@@ -2,6 +2,8 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+  profilePhoto?: string;
+  birthday?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -87,4 +89,11 @@ export interface CreateWorkoutLogRequest {
   weight?: number;
   rpe?: number;
   notes?: string;
+}
+
+export interface UpdateUserProfileRequest {
+  name?: string;
+  email?: string;
+  profilePhoto?: string;
+  birthday?: Date;
 }

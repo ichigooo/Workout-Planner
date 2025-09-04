@@ -42,6 +42,19 @@ if (!supabaseUrl || !supabaseKey ||
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Helpers
+function mapUserRow(row) {
+  if (!row) return row;
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name ?? null,
+    profilePhoto: row.profile_photo ?? null,
+    birthday: row.birthday ?? null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 function mapWorkoutRow(row) {
   if (!row) return row;
   return {
@@ -321,6 +334,53 @@ app.delete('/api/plan-items/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting plan item:', error);
     res.status(500).json({ error: 'Failed to delete plan item' });
+  }
+});
+
+// User Profile Endpoints
+
+// Get user profile
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (error) throw error;
+    res.json(mapUserRow(data));
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ error: 'Failed to fetch user profile' });
+  }
+});
+
+// Update user profile
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { name, email, profilePhoto, birthday } = req.body;
+
+    // Prepare update data (only include fields that are provided)
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (profilePhoto !== undefined) updateData.profile_photo = profilePhoto;
+    if (birthday !== undefined) updateData.birthday = birthday;
+
+    const { data, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(mapUserRow(data));
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    res.status(500).json({ error: 'Failed to update user profile' });
   }
 });
 
