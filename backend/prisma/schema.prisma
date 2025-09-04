@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workouts     Workout[]
+  workoutPlans WorkoutPlan[]
+  workoutLogs  WorkoutLog[]
+
+  @@map("users")
+}
+
+model Workout {
+  id          String   @id @default(cuid())
+  title       String
+  category    String   // e.g., "legs", "core", "upper body"
+  description String?
+  sets        Int
+  reps        Int
+  intensity   String   // e.g., "weight", "RPE", "bodyweight"
+  imageUrl    String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planItems   PlanItem[]
+  workoutLogs WorkoutLog[]
+
+  @@map("workouts")
+}
+
+model WorkoutPlan {
+  id          String   @id @default(cuid())
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planItems PlanItem[]
+
+  @@map("workout_plans")
+}
+
+model PlanItem {
+  id           String   @id @default(cuid())
+  workoutId    String
+  workoutPlanId String
+  frequency    String   // e.g., "Mon,Wed,Fri" or "daily"
+  intensity   String?  // override intensity for this plan item
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  workout     Workout     @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  workoutPlan WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+
+  @@map("plan_items")
+}
+
+model WorkoutLog {
+  id        String   @id @default(cuid())
+  workoutId String
+  userId    String
+  date      DateTime
+  sets      Int
+  reps      Int
+  weight    Float?
+  rpe       Int?     // Rate of Perceived Exertion (1-10)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workout Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("workout_logs")
+}
