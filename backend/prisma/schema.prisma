@@ -20,9 +20,9 @@ model User {
   updatedAt    DateTime  @updatedAt
 
   // Relations
-  workouts     Workout[]
-  workoutPlans WorkoutPlan[]
-  workoutLogs  WorkoutLog[]
+  createdWorkouts Workout[] @relation("WorkoutCreator") // Workouts they created (admin)
+  workoutPlans     WorkoutPlan[] // Their personal workout plans
+  workoutLogs      WorkoutLog[] // Their personal workout logs
 
   @@map("users")
 }
@@ -30,18 +30,21 @@ model User {
 model Workout {
   id          String   @id @default(cuid())
   title       String
-  category    String   // e.g., "legs", "core", "upper body"
+  category    String   // Predefined categories: "Upper Body - Pull", "Upper Body - Push", "Legs", "Core", "Climbing - Power", "Climbing - Endurance", "Climbing - Warm Up", "Cardio"
   description String?
-  sets        Int
-  reps        Int
-  intensity   String   // e.g., "weight", "RPE", "bodyweight"
+  workoutType String   // "strength" or "cardio"
+  sets        Int?     // Only for strength workouts
+  reps        Int?     // Only for strength workouts
+  duration    Int?     // Only for cardio workouts (in minutes)
+  intensity   String   // e.g., "weight", "RPE", "bodyweight", "pace", "heart rate"
   imageUrl    String?
-  userId      String
+  isGlobal    Boolean  @default(true) // Global workout library - shared across all users
+  createdBy   String?  // Optional: who created this workout (for admin purposes)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creator     User?        @relation("WorkoutCreator", fields: [createdBy], references: [id], onDelete: SetNull)
   planItems   PlanItem[]
   workoutLogs WorkoutLog[]
 
@@ -85,10 +88,13 @@ model WorkoutLog {
   workoutId String
   userId    String
   date      DateTime
-  sets      Int
-  reps      Int
-  weight    Float?
+  sets      Int?     // Only for strength workouts
+  reps      Int?     // Only for strength workouts
+  duration  Int?     // Only for cardio workouts (in minutes)
+  weight    Float?   // For strength workouts
   rpe       Int?     // Rate of Perceived Exertion (1-10)
+  pace      String?  // For cardio workouts (e.g., "8:30/mile")
+  heartRate Int?     // For cardio workouts (BPM)
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

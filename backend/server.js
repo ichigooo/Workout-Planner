@@ -62,11 +62,14 @@ function mapWorkoutRow(row) {
     title: row.title,
     category: row.category,
     description: row.description ?? null,
-    sets: row.sets,
-    reps: row.reps,
+    workoutType: row.workout_type,
+    sets: row.sets ?? null,
+    reps: row.reps ?? null,
+    duration: row.duration ?? null,
     intensity: row.intensity,
     imageUrl: row.image_url ?? null,
-    userId: row.user_id,
+    isGlobal: row.is_global ?? true,
+    createdBy: row.created_by ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -158,16 +161,23 @@ app.get('/api/workouts', async (req, res) => {
 app.post('/api/workouts', async (req, res) => {
   try {
     const body = req.body || {};
+    
+    // Auto-detect workout type based on category
+    const workoutType = body.category === 'Cardio' ? 'cardio' : 'strength';
+    
     // Map camelCase from client to snake_case columns
     const insert = {
       title: body.title,
       category: body.category,
       description: body.description ?? null,
-      sets: body.sets,
-      reps: body.reps,
+      workout_type: workoutType, // Auto-determined
+      sets: body.sets ?? null,
+      reps: body.reps ?? null,
+      duration: body.duration ?? null,
       intensity: body.intensity,
       image_url: body.imageUrl ?? null,
-      user_id: await resolveUserIdOrCreateFallback(body.userId),
+      is_global: true, // All workouts are global by default
+      created_by: body.createdBy ?? null, // Optional: who created this workout
     };
 
     const { data, error } = await supabase
@@ -206,14 +216,21 @@ app.get('/api/workouts/:id', async (req, res) => {
 app.put('/api/workouts/:id', async (req, res) => {
   try {
     const body = req.body || {};
+    
+    // Auto-detect workout type based on category
+    const workoutType = body.category === 'Cardio' ? 'cardio' : 'strength';
+    
     const update = {
       title: body.title,
       category: body.category,
       description: body.description ?? null,
-      sets: body.sets,
-      reps: body.reps,
+      workout_type: workoutType, // Auto-determined
+      sets: body.sets ?? null,
+      reps: body.reps ?? null,
+      duration: body.duration ?? null,
       intensity: body.intensity,
       image_url: body.imageUrl ?? null,
+      // Note: is_global and created_by are not updated here to maintain data integrity
     };
 
     const { data, error } = await supabase
