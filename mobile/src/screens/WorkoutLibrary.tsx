@@ -10,6 +10,7 @@ import {
   useColorScheme,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getTheme } from '../theme';
 import { WorkoutCard } from '../components/WorkoutCard';
 import { WorkoutForm } from '../components/WorkoutForm';
@@ -146,9 +147,9 @@ export const WorkoutLibrary: React.FC = () => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: theme.colors.bg }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Global Workout Library</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Workout</Text>
         <TouchableOpacity 
           style={[styles.addButton, { backgroundColor: theme.colors.accent }]} 
           onPress={() => setShowForm(true)}
@@ -239,7 +240,7 @@ export const WorkoutLibrary: React.FC = () => {
           />
         )}
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

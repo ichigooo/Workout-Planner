@@ -59,6 +59,8 @@ export const WorkoutPlans: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState<WorkoutPlan | undefined>();
+  // Single routine mode: prefer a known routine if present; otherwise use the first plan
+  const ROUTINE_NAME: string | null = null;
 
   useEffect(() => {
     loadPlans();
@@ -68,7 +70,11 @@ export const WorkoutPlans: React.FC = () => {
     try {
       setLoading(true);
       const data = await apiService.getWorkoutPlans();
-      setPlans(data);
+      // Enforce single routine: pick named routine, else fallback to first if exists
+      const routine = ROUTINE_NAME
+        ? (data || []).find((p) => (p.name || '').toLowerCase() === ROUTINE_NAME.toLowerCase())
+        : (data && data.length > 0 ? data[0] : undefined);
+      setPlans(routine ? [routine] : []);
     } catch (error) {
       Alert.alert('Error', 'Failed to load workout plans');
       console.error('Error loading plans:', error);
@@ -77,16 +83,9 @@ export const WorkoutPlans: React.FC = () => {
     }
   };
 
-  const handleCreatePlan = async (planData: CreateWorkoutPlanRequest) => {
-    try {
-      const newPlan = await apiService.createWorkoutPlan(planData);
-      setPlans(prev => [newPlan, ...prev]);
-      setShowForm(false);
-      Alert.alert('Success', 'Workout plan created successfully!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to create workout plan');
-      console.error('Error creating plan:', error);
-    }
+  // Creating additional plans is disabled for single-routine mode
+  const handleCreatePlan = async (_planData: CreateWorkoutPlanRequest) => {
+    Alert.alert('Info', 'Only one routine is supported. Edit the existing routine instead.');
   };
 
   const handleEditPlan = (plan: WorkoutPlan) => {
@@ -94,23 +93,8 @@ export const WorkoutPlans: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleDeletePlan = (plan: WorkoutPlan) => {
-    Alert.alert(
-      'Delete Plan',
-      `Are you sure you want to delete "${plan.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            // TODO: Implement delete plan API call
-            setPlans(prev => prev.filter(p => p.id !== plan.id));
-            Alert.alert('Success', 'Plan deleted successfully!');
-          },
-        },
-      ]
-    );
+  const handleDeletePlan = (_plan: WorkoutPlan) => {
+    Alert.alert('Info', 'Deleting the routine is disabled. Edit the routine instead.');
   };
 
   const handleFormSubmit = (planData: CreateWorkoutPlanRequest) => {
@@ -143,29 +127,29 @@ export const WorkoutPlans: React.FC = () => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Workout Plans</Text>
-        <TouchableOpacity 
-          style={[styles.addButton, { backgroundColor: theme.colors.accent }]} 
-          onPress={() => setShowForm(true)}
-        >
-          <Text style={styles.addButtonText}>+ Add Plan</Text>
-        </TouchableOpacity>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Routine</Text>
       </View>
 
-      <FlatList
-        data={plans}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <WorkoutPlanCard
-            plan={item}
-            onPress={() => handleEditPlan(item)}
-            onEdit={() => handleEditPlan(item)}
-            onDelete={() => handleDeletePlan(item)}
-          />
-        )}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-      />
+      {plans.length > 0 ? (
+        <FlatList
+          data={plans}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <WorkoutPlanCard
+              plan={item}
+              onPress={() => handleEditPlan(item)}
+              onEdit={() => handleEditPlan(item)}
+              onDelete={() => handleDeletePlan(item)}
+            />
+          )}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+        />
+      ) : (
+        <View style={styles.listContainer}>
+          <Text style={{ textAlign: 'center', color: theme.colors.subtext }}>No routine found.</Text>
+        </View>
+      )}
 
       <Modal
         visible={showForm}

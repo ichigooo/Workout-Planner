@@ -22,11 +22,13 @@ interface WorkoutPlanFormProps {
   onSubmit: (plan: CreateWorkoutPlanRequest) => void;
   onCancel: () => void;
   onPlanUpdated?: () => void;
+  hideDates?: boolean; // when true, hide start/end date inputs for perpetual routine
 }
 
 interface WorkoutWithDays extends Workout {
   scheduledDays: string[];
   planItemId?: string;
+  createdAt?: string;
 }
 
 const DAYS_OF_WEEK = [
@@ -43,14 +45,21 @@ export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
   plan, 
   onSubmit, 
   onCancel,
-  onPlanUpdated 
+  onPlanUpdated,
+  hideDates = false,
 }) => {
   const scheme = useColorScheme();
   const theme = getTheme(scheme === 'dark' ? 'dark' : 'light');
   
-  const [name, setName] = useState(plan?.name || '');
-  const [startDate, setStartDate] = useState(plan?.startDate || new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(plan?.endDate || new Date().toISOString().split('T')[0]);
+  // Single routine mode: hide name; always use implicit 'Routine'
+  const [name] = useState('Routine');
+  // compute sensible defaults: start = plan.startDate || today, end = plan.endDate || start + 90 days
+  const today = new Date();
+  const formatDate = (d: Date) => d.toISOString().split('T')[0];
+  const defaultStart = plan?.startDate ? new Date(plan.startDate) : today;
+  const defaultEnd = plan?.endDate ? new Date(plan.endDate) : new Date(defaultStart.getTime() + 90 * 24 * 60 * 60 * 1000);
+  const [startDate, setStartDate] = useState<string>(plan?.startDate || formatDate(defaultStart));
+  const [endDate, setEndDate] = useState<string>(plan?.endDate || formatDate(defaultEnd));
   
   // Workout scheduling state
   const [availableWorkouts, setAvailableWorkouts] = useState<Workout[]>([]);
@@ -84,10 +93,17 @@ export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
             ...planItem.workout,
             scheduledDays: days,
             planItemId: planItem.id,
+            createdAt: planItem.createdAt,
           });
         }
       });
       
+      // Newest added first
+      scheduled.sort((a, b) => {
+        const ta = a.createdAt ? Date.parse(a.createdAt) : 0;
+        const tb = b.createdAt ? Date.parse(b.createdAt) : 0;
+        return tb - ta;
+      });
       setScheduledWorkouts(scheduled);
     } catch (error) {
       console.error('Error loading workouts:', error);
@@ -137,34 +153,40 @@ export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!name || !startDate || !endDate) {
+    if (!name || (!hideDates && (!startDate || !endDate))) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    if (new Date(startDate) >= new Date(endDate)) {
+    if (!hideDates && new Date(startDate) >= new Date(endDate)) {
       Alert.alert('Error', 'End date must be after start date');
       return;
     }
 
     const planData: CreateWorkoutPlanRequest = {
       name,
-      startDate,
-      endDate,
+      startDate: hideDates ? new Date().toISOString().split('T')[0] : startDate,
+      endDate: hideDates ? new Date().toISOString().split('T')[0] : endDate,
       userId: plan?.userId || 'temp-user-id', // TODO: Get from auth context
     };
 
     // If editing an existing plan, save the workout schedule
     if (plan) {
       try {
-        // Remove existing plan items
-        for (const workout of scheduledWorkouts) {
-          if (workout.planItemId) {
-            await apiService.removeWorkoutFromPlan(workout.planItemId);
+        // Fetch current plan items from server to ensure we remove any deleted items
+        const planData = await apiService.getWorkoutPlans();
+        const currentPlan = planData.find(p => p.id === plan.id);
+
+        // Remove all existing plan items for this plan (server-side source of truth)
+        if (currentPlan?.planItems?.length) {
+          for (const existingItem of currentPlan.planItems) {
+            if (existingItem.id) {
+              await apiService.removeWorkoutFromPlan(existingItem.id);
+            }
           }
         }
 
-        // Add new plan items
+        // Add new plan items from scheduledWorkouts
         for (const workout of scheduledWorkouts) {
           if (workout.scheduledDays.length > 0) {
             await apiService.addWorkoutToPlan(plan.id, {
@@ -251,78 +273,39 @@ export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
 
   const renderHeader = () => (
     <View>
-      <Text style={[styles.title, { color: theme.colors.text }]}>{plan ? 'Edit Workout Plan' : 'Create New Workout Plan'}</Text>
-    
-      <View style={styles.inputGroup}>
-        <Text style={[styles.label, { color: theme.colors.text }]}>Plan Name *</Text>
-        <TextInput
-          style={[styles.input, { 
-            backgroundColor: theme.colors.surface, 
-            borderColor: theme.colors.border, 
-            color: theme.colors.text 
-          }]}
-          value={name}
-          onChangeText={setName}
-          placeholder="Enter plan name"
-          placeholderTextColor={theme.colors.subtext}
-        />
-      </View>
+      {!plan && (
+        <Text style={[styles.title, { color: theme.colors.text }]}>Create Routine</Text>
+      )}
 
-      <View style={styles.inputGroup}>
-        <Text style={[styles.label, { color: theme.colors.text }]}>Start Date *</Text>
-        <CalendarWidget
-          selectedDate={startDate}
-          onDateSelect={setStartDate}
-          placeholder="Select start date"
-          minimumDate={new Date().toISOString().split('T')[0]}
-        />
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={[styles.label, { color: theme.colors.text }]}>End Date *</Text>
-        <CalendarWidget
-          selectedDate={endDate}
-          onDateSelect={setEndDate}
-          placeholder="Select end date"
-          minimumDate={startDate}
-        />
-      </View>
-
-      {plan && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Available Workouts</Text>
-          <Text style={[styles.sectionSubtitle, { color: theme.colors.subtext }]}>
-            Tap to add to your plan
-          </Text>
-          
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.workoutSelector}>
-            {availableWorkouts.map((workout) => (
-              <TouchableOpacity
-                key={workout.id}
-                style={[styles.workoutOption, { 
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.border 
-                }]}
-                onPress={() => handleAddWorkout(workout)}
-              >
-                <Text style={[styles.workoutOptionTitle, { color: theme.colors.text }]}>
-                  {workout.title}
-                </Text>
-                <Text style={[styles.workoutOptionDetails, { color: theme.colors.subtext }]}>
-                  {workout.category}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+      {!hideDates && (
+        <View style={styles.inputGroup}>
+          <Text style={[styles.label, { color: theme.colors.text }]}>Start Date *</Text>
+          <CalendarWidget
+            selectedDate={startDate}
+            onDateSelect={setStartDate}
+            placeholder="Select start date"
+            minimumDate={new Date().toISOString().split('T')[0]}
+          />
         </View>
       )}
+
+      {!hideDates && (
+        <View style={styles.inputGroup}>
+          <Text style={[styles.label, { color: theme.colors.text }]}>End Date *</Text>
+          <CalendarWidget
+            selectedDate={endDate}
+            onDateSelect={setEndDate}
+            placeholder="Select end date"
+            minimumDate={startDate}
+          />
+        </View>
+      )}
+
+      {/* Available Workouts section removed per design */}
 
       {plan && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Scheduled Workouts</Text>
-          <Text style={[styles.sectionSubtitle, { color: theme.colors.subtext }]}>
-            Long press to reorder • Tap days to schedule
-          </Text>
         </View>
       )}
     </View>
@@ -370,20 +353,8 @@ export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
           {scheduledWorkouts.length > 0 ? (
             <View style={styles.workoutsContainer}>
               {scheduledWorkouts.map((workout, index) => (
-                <View key={workout.id} style={styles.workoutItemWrapper}>
-                  <TouchableOpacity
-                    style={[styles.dragHandle, { backgroundColor: theme.colors.subtext }]}
-                    onLongPress={() => {
-                      // Simple reorder functionality - move item up/down
-                      const newWorkouts = [...scheduledWorkouts];
-                      if (index > 0) {
-                        [newWorkouts[index], newWorkouts[index - 1]] = [newWorkouts[index - 1], newWorkouts[index]];
-                        setScheduledWorkouts(newWorkouts);
-                      }
-                    }}
-                  >
-                    <Text style={styles.dragHandleText}>⋮⋮</Text>
-                  </TouchableOpacity>
+                <View key={`${workout.planItemId ?? workout.id}-${index}`} style={styles.workoutItemWrapper}>
+                  {/* Drag handle removed per design */}
                   {renderWorkoutItem({ item: workout, drag: () => {}, isActive: false })}
                 </View>
               ))}
@@ -401,42 +372,31 @@ export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={[styles.title, { color: theme.colors.text }]}>Create New Workout Plan</Text>
-        
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.colors.text }]}>Plan Name *</Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.colors.surface, 
-                borderColor: theme.colors.border, 
-                color: theme.colors.text 
-              }]}
-              value={name}
-              onChangeText={setName}
-              placeholder="Enter plan name"
-              placeholderTextColor={theme.colors.subtext}
-            />
-          </View>
+          <Text style={[styles.title, { color: theme.colors.text }]}>Create Routine</Text>
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.colors.text }]}>Start Date *</Text>
-            <CalendarWidget
-              selectedDate={startDate}
-              onDateSelect={setStartDate}
-              placeholder="Select start date"
-              minimumDate={new Date().toISOString().split('T')[0]}
-            />
-          </View>
+          {!hideDates && (
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.colors.text }]}>Start Date *</Text>
+              <CalendarWidget
+                selectedDate={startDate}
+                onDateSelect={setStartDate}
+                placeholder="Select start date"
+                minimumDate={new Date().toISOString().split('T')[0]}
+              />
+            </View>
+          )}
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.colors.text }]}>End Date *</Text>
-            <CalendarWidget
-              selectedDate={endDate}
-              onDateSelect={setEndDate}
-              placeholder="Select end date"
-              minimumDate={startDate}
-            />
-          </View>
+          {!hideDates && (
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.colors.text }]}>End Date *</Text>
+              <CalendarWidget
+                selectedDate={endDate}
+                onDateSelect={setEndDate}
+                placeholder="Select end date"
+                minimumDate={startDate}
+              />
+            </View>
+          )}
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={[styles.cancelButton, { backgroundColor: theme.colors.subtext }]} onPress={onCancel}>

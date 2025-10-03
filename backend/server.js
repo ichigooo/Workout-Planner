@@ -13,6 +13,30 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Request logging middleware (development only)
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV !== 'production') {
+    const now = new Date().toISOString();
+    try {
+      console.log(`[${now}] ${req.method} ${req.originalUrl} from ${req.ip}`);
+      if (req.query && Object.keys(req.query).length > 0) {
+        console.log('  query:', JSON.stringify(req.query));
+      }
+      if (req.method !== 'GET' && req.body && Object.keys(req.body).length > 0) {
+        try {
+          console.log('  body:', JSON.stringify(req.body));
+        } catch (e) {
+          console.log('  body: <unserializable>');
+        }
+      }
+    } catch (e) {
+      // Safe guard to prevent logger from crashing the server
+      console.error('Request logger error:', e);
+    }
+  }
+  next();
+});
+
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -42,19 +66,33 @@ if (!supabaseUrl || !supabaseKey ||
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Helpers
+/**
+ * mapUserRow
+ * Maps a database user row to API-friendly camelCase fields.
+ * Accepts both snake_case and camelCase source column names.
+ * @param {Object} row - raw DB row
+ * @returns {Object} mapped user object
+ */
 function mapUserRow(row) {
   if (!row) return row;
   return {
     id: row.id,
     email: row.email,
     name: row.name ?? null,
-    profilePhoto: row.profile_photo ?? null,
+    profilePhoto: row.profilePhoto ?? row.profile_photo ?? null,
     birthday: row.birthday ?? null,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt: row.createdAt ?? row.created_at,
+    updatedAt: row.updatedAt ?? row.updated_at,
   };
 }
 
+/**
+ * mapWorkoutRow
+ * Maps a database workout row to API-friendly camelCase fields.
+ * Normalizes snake_case or camelCase column names and fills defaults.
+ * @param {Object} row - raw DB row
+ * @returns {Object} mapped workout object
+ */
 function mapWorkoutRow(row) {
   if (!row) return row;
   return {
@@ -62,26 +100,34 @@ function mapWorkoutRow(row) {
     title: row.title,
     category: row.category,
     description: row.description ?? null,
-    workoutType: row.workout_type,
+    workoutType: row.workoutType ?? row.workout_type,
     sets: row.sets ?? null,
     reps: row.reps ?? null,
     duration: row.duration ?? null,
     intensity: row.intensity,
-    imageUrl: row.image_url ?? null,
-    isGlobal: row.is_global ?? true,
-    createdBy: row.created_by ?? null,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    imageUrl: row.imageUrl ?? row.image_url ?? null,
+    isGlobal: (row.isGlobal !== undefined) ? row.isGlobal : (row.is_global ?? true),
+    createdBy: row.createdBy ?? row.created_by ?? null,
+    createdAt: row.createdAt ?? row.created_at,
+    updatedAt: row.updatedAt ?? row.updated_at,
   };
 }
 
+/**
+ * mapPlanItemRow
+ * Maps a plan_items DB row (single occurrence) to an API-friendly object.
+ * Ensures scheduled date normalization and attaches nested workout data if present.
+ * @param {Object} row - raw DB row
+ * @returns {Object} mapped plan item
+ */
 function mapPlanItemRow(row) {
   if (!row) return row;
   return {
     id: row.id,
     workoutId: row.workout_id,
     workoutPlanId: row.workout_plan_id,
-    frequency: row.frequency,
+    // After consolidation each PlanItem represents a single dated occurrence
+    scheduledDate: row.scheduled_date ?? null,
     intensity: row.intensity ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -89,19 +135,131 @@ function mapPlanItemRow(row) {
   };
 }
 
+/**
+ * expandFrequencyToDates
+ * Expand a recurrence frequency string (e.g., "Mon,Wed,Fri" or "daily") into
+ * concrete ISO date strings within the provided range (or next 90 days by default).
+ * @param {string} frequency - comma-separated tokens or 'daily'
+ * @param {string|null} startDate - inclusive start date (YYYY-MM-DD) or null
+ * @param {string|null} endDate - inclusive end date (YYYY-MM-DD) or null
+ * @returns {string[]} array of YYYY-MM-DD dates
+ */
+// Expand a recurrence string like "Mon,Wed,Fri" or "daily" into concrete dates
+function expandFrequencyToDates(frequency, startDate, endDate) {
+  if (!frequency) return [];
+  const tokens = frequency.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+  const results = [];
+  const start = startDate ? new Date(startDate) : new Date();
+  const end = endDate ? new Date(endDate) : new Date(new Date().getTime() + 90 * 24 * 60 * 60 * 1000);
+
+  // Normalize tokens (daily or weekday short/full)
+  const isDaily = tokens.some(t => t === 'daily');
+  const tokenShorts = new Set(tokens.map(t => t.slice(0,3)));
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    if (isDaily) {
+      results.push(new Date(d).toISOString().split('T')[0]);
+      continue;
+    }
+    const dayFull = d.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    const dayShort = dayFull.slice(0,3);
+    if (tokenShorts.has(dayShort) || tokenShorts.has(dayFull)) {
+      results.push(new Date(d).toISOString().split('T')[0]);
+    }
+  }
+  return results;
+}
+
+/**
+ * addWorkoutToPlanByDate
+ * Insert a single dated plan item into a workout plan. Tries camelCase column names
+ * first, and falls back to snake_case if necessary. Returns the normalized plan item
+ * with nested workout information when available.
+ * @param {string} planId
+ * @param {string} workoutId
+ * @param {string} date - YYYY-MM-DD
+ * @param {string|null} intensity
+ * @returns {Object} mapped plan item
+ */
+// Helper: add a single dated plan item to a plan (tries camelCase, falls back to snake_case)
+async function addWorkoutToPlanByDate(planId, workoutId, date, intensity) {
+  const id = require('crypto').randomUUID();
+  const now = new Date().toISOString();
+
+  const insertCamel = {
+    id,
+    workoutId,
+    workoutPlanId: planId,
+    scheduledDate: date,
+    intensity,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  let inserted;
+  try {
+    const { data, error } = await supabase.from('plan_items').insert([insertCamel]).select().single();
+    if (error) throw error;
+    inserted = data;
+  } catch (err) {
+    // fallback to snake_case
+    const insertSnake = {
+      id,
+      workout_id: workoutId,
+      workout_plan_id: planId,
+      scheduled_date: date,
+      intensity,
+      created_at: now,
+      updated_at: now,
+    };
+    const { data, error } = await supabase.from('plan_items').insert([insertSnake]).select().single();
+    if (error) throw error;
+    inserted = data;
+  }
+
+  // Fetch full plan item with workout info
+  try {
+    const { data: full, error: fullErr } = await supabase.from('plan_items').select('*, workouts(*)').eq('id', id).single();
+    if (!fullErr && full) {
+      if (full.scheduledDate && !full.scheduled_date) full.scheduled_date = full.scheduledDate;
+      return mapPlanItemRow(full);
+    }
+  } catch (e) {
+    // ignore and fallthrough to return inserted mapping
+  }
+
+  return mapPlanItemRow(inserted);
+}
+
+/**
+ * mapPlanRow
+ * Maps a workout_plan DB row to an API-friendly object. Normalizes field names
+ * and maps nested plan items via mapPlanItemRow.
+ * @param {Object} row - raw DB row
+ * @returns {Object} mapped plan
+ */
 function mapPlanRow(row) {
   if (!row) return row;
   return {
     id: row.id,
-    name: row.name,
-    startDate: row.start_date,
-    endDate: row.end_date,
-    userId: row.user_id,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    name: row.name, // may be null for routine
+    startDate: row.startDate ?? row.start_date, // may be null for routine
+    endDate: row.endDate ?? row.end_date, // may be null for routine
+    userId: row.user_id ?? row.userId,
+    createdAt: row.createdAt ?? row.created_at,
+    updatedAt: row.updatedAt ?? row.updated_at,
+    isRoutine: (row.is_routine === true) || (row.isRoutine === true),
     planItems: Array.isArray(row.plan_items) ? row.plan_items.map(mapPlanItemRow) : [],
   };
 }
+/**
+ * resolveUserIdOrCreateFallback
+ * Verifies the provided userId exists. If missing, returns an existing test user id
+ * or creates a fallback user and returns its id. Used by server-side creation flows
+ * where a user context is required.
+ * @param {string|null} providedUserId
+ * @returns {Promise<string>} user id to use
+ */
 async function resolveUserIdOrCreateFallback(providedUserId) {
   try {
     if (providedUserId) {
@@ -143,11 +301,12 @@ app.get('/health', (req, res) => {
 
 // Workout routes
 app.get('/api/workouts', async (req, res) => {
+  console.log('[GET /api/workouts] received request');
   try {
     const { data, error } = await supabase
       .from('workouts')
       .select('*')
-      .order('created_at', { ascending: false });
+    .order('createdAt', { ascending: false });
 
     if (error) throw error;
     const mapped = Array.isArray(data) ? data.map(mapWorkoutRow) : [];
@@ -159,6 +318,7 @@ app.get('/api/workouts', async (req, res) => {
 });
 
 app.post('/api/workouts', async (req, res) => {
+  console.log('[POST /api/workouts] received request');
   try {
     const body = req.body || {};
     
@@ -167,18 +327,23 @@ app.post('/api/workouts', async (req, res) => {
     
     // Map camelCase from client to snake_case columns
     const insert = {
+      id: require('crypto').randomUUID(),
       title: body.title,
       category: body.category,
       description: body.description ?? null,
-      workout_type: workoutType, // Auto-determined
+      workoutType: workoutType, // Auto-determined (camelCase column)
       sets: body.sets ?? null,
       reps: body.reps ?? null,
       duration: body.duration ?? null,
       intensity: body.intensity,
-      image_url: body.imageUrl ?? null,
-      is_global: true, // All workouts are global by default
-      created_by: body.createdBy ?? null, // Optional: who created this workout
+      imageUrl: body.imageUrl ?? null,
+      isGlobal: true, // All workouts are global by default
+      createdBy: body.createdBy ?? null, // Optional: who created this workout
     };
+
+    // Ensure timestamps are provided to match DB NOT NULL constraints
+    insert.createdAt = new Date().toISOString();
+    insert.updatedAt = new Date().toISOString();
 
     const { data, error } = await supabase
       .from('workouts')
@@ -224,12 +389,12 @@ app.put('/api/workouts/:id', async (req, res) => {
       title: body.title,
       category: body.category,
       description: body.description ?? null,
-      workout_type: workoutType, // Auto-determined
+      workoutType: workoutType, // Auto-determined
       sets: body.sets ?? null,
       reps: body.reps ?? null,
       duration: body.duration ?? null,
       intensity: body.intensity,
-      image_url: body.imageUrl ?? null,
+      imageUrl: body.imageUrl ?? null,
       // Note: is_global and created_by are not updated here to maintain data integrity
     };
 
@@ -275,7 +440,7 @@ app.get('/api/workout-plans', async (req, res) => {
           workouts (*)
         )
       `)
-      .order('created_at', { ascending: false });
+    .order('createdAt', { ascending: false });
 
     if (error) throw error;
     const mapped = Array.isArray(data) ? data.map(mapPlanRow) : [];
@@ -286,14 +451,131 @@ app.get('/api/workout-plans', async (req, res) => {
   }
 });
 
+// Create or return default routine for a user (90 days)
+app.post('/api/users/:id/default-plan', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    // Check if user already has a plan
+    const { data: existingPlans, error: existingErr } = await supabase
+      .from('workout_plans')
+      .select('*')
+      .eq('userId', userId)
+      .order('createdAt', { ascending: false });
+
+    if (existingErr) throw existingErr;
+    if (Array.isArray(existingPlans) && existingPlans.length > 0) {
+      // Return the most recent plan
+      return res.json(mapPlanRow(existingPlans[0]));
+    }
+
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + 90);
+
+    const insert = {
+      id: require('crypto').randomUUID(),
+      // some DBs have name NOT NULL; use empty string as default
+      name: '',
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+      userId: userId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('workout_plans')
+      .insert([insert])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(mapPlanRow(data));
+  } catch (error) {
+    console.error('Error creating default plan:', error);
+    res.status(500).json({ error: 'Failed to create default plan' });
+  }
+});
+
+// Add workout to plan for a specific date (single occurrence)
+app.post('/api/workout-plans/:id/plan-items/date', async (req, res) => {
+  try {
+    const planId = req.params.id;
+    const body = req.body || {};
+    const workoutId = body.workoutId;
+    const date = body.date; // expected YYYY-MM-DD
+    const intensity = body.intensity ?? null;
+
+    if (!workoutId || !date) {
+      return res.status(400).json({ error: 'workoutId and date are required' });
+    }
+
+    const id = require('crypto').randomUUID();
+    const now = new Date().toISOString();
+
+    // Try inserting using camelCase (scheduledDate) first, fallback to snake_case (scheduled_date)
+    const insertCamel = {
+      id,
+      workoutId,
+      workoutPlanId: planId,
+      scheduledDate: date,
+      intensity,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    let inserted;
+    try {
+      const { data, error } = await supabase.from('plan_items').insert([insertCamel]).select().single();
+      if (error) throw error;
+      inserted = data;
+    } catch (err) {
+      // fallback to snake_case
+      const insertSnake = {
+        id,
+        workout_id: workoutId,
+        workout_plan_id: planId,
+        scheduled_date: date,
+        intensity,
+        created_at: now,
+        updated_at: now,
+      };
+      const { data, error } = await supabase.from('plan_items').insert([insertSnake]).select().single();
+      if (error) throw error;
+      inserted = data;
+    }
+
+    // Normalize scheduled_date if needed
+    if (inserted && inserted.scheduledDate && !inserted.scheduled_date) {
+      inserted.scheduled_date = inserted.scheduledDate;
+    }
+
+    // Fetch full plan item with workout
+    const { data: full, error: fullErr } = await supabase.from('plan_items').select('*, workouts(*)').eq('id', id).single();
+    if (fullErr) {
+      // Return the raw inserted object if we can't fetch full
+      return res.status(201).json(mapPlanItemRow(inserted));
+    }
+
+    // Normalize again
+    if (full && full.scheduledDate && !full.scheduled_date) full.scheduled_date = full.scheduledDate;
+
+    res.status(201).json(mapPlanItemRow(full));
+  } catch (error) {
+    console.error('Error adding workout to plan by date:', error);
+    res.status(500).json({ error: 'Failed to add workout to plan by date' });
+  }
+});
+
 app.post('/api/workout-plans', async (req, res) => {
   try {
     const body = req.body || {};
-    // Map camelCase to snake_case
+    // Map camelCase to snake_case; routine plans have no name and no date range
     const insert = {
-      name: body.name,
-      start_date: body.startDate,
-      end_date: body.endDate,
+      name: body.isRoutine ? null : body.name ?? null,
+      start_date: body.isRoutine ? null : body.startDate ?? null,
+      end_date: body.isRoutine ? null : body.endDate ?? null,
+      is_routine: body.isRoutine === true,
       user_id: await resolveUserIdOrCreateFallback(body.userId),
     };
 
@@ -314,24 +596,53 @@ app.post('/api/workout-plans', async (req, res) => {
 app.post('/api/workout-plans/:id/plan-items', async (req, res) => {
   try {
     const body = req.body || {};
-    const insert = {
-      workout_plan_id: req.params.id,
-      workout_id: body.workoutId,
-      frequency: body.frequency,
-      intensity: body.intensity ?? null,
-    };
+    // Accept either explicit dates or a frequency token from client.
+    // If body.dates is provided (array of 'YYYY-MM-DD'), insert those explicit dates.
+    // Else if body.frequency is provided, expand into dates for the next 90 days (or plan range).
 
-    const { data, error } = await supabase
+    const planId = req.params.id;
+    const workoutId = body.workoutId;
+    const intensity = body.intensity ?? null;
+
+    // Insert a plan_items row as the anchor (metadata)
+    const { data: inserted, error: insertErr } = await supabase
       .from('plan_items')
-      .insert([insert])
-      .select(`
-        *,
-        workouts (*)
-      `)
+      .insert([{ workout_plan_id: planId, workout_id: workoutId, intensity }])
+      .select()
       .single();
+    if (insertErr) throw insertErr;
 
-    if (error) throw error;
-    res.status(201).json(mapPlanItemRow(data));
+    const planItemId = inserted.id;
+
+    // Determine dates to insert
+    let dates = [];
+    if (Array.isArray(body.dates) && body.dates.length > 0) {
+      dates = body.dates;
+    } else if (body.frequency) {
+      // Fetch plan dates to determine range
+      const { data: planRows } = await supabase.from('workout_plans').select('start_date,end_date').eq('id', planId).single();
+      const startDate = planRows?.start_date ? planRows.start_date : null;
+      const endDate = planRows?.end_date ? planRows.end_date : null;
+      dates = expandFrequencyToDates(body.frequency, startDate, endDate);
+    }
+
+    if (dates.length > 0) {
+      const inserts = dates.map(d => ({ id: require('crypto').randomUUID(), plan_item_id: planItemId, scheduled_date: d }));
+      const { error: dateErr } = await supabase.from('plan_item_dates').insert(inserts);
+      if (dateErr) {
+        console.error('Error inserting plan_item_dates:', dateErr);
+      }
+    }
+
+    // Return the inserted plan item including any plan_item_dates
+    const { data: full, error: fullErr } = await supabase
+      .from('plan_items')
+      .select(`*, plan_item_dates(*) , workouts(*)`)
+      .eq('id', planItemId)
+      .single();
+    if (fullErr) throw fullErr;
+
+    res.status(201).json(mapPlanItemRow(full));
   } catch (error) {
     console.error('Error creating plan item:', error);
     res.status(500).json({ error: 'Failed to create plan item' });
@@ -403,6 +714,6 @@ app.put('/api/users/:id', async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`[LINNA] Server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
 });

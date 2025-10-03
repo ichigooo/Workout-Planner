@@ -31,10 +31,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
   const scheme = useColorScheme();
   const theme = getTheme(scheme === 'dark' ? 'dark' : 'light');
   
-  // Timer state
-  const [isRunning, setIsRunning] = useState(false);
-  const [time, setTime] = useState(0);
-  const [setsCompleted, setSetsCompleted] = useState(0);
+  // Quick notes state
   const [currentWeight, setCurrentWeight] = useState('');
   const [notes, setNotes] = useState('');
   
@@ -47,61 +44,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [frequency, setFrequency] = useState<string>('');
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isRunning) {
-      interval = setInterval(() => {
-        setTime(time => time + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isRunning]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleStartStop = () => {
-    setIsRunning(!isRunning);
-  };
-
-  const handleReset = () => {
-    setTime(0);
-    setIsRunning(false);
-  };
-
-  const handleCompleteSet = () => {
-    if (setsCompleted < (workout.sets || 0)) {
-      setSetsCompleted(setsCompleted + 1);
-    }
-  };
-
   const handleLogWorkout = () => {
-    if (setsCompleted === 0) {
-      Alert.alert('No sets completed', 'Please complete at least one set before logging.');
-      return;
-    }
-    
-    Alert.alert(
-      'Log Workout',
-      `Log ${setsCompleted}/${workout.sets || 0} sets completed in ${formatTime(time)}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Log', 
-          onPress: () => {
-            // TODO: Save to backend
-            Alert.alert('Success', 'Workout logged successfully!');
-            handleReset();
-            setSetsCompleted(0);
-            setCurrentWeight('');
-            setNotes('');
-          }
-        }
-      ]
-    );
+    Alert.alert('Saved', 'Notes saved.');
   };
 
   const handleEditPress = () => {
@@ -218,49 +162,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
             <Text style={styles.addToPlanButtonText}>Add to Plan</Text>
           </TouchableOpacity>
 
-          {/* Workout Tracker Section */}
+          {/* Notes */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Workout Tracker</Text>
-            
-            {/* Timer */}
-            <View style={[styles.timerContainer, { backgroundColor: theme.colors.bg, borderColor: theme.colors.border }]}>
-              <Text style={[styles.timerText, { color: theme.colors.text }]}>{formatTime(time)}</Text>
-              <View style={styles.timerButtons}>
-                <TouchableOpacity 
-                  style={[styles.timerButton, { backgroundColor: theme.colors.accent }]} 
-                  onPress={handleStartStop}
-                >
-                  <Text style={styles.timerButtonText}>{isRunning ? 'Pause' : 'Start'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.timerButton, { backgroundColor: theme.colors.subtext }]} 
-                  onPress={handleReset}
-                >
-                  <Text style={styles.timerButtonText}>Reset</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Sets Progress - only for strength workouts */}
-            {workout.workoutType === 'strength' && (
-              <View style={[styles.setsContainer, { backgroundColor: theme.colors.bg, borderColor: theme.colors.border }]}>
-                <Text style={[styles.setsTitle, { color: theme.colors.text }]}>Sets Progress</Text>
-                <View style={styles.setsProgress}>
-                  <Text style={[styles.setsText, { color: theme.colors.text }]}>
-                    {setsCompleted} / {workout.sets || 0} completed
-                  </Text>
-                  <TouchableOpacity 
-                    style={[styles.completeSetButton, { backgroundColor: theme.colors.accent }]} 
-                    onPress={handleCompleteSet}
-                    disabled={setsCompleted >= (workout.sets || 0)}
-                  >
-                    <Text style={styles.completeSetText}>+1 Set</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            {/* Weight & Notes */}
             <View style={styles.inputsContainer}>
               <View style={styles.inputRow}>
                 <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Weight (kg)</Text>
@@ -287,12 +190,12 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
               </View>
             </View>
 
-            {/* Log Workout Button */}
+            {/* Save Notes Button */}
             <TouchableOpacity 
               style={[styles.logButton, { backgroundColor: theme.colors.accent }]} 
               onPress={handleLogWorkout}
             >
-              <Text style={styles.logButtonText}>Log Workout</Text>
+              <Text style={styles.logButtonText}>Save Notes</Text>
             </TouchableOpacity>
           </View>
         </View>

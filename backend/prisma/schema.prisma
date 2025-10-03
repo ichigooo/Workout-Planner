@@ -71,14 +71,16 @@ model PlanItem {
   id           String   @id @default(cuid())
   workoutId    String
   workoutPlanId String
-  frequency    String   // e.g., "Mon,Wed,Fri" or "daily"
+  // each PlanItem represents a single dated occurrence after consolidation
   intensity   String?  // override intensity for this plan item
+  scheduledDate DateTime @map("scheduled_date")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
   workout     Workout     @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   workoutPlan WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  // no separate plan item dates; each PlanItem is dated
 
   @@map("plan_items")
 }

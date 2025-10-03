@@ -11,8 +11,22 @@ import {
 
 import { API_BASE_URL } from '../constants';
 
+// Log which API base the app is using (helps confirm local vs cloud)
+try {
+  // eslint-disable-next-line no-console
+  console.log('[api] API_BASE_URL=', API_BASE_URL);
+} catch (e) {
+  // ignore
+}
+
 class ApiService {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    // Log each request for debugging (Metro/console)
+    try {
+      // eslint-disable-next-line no-console
+      console.log(`[api] ${options?.method ?? 'GET'} ${API_BASE_URL}${endpoint}`);
+    } catch (e) {}
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
         'Content-Type': 'application/json',

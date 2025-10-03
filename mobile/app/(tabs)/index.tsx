@@ -1,31 +1,16 @@
-import { StyleSheet } from 'react-native';
+import React from 'react';
+import { useRouter } from 'expo-router';
+import Home from '@/src/screens/Home';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+export default function Index() {
+  const router = useRouter();
 
-export default function TabOneScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
-    </View>
+    <Home
+      onOpenCalendar={() => router.push('/(tabs)/calendar')}
+      onOpenProfile={() => router.push('/(tabs)/profile')}
+      onOpenLibrary={(category?: string) => category ? router.push(`/workout?category=${encodeURIComponent(category)}`) : router.push('/workout')}
+      onOpenRoutine={() => router.push('/(tabs)/library?tab=routine')}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});

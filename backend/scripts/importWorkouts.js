@@ -83,7 +83,7 @@ function convertRowToWorkout(row) {
 // Main import function
 async function importWorkouts(filePath) {
   try {
-    console.log('📖 Reading Excel file...');
+    console.log('[importWorkouts]📖 Reading Excel file...');
     
     // Read Excel file
     const workbook = XLSX.readFile(filePath);

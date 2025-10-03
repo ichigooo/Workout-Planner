@@ -8,6 +8,7 @@ import {
   useColorScheme,
   Alert 
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar } from 'react-native-calendars';
 import { WorkoutPlan, Workout } from '../types';
 import { apiService } from '../services/api';
@@ -43,6 +44,10 @@ export const CalendarView: React.FC = () => {
     try {
       const plans = await apiService.getWorkoutPlans();
       setWorkoutPlans(plans);
+      try {
+        // Debug log: summary of loaded plans
+        console.log('[CalendarView] loaded workout plans:', plans.map(p => ({ id: p.id, name: p.name || null, items: (p.planItems || []).length })));
+      } catch (e) {}
     } catch (error) {
       console.error('Error loading workout plans:', error);
     } finally {
@@ -56,50 +61,65 @@ export const CalendarView: React.FC = () => {
     const startOfWeek = new Date(currentDate);
     startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
     
-    // Generate workouts for the current week
+    // Use the single routine: always take the first plan returned (there should only be one)
+    const routinePlan = (workoutPlans && workoutPlans.length > 0) ? workoutPlans[0] : null;
+
+    if (!routinePlan) {
+      setScheduledWorkouts([]);
+      console.log('[CalendarView] no routine plan found');
+      return;
+    }
+
+    // Log selected routine plan for debugging
+    try {
+      console.log('[CalendarView] using routinePlan:', { id: routinePlan.id, startDate: routinePlan.startDate, endDate: routinePlan.endDate, planItems: (routinePlan.planItems || []).length });
+    } catch (e) {}
+
     for (let i = 0; i < 7; i++) {
       const date = new Date(startOfWeek);
       date.setDate(startOfWeek.getDate() + i);
       const dateString = date.toISOString().split('T')[0];
       const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-      
-      // Check each plan to see if it has workouts scheduled for this day
-      workoutPlans.forEach(plan => {
-        const planStart = new Date(plan.startDate);
-        const planEnd = new Date(plan.endDate);
-        
-        if (date >= planStart && date <= planEnd) {
-          plan.planItems?.forEach(planItem => {
-            if (planItem.workout && isWorkoutScheduledForDay(planItem.frequency, dayName)) {
-              scheduled.push({
-                id: `${planItem.id}-${dateString}`,
-                workout: planItem.workout,
-                date: dateString,
-                frequency: planItem.frequency,
-                intensity: planItem.intensity || planItem.workout.intensity,
-              });
-            }
+
+      const planStart = routinePlan.startDate ? new Date(routinePlan.startDate) : null;
+      const planEnd = routinePlan.endDate ? new Date(routinePlan.endDate) : null;
+      const inRange = (!planStart && !planEnd) || (planStart && planEnd && date >= planStart && date <= planEnd);
+      if (!inRange) continue;
+
+      routinePlan.planItems?.forEach(planItem => {
+        if (planItem.workout && isWorkoutScheduledForDay(planItem.frequency, dayName)) {
+          scheduled.push({
+            id: `${planItem.id}-${dateString}`,
+            workout: planItem.workout,
+            date: dateString,
+            frequency: planItem.frequency,
+            intensity: planItem.intensity || planItem.workout.intensity,
           });
         }
       });
     }
     
     setScheduledWorkouts(scheduled);
+    try {
+      console.log('[CalendarView] generated scheduledWorkouts:', scheduled.map(s => ({ id: s.id, date: s.date, title: s.workout.title, frequency: s.frequency })));
+    } catch (e) {}
   };
 
   const isWorkoutScheduledForDay = (frequency: string, dayName: string): boolean => {
-    const dayMap: { [key: string]: string } = {
-      'Monday': 'Mon',
-      'Tuesday': 'Tue', 
-      'Wednesday': 'Wed',
-      'Thursday': 'Thu',
-      'Friday': 'Fri',
-      'Saturday': 'Sat',
-      'Sunday': 'Sun'
-    };
-    
-    const shortDay = dayMap[dayName];
-    return frequency.includes(shortDay) || frequency.toLowerCase().includes('daily');
+    if (!frequency) return false;
+
+    // Normalize tokens to lowercase trimmed strings
+    const tokens = frequency.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+    if (tokens.length === 0) return false;
+
+    // If 'daily' is present, it's scheduled every day
+    if (tokens.includes('daily')) return true;
+
+    const dayFull = dayName.toLowerCase();
+    const dayShort = dayFull.slice(0,3); // 'mon','tue','wed',...
+
+    // Match either full name or short (case-insensitive)
+    return tokens.includes(dayShort) || tokens.includes(dayFull);
   };
 
   const getWorkoutsForDate = (date: string) => {
@@ -120,6 +140,10 @@ export const CalendarView: React.FC = () => {
       weekWorkouts[dateString] = getWorkoutsForDate(dateString);
     }
     
+    try {
+      // Debug: log counts per day for the week
+      console.log('[CalendarView] weekWorkouts summary:', Object.keys(weekWorkouts).map(d => ({ date: d, count: (weekWorkouts[d] || []).length })));
+    } catch (e) {}
     return weekWorkouts;
   };
 
@@ -228,7 +252,7 @@ export const CalendarView: React.FC = () => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: theme.colors.bg }]}> 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Weekly Row */}
         <View style={styles.weeklyRowContainer}>
@@ -298,7 +322,7 @@ export const CalendarView: React.FC = () => {
             <Calendar
               onDayPress={(day) => setSelectedDate(day.dateString)}
               markedDates={getMarkedDates()}
-              theme={calendarTheme}
+              theme={calendarTheme as any}
               style={styles.calendar}
             />
           </View>
@@ -383,7 +407,7 @@ export const CalendarView: React.FC = () => {
           )}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

@@ -12,6 +12,7 @@ import {
   useColorScheme,
   KeyboardAvoidingView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { User, UpdateUserProfileRequest } from '../types';
@@ -131,8 +132,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
   }
 
   return (
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: theme.colors.bg }]}> 
     <KeyboardAvoidingView 
-      style={[styles.container, { backgroundColor: theme.colors.bg }]}
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
@@ -253,6 +255,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
       </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
