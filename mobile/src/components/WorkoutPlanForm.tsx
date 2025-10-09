@@ -28,7 +28,7 @@ interface WorkoutPlanFormProps {
 interface WorkoutWithDays extends Workout {
   scheduledDays: string[];
   planItemId?: string;
-  createdAt?: string;
+  createdAt: string;
 }
 
 const DAYS_OF_WEEK = [
@@ -75,28 +75,49 @@ export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
   const loadWorkouts = async () => {
     try {
       setLoadingWorkouts(true);
+      console.log('[WorkoutPlanForm] SETTING WORKOUT DATA..');
       const [workouts, planData] = await Promise.all([
         apiService.getWorkouts(),
         apiService.getWorkoutPlans()
       ]);
-      
+
+      console.log('[WorkoutPlanForm] GET WORKOUT DATA!');
       setAvailableWorkouts(workouts);
       
       // Convert plan items to scheduled workouts with days
       const currentPlan = planData.find(p => p.id === plan?.id);
       const scheduled: WorkoutWithDays[] = [];
       
-      currentPlan?.planItems?.forEach(planItem => {
-        if (planItem.workout) {
-          const days = planItem.frequency.split(',').map(d => d.trim());
-          scheduled.push({
-            ...planItem.workout,
-            scheduledDays: days,
-            planItemId: planItem.id,
-            createdAt: planItem.createdAt,
-          });
+      // Group dated plan items by workout id and build scheduledDays from scheduledDate
+      const byWorkout = new Map();
+      const weekdayKeys = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      currentPlan?.planItems?.forEach(pi => {
+        if (!pi || !pi.workout) return;
+        const workout = pi.workout;
+        const wid = workout.id;
+        const dateStr = (pi as any).scheduledDate ?? (pi as any).scheduled_date;
+        if (!dateStr) return;
+        const dayKey = weekdayKeys[new Date(dateStr).getDay()];
+
+        const entry = byWorkout.get(wid) || { workout, days: new Set(), latestCreatedAt: '', latestPlanItemId: undefined };
+        entry.days.add(dayKey);
+        const createdAt = (pi as any).createdAt ?? (pi as any).created_at ?? '';
+        if (createdAt && (!entry.latestCreatedAt || new Date(createdAt) > new Date(entry.latestCreatedAt))) {
+          entry.latestCreatedAt = createdAt;
+          entry.latestPlanItemId = pi.id;
         }
+        byWorkout.set(wid, entry);
       });
+
+      for (const v of byWorkout.values()) {
+        const { workout: w, days, latestCreatedAt, latestPlanItemId } = v as any;
+        scheduled.push({
+          ...w,
+          scheduledDays: Array.from(days),
+          planItemId: latestPlanItemId,
+          createdAt: latestCreatedAt || '',
+        });
+      }
       
       // Newest added first
       scheduled.sort((a, b) => {
@@ -355,7 +376,7 @@ export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
               {scheduledWorkouts.map((workout, index) => (
                 <View key={`${workout.planItemId ?? workout.id}-${index}`} style={styles.workoutItemWrapper}>
                   {/* Drag handle removed per design */}
-                  {renderWorkoutItem({ item: workout, drag: () => {}, isActive: false })}
+                  {renderWorkoutItem({ item: workout, drag: () => {}, isActive: false, getIndex: () => index })}
                 </View>
               ))}
             </View>
