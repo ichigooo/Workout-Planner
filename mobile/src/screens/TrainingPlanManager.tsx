@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Alert, useColorScheme, TouchableOpacity, Modal, ScrollView, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Calendar } from 'react-native-calendars';
 import { getTheme } from '../theme';
 import { apiService } from '../services/api';
 import { WorkoutPlan, CreateWorkoutPlanRequest, Workout } from '../types';
@@ -16,6 +17,7 @@ export const TrainingPlanManager: React.FC = () => {
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
+  const [selectedDates, setSelectedDates] = useState<{[key: string]: any}>({});
 
   useEffect(() => {
     loadPlan();
@@ -71,44 +73,30 @@ export const TrainingPlanManager: React.FC = () => {
 
   const handleQuickAdd = async () => {
     if (!plan || !selectedWorkoutId) return;
+    
+    const selectedDateStrings = Object.keys(selectedDates);
+    if (selectedDateStrings.length === 0) {
+      Alert.alert('No dates selected', 'Please select at least one date for the workout');
+      return;
+    }
+    
     try {
-      await apiService.addWorkoutToPlan(plan.id, {
+      // Use the new API to add workout to specific dates
+      await apiService.addWorkoutToPlanOnDates(plan.id, {
         workoutId: selectedWorkoutId,
-        frequency: 'daily',
+        dates: selectedDateStrings,
         intensity: undefined,
       });
+      
       setShowAddSheet(false);
       setSelectedWorkoutId(null);
       setSelectedCategory(null);
-      // Optimistic prepend: the server generates ids; we refresh afterwards
+      setSelectedDates({});
+      
+      // Refresh the plan to show the new workouts
       await loadPlan();
-      // After reload, dedupe any duplicate plan items (same workout_id) keeping newest
-      try {
-        const p = await apiService.getWorkoutPlans();
-        const cur = p && p.length > 0 ? p[0] : undefined;
-        if (cur && cur.planItems) {
-          // find duplicates by workout id
-          const seen = new Map();
-          const duplicates = [];
-          cur.planItems.forEach(pi => {
-            const wid = pi.workoutId || (pi.workout && pi.workout.id);
-            if (!wid) return;
-            if (seen.has(wid)) {
-              // Keep the first (newest), remove this older one
-              duplicates.push(pi.id);
-            } else {
-              seen.set(wid, pi.id);
-            }
-          });
-          for (const dupId of duplicates) {
-            await apiService.removeWorkoutFromPlan(dupId);
-          }
-          if (duplicates.length) await loadPlan();
-        }
-      } catch (e) {
-        console.warn('dedupe failed', e);
-      }
-      Alert.alert('Added', 'Workout added to routine');
+      
+      Alert.alert('Added', `Workout added to ${selectedDateStrings.length} date(s)`);
     } catch (e) {
       Alert.alert('Error', 'Failed to add workout');
     }
@@ -193,7 +181,46 @@ export const TrainingPlanManager: React.FC = () => {
               })}
             </View>
 
-            <TouchableOpacity disabled={!selectedWorkoutId} onPress={handleQuickAdd} style={[styles.addBtn, { backgroundColor: selectedWorkoutId ? theme.colors.accent : theme.colors.subtext }]}>
+            <Text style={[styles.fieldLabel, { color: theme.colors.text, marginTop: 16 }]}>Select Dates</Text>
+            <Calendar
+              onDayPress={(day) => {
+                const dateString = day.dateString;
+                setSelectedDates(prev => {
+                  const newDates = { ...prev };
+                  if (newDates[dateString]) {
+                    delete newDates[dateString];
+                  } else {
+                    newDates[dateString] = { selected: true, selectedColor: theme.colors.accent };
+                  }
+                  return newDates;
+                });
+              }}
+              markedDates={selectedDates}
+              theme={{
+                backgroundColor: theme.colors.surface,
+                calendarBackground: theme.colors.surface,
+                textSectionTitleColor: theme.colors.text,
+                selectedDayBackgroundColor: theme.colors.accent,
+                selectedDayTextColor: '#fff',
+                todayTextColor: theme.colors.accent,
+                dayTextColor: theme.colors.text,
+                textDisabledColor: theme.colors.subtext,
+                dotColor: theme.colors.accent,
+                selectedDotColor: '#fff',
+                arrowColor: theme.colors.accent,
+                monthTextColor: theme.colors.text,
+                indicatorColor: theme.colors.accent,
+                textDayFontWeight: '500',
+                textMonthFontWeight: '600',
+                textDayHeaderFontWeight: '600',
+                textDayFontSize: 16,
+                textMonthFontSize: 18,
+                textDayHeaderFontSize: 14,
+              }}
+              style={styles.calendar}
+            />
+
+            <TouchableOpacity disabled={!selectedWorkoutId || Object.keys(selectedDates).length === 0} onPress={handleQuickAdd} style={[styles.addBtn, { backgroundColor: (selectedWorkoutId && Object.keys(selectedDates).length > 0) ? theme.colors.accent : theme.colors.subtext }]}>
               <Text style={{ color: '#fff', fontWeight: '700' }}>ADD</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -240,6 +267,7 @@ const styles = StyleSheet.create({
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
   workoutRow: { borderWidth: 1, borderRadius: 12, padding: 12 },
+  calendar: { marginVertical: 8, borderRadius: 12, overflow: 'hidden' },
   addBtn: { marginTop: 20, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12 },
 });
 

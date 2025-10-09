@@ -18,7 +18,6 @@ interface ScheduledWorkout {
   id: string;
   workout: Workout;
   date: string;
-  frequency: string;
   intensity?: string;
 }
 
@@ -87,14 +86,23 @@ export const CalendarView: React.FC = () => {
       if (!inRange) continue;
 
       routinePlan.planItems?.forEach(planItem => {
-        if (planItem.workout && isWorkoutScheduledForDay(planItem.frequency, dayName)) {
-          scheduled.push({
-            id: `${planItem.id}-${dateString}`,
-            workout: planItem.workout,
-            date: dateString,
-            frequency: planItem.frequency,
-            intensity: planItem.intensity || planItem.workout.intensity,
-          });
+        console.log('[CalendarView] planItem', planItem);
+        if (!planItem || !planItem.workout) return;
+
+        // Support dated plan_items (scheduledDate / scheduled_date) as well as legacy frequency
+        const itemDate = (planItem as any).scheduledDate ?? (planItem as any).scheduled_date ?? null;
+        if (itemDate) {
+          const itemDateStr = new Date(itemDate).toISOString().split('T')[0];
+          console.log('[CalendarView] itemDateStr', itemDateStr);
+          console.log('[CalendarView] dateString', dateString);
+          if (itemDateStr === dateString) {
+            scheduled.push({
+              id: `${planItem.id}-${dateString}`,
+              workout: planItem.workout,
+              date: dateString,
+              intensity: planItem.intensity || planItem.workout.intensity,
+            });
+          }
         }
       });
     }

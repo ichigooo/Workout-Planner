@@ -39,7 +39,9 @@ export const Home: React.FC<HomeProps> = ({ onOpenCalendar, onOpenProfile, onOpe
   const loadWorkouts = async () => {
     try {
       setLoading(true);
+      console.log('[Home] LOADING WORKOUT DATA..');
       const data = await apiService.getWorkouts();
+      console.log('[Home] loaded workouts!!');
       setWorkouts(data || []);
     } catch (err) {
       console.error('Failed to load workouts', err);
