@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "test": "mocha --exit --recursive --reporter spec",
+    "test": "mocha --exit --recursive --require ./test/setup.js --reporter spec",
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
