@@ -99,10 +99,13 @@ class ApiService {
    * payload: { workoutId, date: 'YYYY-MM-DD', intensity? }
    */
   async addWorkoutToPlanOnDate(planId: string, payload: { workoutId: string; date: string; intensity?: string }): Promise<PlanItem> {
-    return this.request<PlanItem>(`/workout-plans/${planId}/plan-items/date`, {
+    const res = await this.request<PlanItem>(`/workout-plans/${planId}/plan-items/date`, {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+    // update cache for this plan
+    this._planItemsCache[planId] = (this._planItemsCache[planId] || []).concat([res]);
+    return res;
   }
 
   /**
@@ -110,16 +113,70 @@ class ApiService {
    * payload: { workoutId, dates: ['YYYY-MM-DD', ...], intensity? }
    */
   async addWorkoutToPlanOnDates(planId: string, payload: { workoutId: string; dates: string[]; intensity?: string }): Promise<PlanItem[] | PlanItem> {
-    return this.request<PlanItem[] | PlanItem>(`/workout-plans/${planId}/plan-items`, {
+    const res = await this.request<PlanItem[] | PlanItem>(`/workout-plans/${planId}/plan-items`, {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+    // normalize to array and update cache
+    const created = Array.isArray(res) ? res : [res];
+    this._planItemsCache[planId] = (this._planItemsCache[planId] || []).concat(created);
+    return res;
+  }
+
+  /**
+   * Get plan items for a specific workout plan sorted by scheduled_date (limit 30)
+   */
+  async getPlanItemsSorted(planId: string): Promise<PlanItem[]> {
+    return this.request<PlanItem[]>(`/workout-plans/${planId}/plan-items-sorted`);
+  }
+
+  /**
+   * Get plan items for a specific plan filtered by month/year.
+   * If year/month omitted, server uses current year/month.
+   */
+  async getPlanItemsByMonth(planId: string, year?: number, month?: number): Promise<{ year: number; month: number; items: PlanItem[] }> {
+    const qs: string[] = [];
+    if (year) qs.push(`year=${year}`);
+    if (month) qs.push(`month=${month}`);
+    const query = qs.length ? `?${qs.join('&')}` : '';
+    return this.request<{ year: number; month: number; items: PlanItem[] }>(`/workout-plans/${planId}/plan-items-by-month${query}`);
+  }
+
+  // Simple in-memory cache for plan items (keyed by planId)
+  private _planItemsCache: { [planId: string]: PlanItem[] } = {};
+
+  /**
+   * Fetch plan items for the given plan id and store in local cache
+   */
+  async fetchAndCachePlanItems(planId: string): Promise<PlanItem[]> {
+    const items = await this.getPlanItemsSorted(planId);
+    console.log('[api] fetched and cached plan items', items.length);
+    this._planItemsCache[planId] = items || [];
+    return this._planItemsCache[planId];
+  }
+
+  /**
+   * Return cached plan items for a plan id (or empty array)
+   */
+  getCachedPlanItems(planId: string): PlanItem[] {
+    return this._planItemsCache[planId] || [];
+  }
+
+  clearPlanItemsCache(planId?: string) {
+    if (planId) delete this._planItemsCache[planId];
+    else this._planItemsCache = {};
   }
 
   async removeWorkoutFromPlan(planItemId: string): Promise<void> {
-    return this.request<void>(`/plan-items/${planItemId}`, {
+    await this.request<void>(`/plan-items/${planItemId}`, {
       method: 'DELETE',
     });
+    // remove from cache entries
+    for (const pid of Object.keys(this._planItemsCache)) {
+      const list = this._planItemsCache[pid] || [];
+      const filtered = list.filter(item => item.id !== planItemId);
+      if (filtered.length !== list.length) this._planItemsCache[pid] = filtered;
+    }
   }
 
   // User Profile Methods

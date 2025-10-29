@@ -12,7 +12,27 @@ import { WorkoutPlans } from './screens/WorkoutPlans';
 type TabType = 'library' | 'plans';
 
 export default function App() {
+  console.log('App STARTING!');
   const [activeTab, setActiveTab] = useState<TabType>('library');
+
+  // Preload plan items cache on app start
+  React.useEffect(() => {
+    const preload = async () => {
+      try {
+        const plansResp = await import('./services/api').then(m => m.apiService.getWorkoutPlans());
+        const plans = await plansResp;
+        if (plans && plans.length > 0) {
+          const planId = plans[0].id;
+          // Fetch and cache plan items for this plan
+          await import('./services/api').then(m => m.apiService.fetchAndCachePlanItems(planId));
+        }
+      } catch (e) {
+        // ignore preload errors
+        console.warn('Preload plan items failed', e);
+      }
+    };
+    preload();
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {

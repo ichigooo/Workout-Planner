@@ -6,6 +6,7 @@ export interface User {
   birthday?: string;
   createdAt: string;
   updatedAt: string;
+  isAdmin: boolean;
 }
 
 export type WorkoutCategory = 
@@ -31,6 +32,7 @@ export interface Workout {
   duration?: number; // Only for cardio workouts (in minutes)
   intensity: string;
   imageUrl?: string;
+  imageUrl2?: string; // camelCase column name
   isGlobal: boolean; // Global workout library - shared across all users
   createdBy?: string; // Optional: who created this workout (for admin purposes)
   createdAt: string;
@@ -86,6 +88,7 @@ export interface CreateWorkoutRequest {
   duration?: number; // Only for cardio workouts (in minutes)
   intensity: string;
   imageUrl?: string;
+  imageUrl2?: string;
   createdBy?: string; // Optional: who created this workout (for admin purposes)
 }
 

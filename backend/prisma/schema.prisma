@@ -38,6 +38,7 @@ model Workout {
   duration    Int?     // Only for cardio workouts (in minutes)
   intensity   String   // e.g., "weight", "RPE", "bodyweight", "pace", "heart rate"
   imageUrl    String?
+  imageUrl2   String?  @map("imageUrl2")
   isGlobal    Boolean  @default(true) // Global workout library - shared across all users
   createdBy   String?  // Optional: who created this workout (for admin purposes)
   createdAt   DateTime @default(now())

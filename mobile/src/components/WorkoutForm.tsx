@@ -10,8 +10,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
-  FlatList
+  FlatList,
+  Image,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Workout, CreateWorkoutRequest, WorkoutCategory, WorkoutType } from '../types';
 import { WORKOUT_CATEGORIES, WORKOUT_CATEGORY_DESCRIPTIONS, WORKOUT_TYPES, INTENSITY_TYPES } from '../constants/workoutCategories';
 
@@ -42,6 +44,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
   const [duration, setDuration] = useState(workout?.duration?.toString() || '');
   const [intensity, setIntensity] = useState(workout?.intensity || '');
   const [imageUrl, setImageUrl] = useState(workout?.imageUrl || '');
+  const [imageUrl2, setImageUrl2] = useState(workout?.imageUrl2 || '');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   // Update workout type when category changes
@@ -80,6 +83,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
       duration: workoutType === WORKOUT_TYPES.CARDIO ? parseInt(duration) : undefined,
       intensity,
       imageUrl: imageUrl || undefined,
+      imageUrl2: imageUrl2 || undefined,
       createdBy: workout?.createdBy || undefined, // Optional: who created this workout
     };
 
@@ -202,13 +206,33 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Image URL</Text>
-        <TextInput
-          style={styles.input}
-          value={imageUrl}
-          onChangeText={setImageUrl}
-          placeholder="https://example.com/image.jpg"
-        />
+        <Text style={styles.label}>Images</Text>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Primary</Text>
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={{ width: '100%', height: 80, borderRadius: 8, marginBottom: 6 }} />
+            ) : null}
+            <TouchableOpacity style={[styles.smallBtn, { backgroundColor: '#007AFF' }]} onPress={async () => {
+              const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, quality: 0.8 });
+              if (!res.canceled && res.assets[0]) setImageUrl(res.assets[0].uri);
+            }}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>{imageUrl ? 'Replace' : 'Upload'}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Secondary</Text>
+            {imageUrl2 ? (
+              <Image source={{ uri: imageUrl2 }} style={{ width: '100%', height: 80, borderRadius: 8, marginBottom: 6 }} />
+            ) : null}
+            <TouchableOpacity style={[styles.smallBtn, { backgroundColor: '#007AFF' }]} onPress={async () => {
+              const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, quality: 0.8 });
+              if (!res.canceled && res.assets[0]) setImageUrl2(res.assets[0].uri);
+            }}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>{imageUrl2 ? 'Replace' : 'Upload'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -264,6 +288,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  smallBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    alignItems: 'center',
   },
   scrollView: {
     flex: 1,

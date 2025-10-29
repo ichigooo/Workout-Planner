@@ -9,11 +9,15 @@ import {
   useColorScheme,
   TextInput,
   Alert,
-  Modal 
+  Modal,
+  Dimensions,
+  SafeAreaView,
 } from 'react-native';
-import { Workout, WorkoutPlan, CreatePlanItemRequest } from '../types';
+import { Calendar } from 'react-native-calendars';
+import { Workout, WorkoutPlan, CreatePlanItemRequest, CreateWorkoutRequest } from '../types';
 import { getTheme } from '../theme';
 import { apiService } from '../services/api';
+import { WorkoutForm } from './WorkoutForm';
 
 interface WorkoutDetailProps {
   workout: Workout;
@@ -31,18 +35,28 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
   const scheme = useColorScheme();
   const theme = getTheme(scheme === 'dark' ? 'dark' : 'light');
   
-  // Quick notes state
-  const [currentWeight, setCurrentWeight] = useState('');
-  const [notes, setNotes] = useState('');
-  
   // Menu state
   const [showMenu, setShowMenu] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  // Add to plan sheet state
+  const [showAddSheet, setShowAddSheet] = useState(false);
+  const [selectedDates, setSelectedDates] = useState<{[key: string]: any}>({});
+  const [planId, setPlanId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
 
-  // Add to plan state
-  const [showAddToPlan, setShowAddToPlan] = useState(false);
-  const [availablePlans, setAvailablePlans] = useState<WorkoutPlan[]>([]);
-  const [selectedPlan, setSelectedPlan] = useState<string>('');
-  const [frequency, setFrequency] = useState<string>('');
+  // Temporary: test user id used elsewhere in the app for local testing
+  const TEST_CURRENT_USER_ID = '48a1fd02-b5d4-4942-9356-439ecfbf13f8';
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const u = await apiService.getUserProfile(TEST_CURRENT_USER_ID);
+      if (!mounted) return;
+      setIsCurrentUserAdmin(u.isAdmin);
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const handleLogWorkout = () => {
     Alert.alert('Saved', 'Notes saved.');
@@ -50,7 +64,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
 
   const handleEditPress = () => {
     setShowMenu(false);
-    onEdit();
+    // open inline edit modal
+    setShowEditModal(true);
   };
 
   const handleDeletePress = () => {
@@ -58,35 +73,39 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     onDelete();
   };
 
-  const loadPlans = async () => {
+  const openAddSheet = async () => {
+    setShowAddSheet(true);
     try {
       const plans = await apiService.getWorkoutPlans();
-      setAvailablePlans(plans);
-    } catch (error) {
-      console.error('Error loading plans:', error);
+      if (Array.isArray(plans) && plans.length > 0) setPlanId(plans[0].id);
+    } catch (e) {
+      console.warn('Failed to load plans for add sheet', e);
     }
   };
 
   const handleAddToPlan = async () => {
-    if (!selectedPlan || !frequency) {
-      Alert.alert('Error', 'Please select a plan and specify frequency');
+    if (!planId) {
+      Alert.alert('No plan', 'No plan available to add to');
       return;
     }
-
+    const dates = Object.keys(selectedDates);
+    if (dates.length === 0) {
+      Alert.alert('No dates selected', 'Please select at least one date');
+      return;
+    }
     try {
-      await apiService.addWorkoutToPlan(selectedPlan, {
-        workoutId: workout.id,
-        frequency: frequency,
-        intensity: workout.intensity,
-      });
-      
-      Alert.alert('Success', 'Workout added to plan successfully!');
-      setShowAddToPlan(false);
-      setSelectedPlan('');
-      setFrequency('');
-    } catch (error) {
+      setAdding(true);
+      await apiService.addWorkoutToPlanOnDates(planId, { workoutId: workout.id, dates });
+      // refresh cache
+      try { await apiService.fetchAndCachePlanItems(planId); } catch (e) {}
+      setShowAddSheet(false);
+      setSelectedDates({});
+      Alert.alert('Added', `Workout added to ${dates.length} date(s)`);
+    } catch (e) {
+      console.error('Add to plan failed', e);
       Alert.alert('Error', 'Failed to add workout to plan');
-      console.error('Error adding workout to plan:', error);
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -97,21 +116,35 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
           <Text style={[styles.closeButtonText, { color: theme.colors.accent }]}>✕</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Workout Details</Text>
-        <TouchableOpacity onPress={() => setShowMenu(true)} style={styles.menuButton}>
-          <Text style={[styles.menuButtonText, { color: theme.colors.text }]}>⋯</Text>
-        </TouchableOpacity>
+        {isCurrentUserAdmin ? (
+          <TouchableOpacity onPress={() => setShowMenu(true)} style={styles.menuButton}>
+            <Text style={[styles.menuButtonText, { color: theme.colors.text }]}>⋯</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {workout.imageUrl && (
-          <View style={styles.imageContainer}>
-            <Image 
-              source={{ uri: workout.imageUrl }} 
-              style={styles.image}
-              resizeMode="contain"
-            />
-          </View>
-        )}
+        {(() => {
+          const imgs = [workout.imageUrl, workout.imageUrl2].filter(Boolean) as string[];
+          if (imgs.length === 0) return null;
+          const slideWidth = Dimensions.get('window').width - 32; // account for padding
+          return (
+            <View style={styles.imageContainer}>
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ alignItems: 'center' }}
+              >
+                {imgs.map((uri, idx) => (
+                  <View key={`${uri}-${idx}`} style={[styles.imageSlideWrapper, { width: slideWidth }] }>
+                    <Image source={{ uri }} style={styles.imageSlide} resizeMode="contain" />
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          );
+        })()}
         
         <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
           <Text style={[styles.title, { color: theme.colors.text }]}>{workout.title}</Text>
@@ -154,50 +187,11 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
           {/* Add to Plan Button */}
           <TouchableOpacity 
             style={[styles.addToPlanButton, { backgroundColor: theme.colors.accent }]} 
-            onPress={() => {
-              loadPlans();
-              setShowAddToPlan(true);
-            }}
+            onPress={openAddSheet}
           >
             <Text style={styles.addToPlanButtonText}>Add to Plan</Text>
           </TouchableOpacity>
 
-          {/* Notes */}
-          <View style={styles.section}>
-            <View style={styles.inputsContainer}>
-              <View style={styles.inputRow}>
-                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Weight (kg)</Text>
-                <TextInput
-                  style={[styles.input, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text }]}
-                  value={currentWeight}
-                  onChangeText={setCurrentWeight}
-                  placeholder="0"
-                  keyboardType="numeric"
-                  placeholderTextColor={theme.colors.subtext}
-                />
-              </View>
-              <View style={styles.inputRow}>
-                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Notes</Text>
-                <TextInput
-                  style={[styles.input, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text }]}
-                  value={notes}
-                  onChangeText={setNotes}
-                  placeholder="Add notes..."
-                  multiline
-                  numberOfLines={2}
-                  placeholderTextColor={theme.colors.subtext}
-                />
-              </View>
-            </View>
-
-            {/* Save Notes Button */}
-            <TouchableOpacity 
-              style={[styles.logButton, { backgroundColor: theme.colors.accent }]} 
-              onPress={handleLogWorkout}
-            >
-              <Text style={styles.logButtonText}>Save Notes</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </ScrollView>
 
@@ -229,86 +223,70 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
           </View>
         </TouchableOpacity>
       </Modal>
-
-      {/* Add to Plan Modal */}
-      <Modal
-        visible={showAddToPlan}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <View style={[styles.modalContainer, { backgroundColor: theme.colors.bg }]}>
-          <View style={[styles.modalHeader, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
-            <TouchableOpacity onPress={() => setShowAddToPlan(false)} style={styles.closeButton}>
-              <Text style={[styles.closeButtonText, { color: theme.colors.accent }]}>✕</Text>
-            </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Add to Plan</Text>
-            <View style={styles.placeholder} />
-          </View>
-
-          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.workoutTitle, { color: theme.colors.text }]}>{workout.title}</Text>
-            
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.text }]}>Select Plan *</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.plansSelector}>
-                {availablePlans.map((plan) => (
-                  <TouchableOpacity
-                    key={plan.id}
-                    style={[
-                      styles.planOption, 
-                      { 
-                        backgroundColor: selectedPlan === plan.id ? theme.colors.accent : theme.colors.surface,
-                        borderColor: theme.colors.border 
-                      }
-                    ]}
-                    onPress={() => setSelectedPlan(plan.id)}
-                  >
-                    <Text style={[
-                      styles.planOptionText,
-                      { color: selectedPlan === plan.id ? '#FFFFFF' : theme.colors.text }
-                    ]}>
-                      {plan.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.text }]}>Frequency *</Text>
-              <TextInput
-                style={[styles.frequencyInput, { 
-                  backgroundColor: theme.colors.surface, 
-                  borderColor: theme.colors.border, 
-                  color: theme.colors.text 
-                }]}
-                value={frequency}
-                onChangeText={setFrequency}
-                placeholder="e.g., Mon,Wed,Fri or daily"
-                placeholderTextColor={theme.colors.subtext}
-              />
-              <Text style={[styles.helpText, { color: theme.colors.subtext }]}>
-                Specify which days (Mon,Tue,Wed,Thu,Fri,Sat,Sun) or "daily"
-              </Text>
-            </View>
-
-            <View style={styles.modalButtonContainer}>
-              <TouchableOpacity 
-                style={[styles.cancelButton, { backgroundColor: theme.colors.subtext }]} 
-                onPress={() => setShowAddToPlan(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.addButton, { backgroundColor: theme.colors.accent }]} 
-                onPress={handleAddToPlan}
-              >
-                <Text style={styles.addButtonText}>Add to Plan</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </View>
+      {/* Edit workout modal */}
+      <Modal visible={showEditModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowEditModal(false)}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <WorkoutForm
+            workout={workout}
+            onCancel={() => setShowEditModal(false)}
+            onSubmit={async (payload: CreateWorkoutRequest) => {
+              try {
+                // call API to update workout
+                await apiService.updateWorkout(workout.id, payload);
+                // refresh workout details by fetching again
+                const refreshed = await apiService.getWorkout(workout.id);
+                // notify parent via onEdit callback to let it refresh
+                onEdit();
+                setShowEditModal(false);
+                // Optionally update UI immediately (not wired here)
+                Alert.alert('Updated', 'Workout updated successfully');
+              } catch (e) {
+                console.error('Failed to update workout', e);
+                Alert.alert('Error', 'Failed to update workout');
+              }
+            }}
+          />
+        </SafeAreaView>
       </Modal>
+      <Modal visible={showAddSheet} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowAddSheet(false)}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.colors.bg }]}> 
+          <View style={[styles.modalHeader, { borderBottomColor: theme.colors.border, backgroundColor: theme.colors.surface }]}> 
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Add to Plan</Text>
+            <TouchableOpacity onPress={() => setShowAddSheet(false)}>
+              <Text style={{ color: theme.colors.accent }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Select Dates</Text>
+            <Calendar
+              onDayPress={(day) => {
+                const dateString = day.dateString;
+                setSelectedDates(prev => {
+                  const newDates = { ...prev };
+                  if (newDates[dateString]) delete newDates[dateString]; else newDates[dateString] = { selected: true, selectedColor: theme.colors.accent };
+                  return newDates;
+                });
+              }}
+              markedDates={selectedDates}
+              theme={{
+                backgroundColor: theme.colors.surface,
+                calendarBackground: theme.colors.surface,
+                textSectionTitleColor: theme.colors.text,
+                selectedDayBackgroundColor: theme.colors.accent,
+                selectedDayTextColor: '#fff',
+                todayTextColor: theme.colors.accent,
+                dayTextColor: theme.colors.text,
+              }}
+              style={{ marginVertical: 8 }}
+            />
+
+            <TouchableOpacity onPress={handleAddToPlan} disabled={adding} style={[styles.addButton, { backgroundColor: theme.colors.accent, marginTop: 12 }]}> 
+              <Text style={styles.addButtonText}>{adding ? 'Adding...' : 'Add to Plan'}</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
     </View>
   );
 };
@@ -360,6 +338,35 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: '#f8f9fa',
+  },
+  imageSlideWrapper: {
+    height: '100%',
+    paddingHorizontal: 8,
+  },
+  imageSlide: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  dualImageContainer: {
+    width: '100%',
+    height: 300,
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#f8f9fa',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  dualImage: {
+    flex: 1,
+    height: '100%',
+  },
+  imageSpacer: {
+    width: 8,
   },
   image: {
     width: '100%',

@@ -15,6 +15,7 @@ export interface Workout {
   reps: number;
   intensity: string;
   imageUrl?: string;
+  imageUrl2?: string;
   userId: string;
   createdAt: string;
   updatedAt: string;

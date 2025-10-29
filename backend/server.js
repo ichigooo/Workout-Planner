@@ -11,7 +11,9 @@ const PORT = 3001;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Increase body size limit to accept base64 image payloads from mobile
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 // Request logging middleware (development only)
 app.use((req, res, next) => {
@@ -99,7 +101,59 @@ function mapUserRow(row) {
     birthday: row.birthday,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    isAdmin: row.isAdmin,
   };
+}
+
+/**
+ * uploadAvatarToStorage
+ * Uploads a base64/data-URL image to Supabase storage 'avatars' bucket for a given user
+ * and returns a public URL. If the input looks like an http(s) URL, returns it unchanged.
+ * @param {string} userId
+ * @param {string} input - data URL (e.g. data:image/jpeg;base64,...) or raw base64 or http(s) URL
+ * @returns {Promise<string|null>} public URL or null on failure
+ */
+async function uploadAvatarToStorage(userId, input) {
+  try {
+    if (!input || typeof input !== 'string') return null;
+    // If it's already an http(s) URL, return as-is
+    if (/^https?:\/\//i.test(input)) return input;
+    // Reject local device file URIs - server cannot read client sandbox files
+    if (/^file:\/\//i.test(input)) {
+      const err = new Error('UNSUPPORTED_LOCAL_URI');
+      err.code = 'UNSUPPORTED_LOCAL_URI';
+      throw err;
+    }
+    let contentType = 'image/jpeg';
+    let base64Data = input;
+    const dataUrlMatch = input.match(/^data:(?<ct>[^;]+);base64,(?<data>[A-Za-z0-9+/=]+)$/);
+    if (dataUrlMatch && dataUrlMatch.groups) {
+      contentType = dataUrlMatch.groups.ct || contentType;
+      base64Data = dataUrlMatch.groups.data || '';
+    }
+    // Fallback: if not data URL but looks like base64, keep as-is
+    const buffer = Buffer.from(base64Data, 'base64');
+    if (!buffer || buffer.length === 0) return null;
+
+    const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
+    const filePath = `${userId}/${Date.now()}.${ext}`;
+    const { error: uploadErr } = await supabase
+      .storage
+      .from('avatars')
+      .upload(filePath, buffer, { contentType, upsert: true });
+    if (uploadErr) {
+      console.error('Supabase storage upload error:', uploadErr);
+      return null;
+    }
+    const { data: pub } = supabase
+      .storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+    return pub?.publicUrl || null;
+  } catch (e) {
+    console.error('uploadAvatarToStorage failed:', e);
+    return null;
+  }
 }
 
 /**
@@ -122,6 +176,7 @@ function mapWorkoutRow(row) {
     duration: row.duration ?? null,
     intensity: row.intensity,
     imageUrl: row.imageUrl ?? null,
+    imageUrl2: row.imageUrl2  ?? null,
     isGlobal: (row.isGlobal !== undefined) ? row.isGlobal : true,
     createdBy: row.createdBy ?? null,
     createdAt: row.createdAt,
@@ -642,6 +697,77 @@ app.post('/api/workout-plans/:id/plan-items', async (req, res) => {
   }
 });
 
+// Get plan items for a specific workout plan, sorted by scheduled_date (limit 30)
+app.get('/api/workout-plans/:id/plan-items-sorted', async (req, res) => {
+  try {
+    const planId = req.params.id;
+    console.log('[GET /api/workout-plans/:id/plan-items-sorted] planId=', planId);
+    // Query using camelCase columns (schema uses camelCase)
+    const { data, error } = await supabase
+      .from('plan_items')
+      .select('*, workouts(*)')
+      .eq('workoutPlanId', planId)
+      .order('scheduled_date', { ascending: true })
+      .limit(30);
+
+    if (error) throw error;
+
+    const mapped = Array.isArray(data) ? data.map(mapPlanItemRow) : [];
+    res.json(mapped);
+  } catch (error) {
+    console.error('Error fetching sorted plan items:', error);
+    res.status(500).json({ error: 'Failed to fetch plan items' });
+  }
+});
+
+// Get plan items for a specific workout plan for a given month/year
+// Query params: year=YYYY (default current year), month=1-12 (default current month)
+app.get('/api/workout-plans/:id/plan-items-by-month', async (req, res) => {
+  try {
+    const planId = req.params.id;
+    const qYear = parseInt(req.query.year, 10);
+    const qMonth = parseInt(req.query.month, 10);
+
+    const now = new Date();
+    const year = Number.isFinite(qYear) && qYear > 0 ? qYear : now.getFullYear();
+    const month = Number.isFinite(qMonth) && qMonth >= 1 && qMonth <= 12 ? qMonth : (now.getMonth() + 1);
+
+    // start is inclusive first day of month, end is exclusive first day of next month
+    // Use local dates (no UTC conversion) to avoid timezone shifts when comparing timestamps stored without timezone
+    const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
+    const startDate = `${year}-${pad(month)}-01`;
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const endDate = `${nextYear}-${pad(nextMonth)}-01`;
+
+    console.log('[GET /api/workout-plans/:id/plan-items-by-month]', planId, year, month, startDate, endDate);
+
+    const { data, error } = await supabase
+      .from('plan_items')
+      .select('*, workouts(*)')
+      .eq('workoutPlanId', planId)
+      .gte('scheduled_date', startDate)
+      .lt('scheduled_date', endDate)
+      .order('scheduled_date', { ascending: true })
+      .limit(1000);
+
+    if (error) throw error;
+
+    const rows = Array.isArray(data) ? data : [];
+    // Normalize scheduled_date to date-only string to avoid timezone shifts on clients
+    const normalized = rows.map(r => {
+      const sd = r.scheduled_date ?? r.scheduledDate ?? null;
+      const sdStr = sd ? (typeof sd === 'string' ? sd.split('T')[0].split(' ')[0] : (new Date(sd)).toISOString().split('T')[0]) : null;
+      return { ...r, scheduled_date: sdStr };
+    });
+    const mapped = normalized.map(mapPlanItemRow);
+    res.json({ year, month, items: mapped });
+  } catch (error) {
+    console.error('Error fetching plan items by month:', error);
+    res.status(500).json({ error: 'Failed to fetch plan items by month' });
+  }
+});
+
 // Delete plan item
 app.delete('/api/plan-items/:id', async (req, res) => {
   try {
@@ -687,7 +813,14 @@ app.put('/api/users/:id', async (req, res) => {
     const updateData = {};
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email;
-    if (profilePhoto !== undefined) updateData.profile_photo = profilePhoto;
+    if (profilePhoto !== undefined) {
+      // If profilePhoto is provided as data URL/base64/local URI, upload to Supabase storage and save URL
+      if (/^file:\/\//i.test(profilePhoto)) {
+        return res.status(400).json({ error: 'Please send profilePhoto as a data URL (base64), not a file:// URI.' });
+      }
+      const uploaded = await uploadAvatarToStorage(userId, profilePhoto);
+      if (uploaded) updateData.profilePhoto = uploaded; else if (/^https?:\/\//i.test(profilePhoto)) updateData.profilePhoto = profilePhoto;
+    }
     if (birthday !== undefined) updateData.birthday = birthday;
 
     const { data, error } = await supabase
@@ -705,8 +838,52 @@ app.put('/api/users/:id', async (req, res) => {
   }
 });
 
+// Create a new user
+app.post('/api/users', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const email = body.email;
+    if (!email) return res.status(400).json({ error: 'email is required' });
+
+    // Check for existing email
+    const { data: existing, error: findErr } = await supabase
+      .from('users')
+      .select('id,email')
+      .eq('email', email)
+      .maybeSingle();
+    if (findErr) throw findErr;
+    if (existing && existing.email) {
+      return res.status(409).json({ error: 'User with this email already exists', id: existing.id });
+    }
+
+    const id = body.id || require('crypto').randomUUID();
+    const insert = {
+      id,
+      email,
+      name: body.name ?? null,
+      profilePhoto: body.profilePhoto ?? null,
+      birthday: body.birthday ?? null,
+      isAdmin: body.isAdmin === true ? true : false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase.from('users').insert([insert]).select().single();
+    if (error) {
+      // If conflict occurred at DB level, surface it
+      console.error('Supabase insert error for /api/users:', error);
+      return res.status(500).json({ error: 'Failed to create user', details: error });
+    }
+
+    res.status(201).json(mapUserRow(data));
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`[LINNA] Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
 });

@@ -14,14 +14,19 @@
       "backgroundColor": "#F7F7F7"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.linnaw626.workoutplanner",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/catt.png",
         "backgroundColor": "#FF6B35"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.linnaw626.workoutplanner"
     },
     "web": {
       "bundler": "metro",
@@ -34,6 +39,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e160482b-86d6-4fba-9be4-e6a51fa5bd80"
+      }
     }
   }
 }
