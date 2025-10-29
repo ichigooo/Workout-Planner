@@ -42,7 +42,7 @@ export default function WorkoutScreen() {
   const filtered = category ? workouts.filter(w => w.category === category) : workouts;
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: theme.colors.bg }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={[styles.backText, { color: theme.colors.accent }]}>‹ Back</Text>

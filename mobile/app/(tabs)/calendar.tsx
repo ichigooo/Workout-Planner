@@ -1,6 +1,6 @@
 import React from 'react';
-import { CalendarView } from '@/src/screens/CalendarView';
+import CalendarView2 from '../../src/screens/CalendarView2';
 
 export default function CalendarScreen() {
-  return <CalendarView />;
+  return <CalendarView2 />;
 }

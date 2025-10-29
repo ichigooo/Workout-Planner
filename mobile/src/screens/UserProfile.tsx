@@ -13,7 +13,10 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { useScrollToTopOnTabPress } from '../hooks/useScrollToTopOnTabPress';
 import * as ImagePicker from 'expo-image-picker';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { User, UpdateUserProfileRequest } from '../types';
 import { apiService } from '../services/api';
@@ -32,6 +35,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   
   // Form state
   const [name, setName] = useState('');
@@ -39,9 +43,29 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [birthday, setBirthday] = useState<Date | null>(null);
 
+  const scrollRef = useScrollToTopOnTabPress();
+  const navigation = useNavigation();
+
   useEffect(() => {
     loadUserProfile();
   }, [userId]);
+
+  // Refresh profile whenever the Profile tab is pressed or screen gains focus
+  useEffect(() => {
+    const handler = () => { loadUserProfile(); };
+    const navAny: any = navigation as any;
+    const unsubPress = navAny?.addListener ? navAny.addListener('tabPress', handler) : null;
+    const unsubFocus = navAny?.addListener ? navAny.addListener('focus', handler) : null;
+    return () => {
+      if (typeof unsubPress === 'function') unsubPress();
+      if (typeof unsubFocus === 'function') unsubFocus();
+    };
+  }, [navigation, userId]);
+
+  useEffect(() => {
+    // handled by useScrollToTopOnTabPress
+    return;
+  }, [navigation]);
 
   const loadUserProfile = async () => {
     try {
@@ -52,6 +76,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
       setEmail(userData.email || '');
       setProfilePhoto(userData.profilePhoto || null);
       setBirthday(userData.birthday ? new Date(userData.birthday) : null);
+      setIsAdmin(userData.isAdmin);
     } catch (error) {
       console.error('Error loading user profile:', error);
       Alert.alert('Error', 'Failed to load user profile');
@@ -74,10 +99,40 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
+        base64: true,
       });
 
       if (!result.canceled && result.assets[0]) {
-        setProfilePhoto(result.assets[0].uri);
+        const asset = result.assets[0] as any;
+        // Resize/compress using expo-image-manipulator (installed)
+        let dataUrl = '';
+        try {
+          const resized = await manipulateAsync(
+            asset.uri,
+            [{ resize: { width: 1024 } }],
+            { compress: 0.8, format: SaveFormat.JPEG, base64: true }
+          );
+          setProfilePhoto(resized.uri || asset.uri);
+          if (!resized.base64) throw new Error('no_base64');
+          dataUrl = `data:image/jpeg;base64,${resized.base64}`;
+        } catch (e) {
+          if (asset.base64) {
+            setProfilePhoto(asset.uri);
+            dataUrl = `data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}`;
+          } else {
+            Alert.alert('Unsupported', 'Could not process image. Please try another.');
+            return;
+          }
+        }
+        try {
+          const updated = await apiService.updateUserProfile(userId, { profilePhoto: dataUrl });
+          setUser(updated);
+          setProfilePhoto(updated.profilePhoto || asset.uri);
+          onProfileUpdated?.(updated as User);
+        } catch (persistErr) {
+          console.warn('Failed to persist profile photo', persistErr);
+          Alert.alert('Upload failed', 'Could not save your profile photo. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -108,9 +163,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
       onProfileUpdated?.(updatedUser);
       
       Alert.alert('Success', 'Profile updated successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
-      Alert.alert('Error', `Failed to update profile: ${error.message || error}`);
+      Alert.alert('Error', `Failed to update profile: ${error.message || String(error)}`);
     } finally {
       setSaving(false);
     }
@@ -133,12 +188,13 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
 
   return (
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: theme.colors.bg }]}> 
+    {/* admin button removed */}
     <KeyboardAvoidingView 
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      <ScrollView 
+      <ScrollView ref={scrollRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -262,6 +318,19 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  adminButton: {
+    position: 'absolute',
+    top: 44,
+    right: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  adminButtonText: {
+    color: '#fff',
+    fontWeight: '700',
   },
   scrollView: {
     flex: 1,

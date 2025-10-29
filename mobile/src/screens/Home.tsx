@@ -10,6 +10,8 @@ import {
   useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { useScrollToTopOnTabPress } from '../hooks/useScrollToTopOnTabPress';
 import { getTheme } from '../theme';
 import { apiService } from '../services/api';
 import { Workout, WorkoutPlan } from '../types';
@@ -29,19 +31,23 @@ export const Home: React.FC<HomeProps> = ({ onOpenCalendar, onOpenProfile, onOpe
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const nowLocal = new Date();
+  const localTodayStr = `${nowLocal.getFullYear()}-${(nowLocal.getMonth()+1).toString().padStart(2,'0')}-${nowLocal.getDate().toString().padStart(2,'0')}`;
+  const [selectedDate, setSelectedDate] = useState<string>(localTodayStr);
+  const scrollRef = useScrollToTopOnTabPress();
 
   useEffect(() => {
     loadWorkouts();
     loadPlans();
   }, []);
 
+  // scroll to top when tab is pressed (handled by hook)
+  useEffect(() => {}, []);
+
   const loadWorkouts = async () => {
     try {
       setLoading(true);
-      console.log('[Home] LOADING WORKOUT DATA..');
       const data = await apiService.getWorkouts();
-      console.log('[Home] loaded workouts!!');
       setWorkouts(data || []);
     } catch (err) {
       console.error('Failed to load workouts', err);
@@ -60,22 +66,12 @@ export const Home: React.FC<HomeProps> = ({ onOpenCalendar, onOpenProfile, onOpe
   };
 
   // Helpers to compute scheduled workouts similar to CalendarView
-  const isWorkoutScheduledForDay = (frequency: string, dayName: string): boolean => {
-    const dayMap: { [key: string]: string } = {
-      'Monday': 'Mon',
-      'Tuesday': 'Tue',
-      'Wednesday': 'Wed',
-      'Thursday': 'Thu',
-      'Friday': 'Fri',
-      'Saturday': 'Sat',
-      'Sunday': 'Sun',
-    };
-    const shortDay = dayMap[dayName];
-    return frequency?.includes(shortDay) || frequency?.toLowerCase?.().includes('daily');
-  };
+  // Legacy frequency-based scheduling is deprecated. We'll only consider explicit dated plan items.
 
   const getWeekDates = (baseISO: string) => {
-    const base = new Date(baseISO);
+    // Parse baseISO (YYYY-MM-DD) into local components to avoid timezone shifts
+    const parts = baseISO.split('-').map(s => parseInt(s, 10));
+    const base = new Date(parts[0], parts[1] - 1, parts[2]);
     const startOfWeek = new Date(base);
     // Sunday as 0; align to Sunday start
     startOfWeek.setDate(base.getDate() - base.getDay());
@@ -83,7 +79,10 @@ export const Home: React.FC<HomeProps> = ({ onOpenCalendar, onOpenProfile, onOpe
     for (let i = 0; i < 7; i++) {
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
-      dates.push(d.toISOString().split('T')[0]);
+      const y = d.getFullYear();
+      const m = (d.getMonth() + 1).toString().padStart(2, '0');
+      const dd = d.getDate().toString().padStart(2, '0');
+      dates.push(`${y}-${m}-${dd}`);
     }
     return dates;
   };
@@ -94,20 +93,32 @@ export const Home: React.FC<HomeProps> = ({ onOpenCalendar, onOpenProfile, onOpe
     weekDates.forEach(d => (result[d] = []));
 
     workoutPlans.forEach(plan => {
-      const planStart = plan.startDate ? new Date(plan.startDate) : null;
-      const planEnd = plan.endDate ? new Date(plan.endDate) : null;
+      const planStart = plan.startDate ? (() => {
+        const p = plan.startDate.split('T')[0];
+        const [y, m, d] = p.split('-').map(s => parseInt(s, 10));
+        return new Date(y, m - 1, d);
+      })() : null;
+      const planEnd = plan.endDate ? (() => {
+        const p = plan.endDate.split('T')[0];
+        const [y, m, d] = p.split('-').map(s => parseInt(s, 10));
+        return new Date(y, m - 1, d);
+      })() : null;
+
       weekDates.forEach(dateISO => {
-        const dateObj = new Date(dateISO);
+        const [yy, mm, dd] = dateISO.split('-').map(s => parseInt(s, 10));
+        const dateObj = new Date(yy, mm - 1, dd);
         // If plan has no start/end date (perpetual routine), include for all dates
         const inRange = (!planStart && !planEnd) || (planStart && planEnd && dateObj >= planStart && dateObj <= planEnd);
         if (inRange) {
           plan.planItems?.forEach(item => {
-            if (item.workout) {
-              const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-              if (isWorkoutScheduledForDay(item.frequency, dayName)) {
-                result[dateISO].push(item.workout);
-              }
-            }
+            if (!item || !item.workout) return;
+            const sd = (item as any).scheduledDate ?? (item as any).scheduled_date;
+            if (!sd) return; // we only handle explicit dated items here
+            const sdStr = typeof sd === 'string' ? sd.split('T')[0].split(' ')[0] : (() => {
+              const dt = new Date(sd as any);
+              return `${dt.getFullYear()}-${(dt.getMonth()+1).toString().padStart(2,'0')}-${dt.getDate().toString().padStart(2,'0')}`;
+            })();
+            if (sdStr === dateISO) result[dateISO].push(item.workout);
           });
         }
       });
@@ -117,12 +128,17 @@ export const Home: React.FC<HomeProps> = ({ onOpenCalendar, onOpenProfile, onOpe
 
   const weekDates = getWeekDates(selectedDate);
   const weekWorkouts = getScheduledWorkoutsByDate();
-  const todayISO = new Date().toISOString().split('T')[0];
+  const todayISO = localTodayStr;
+  // choose which date to display in the "Today's workouts" section:
+  // prefer the selected date; if it has no workouts, fall back to the next date in the week that does
+  const displayDate = (weekWorkouts[selectedDate] && weekWorkouts[selectedDate].length > 0)
+    ? selectedDate
+    : (weekDates.find(d => (weekWorkouts[d] || []).length > 0) || selectedDate);
 
   const todaysWorkout = workouts.length > 0 ? workouts[0] : undefined;
 
   const renderWorkoutPreview = ({ item }: { item: Workout }) => (
-    <TouchableOpacity style={[styles.previewCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={onOpenLibrary}>
+    <TouchableOpacity style={[styles.previewCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={() => onOpenLibrary && onOpenLibrary()}>
       <View style={styles.previewHeader}>
         <View style={[styles.categoryBadge, { backgroundColor: theme.colors.accent }]}> 
           <Text style={styles.categoryBadgeText}>{item.category.toUpperCase()}</Text>
@@ -142,7 +158,8 @@ export const Home: React.FC<HomeProps> = ({ onOpenCalendar, onOpenProfile, onOpe
         <View style={[styles.weekCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
           <View style={styles.weekRow}>
             {weekDates.map((dateISO) => {
-              const d = new Date(dateISO);
+              const [yy, mm, dd] = dateISO.split('-').map(s => parseInt(s, 10));
+              const d = new Date(yy, mm - 1, dd);
               const label = dayShort[d.getDay()];
               const hasWorkouts = (weekWorkouts[dateISO] || []).length > 0;
               const isToday = dateISO === todayISO;
@@ -179,7 +196,7 @@ export const Home: React.FC<HomeProps> = ({ onOpenCalendar, onOpenProfile, onOpe
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: theme.colors.bg }]}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={onOpenProfile} style={styles.iconButton}>
           <Image source={require('../../assets/images/catt.png')} style={styles.profileImage} />
@@ -196,15 +213,15 @@ export const Home: React.FC<HomeProps> = ({ onOpenCalendar, onOpenProfile, onOpe
 
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-          {selectedDate === todayISO ? "Today's workouts" : new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          {displayDate === todayISO ? "Today's workouts" : (() => { const [yy, mm, dd] = displayDate.split('-').map(s=>parseInt(s,10)); return new Date(yy, mm-1, dd).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); })()}
         </Text>
-        {(weekWorkouts[selectedDate] && weekWorkouts[selectedDate].length > 0) ? (
+        {(weekWorkouts[displayDate] && weekWorkouts[displayDate].length > 0) ? (
           <View style={{ gap: 12 }}>
-            {weekWorkouts[selectedDate].map((item, idx) => (
+            {weekWorkouts[displayDate].map((item, idx) => (
               <TouchableOpacity
                 key={`${item.id}-${idx}`}
                 style={[styles.previewCardFull, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
-                onPress={onOpenLibrary}
+                onPress={() => onOpenLibrary && onOpenLibrary()}
               >
                 <View style={styles.previewHeader}>
                   <View style={[styles.categoryBadge, { backgroundColor: theme.colors.accent }]}> 
@@ -231,7 +248,7 @@ export const Home: React.FC<HomeProps> = ({ onOpenCalendar, onOpenProfile, onOpe
       <View style={styles.section}>
         <View style={styles.rowBetween}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Workout</Text>
-          <TouchableOpacity onPress={onOpenLibrary}>
+          <TouchableOpacity onPress={() => onOpenLibrary && onOpenLibrary()}>
             <Text style={[styles.linkText, { color: theme.colors.accent }]}>See all</Text>
           </TouchableOpacity>
         </View>
@@ -316,6 +333,15 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 20,
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  linkText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   sectionTitle: {
     fontSize: 18,
