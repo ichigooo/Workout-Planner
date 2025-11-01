@@ -22,7 +22,7 @@ export default function App() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>Workout Planner</Text>
+                <Text style={styles.title}>Trainichi</Text>
             </View>
 
             <View style={styles.tabContainer}>

@@ -147,6 +147,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
+        flexWrap: "wrap",
         padding: 16,
         backgroundColor: "white",
         borderBottomWidth: 1,
@@ -156,12 +157,14 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: "bold",
         color: "#333",
+        flexShrink: 1,
     },
     addButton: {
         backgroundColor: "#007AFF",
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 8,
+        marginTop: 8, // allows button to move below title on narrow widths
     },
     addButtonText: {
         color: "white",

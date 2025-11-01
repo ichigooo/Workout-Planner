@@ -14,6 +14,7 @@ import {
     Image,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { imageAssetToDataUrl } from "../utils/image";
 import { Workout, CreateWorkoutRequest, WorkoutCategory, WorkoutType } from "../types";
 import {
     WORKOUT_CATEGORIES,
@@ -237,9 +238,23 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
                                         mediaTypes: ImagePicker.MediaTypeOptions.Images,
                                         allowsEditing: true,
                                         quality: 0.8,
+                                        base64: true,
                                     });
-                                    if (!res.canceled && res.assets[0])
-                                        setImageUrl(res.assets[0].uri);
+                                    if (!res.canceled && res.assets[0]) {
+                                        try {
+                                            const { dataUrl } = await imageAssetToDataUrl(res.assets[0] as any, {
+                                                maxWidth: 1024,
+                                                compress: 0.8,
+                                                format: "jpeg",
+                                            });
+                                            setImageUrl(dataUrl);
+                                        } catch (e) {
+                                            Alert.alert(
+                                                "Unsupported",
+                                                "Could not process image. Please try another.",
+                                            );
+                                        }
+                                    }
                                 }}
                             >
                                 <Text style={{ color: "#fff", fontWeight: "600" }}>
@@ -269,9 +284,23 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
                                         mediaTypes: ImagePicker.MediaTypeOptions.Images,
                                         allowsEditing: true,
                                         quality: 0.8,
+                                        base64: true,
                                     });
-                                    if (!res.canceled && res.assets[0])
-                                        setImageUrl2(res.assets[0].uri);
+                                    if (!res.canceled && res.assets[0]) {
+                                        try {
+                                            const { dataUrl } = await imageAssetToDataUrl(res.assets[0] as any, {
+                                                maxWidth: 1024,
+                                                compress: 0.8,
+                                                format: "jpeg",
+                                            });
+                                            setImageUrl2(dataUrl);
+                                        } catch (e) {
+                                            Alert.alert(
+                                                "Unsupported",
+                                                "Could not process image. Please try another.",
+                                            );
+                                        }
+                                    }
                                 }}
                             >
                                 <Text style={{ color: "#fff", fontWeight: "600" }}>

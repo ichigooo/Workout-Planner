@@ -20,7 +20,7 @@ import { WorkoutForm } from "./WorkoutForm";
 
 interface WorkoutDetailProps {
     workout: Workout;
-    onEdit: () => void;
+    onEdit: (updated: Workout) => void;
     onDelete: () => void;
     onClose: () => void;
 }
@@ -342,9 +342,9 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                 // call API to update workout
                                 await apiService.updateWorkout(workout.id, payload);
                                 // refresh workout details by fetching again
-                                const _refreshed = await apiService.getWorkout(workout.id);
-                                // notify parent via onEdit callback to let it refresh
-                                onEdit();
+                                const refreshed = await apiService.getWorkout(workout.id);
+                                // notify parent with updated workout so it can refresh UI state
+                                onEdit(refreshed);
                                 setShowEditModal(false);
                                 // Optionally update UI immediately (not wired here)
                                 Alert.alert("Updated", "Workout updated successfully");

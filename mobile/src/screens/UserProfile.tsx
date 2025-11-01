@@ -16,7 +16,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
 import * as ImagePicker from "expo-image-picker";
-import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+// image manipulation moved to shared util
+import { imageAssetToDataUrl } from "../utils/image";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { User, UpdateUserProfileRequest } from "../types";
 import { apiService } from "../services/api";
@@ -111,25 +112,18 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
 
             if (!result.canceled && result.assets[0]) {
                 const asset = result.assets[0] as any;
-                // Resize/compress using expo-image-manipulator (installed)
                 let dataUrl = "";
                 try {
-                    const resized = await manipulateAsync(
-                        asset.uri,
-                        [{ resize: { width: 1024 } }],
-                        { compress: 0.8, format: SaveFormat.JPEG, base64: true },
-                    );
-                    setProfilePhoto(resized.uri || asset.uri);
-                    if (!resized.base64) throw new Error("no_base64");
-                    dataUrl = `data:image/jpeg;base64,${resized.base64}`;
+                    const { dataUrl: du, displayUri } = await imageAssetToDataUrl(asset, {
+                        maxWidth: 1024,
+                        compress: 0.8,
+                        format: "jpeg",
+                    });
+                    setProfilePhoto(displayUri);
+                    dataUrl = du;
                 } catch (e) {
-                    if (asset.base64) {
-                        setProfilePhoto(asset.uri);
-                        dataUrl = `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`;
-                    } else {
-                        Alert.alert("Unsupported", "Could not process image. Please try another.");
-                        return;
-                    }
+                    Alert.alert("Unsupported", "Could not process image. Please try another.");
+                    return;
                 }
                 try {
                     const updated = await apiService.updateUserProfile(userId, {

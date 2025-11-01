@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import {
     View,
     Text,
@@ -11,6 +11,7 @@ import {
     ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import { getTheme } from "../theme";
 import { WorkoutCard } from "../components/WorkoutCard";
 import { WorkoutForm } from "../components/WorkoutForm";
@@ -19,6 +20,7 @@ import { Workout, CreateWorkoutRequest } from "../types";
 import { apiService } from "../services/api";
 
 export const WorkoutLibrary: React.FC = () => {
+    const navigation = useNavigation<any>();
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
     const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -32,6 +34,18 @@ export const WorkoutLibrary: React.FC = () => {
     useEffect(() => {
         loadWorkouts();
     }, []);
+
+    // Ensure an Add button is visible in the navigation header (top-right)
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerTitle: "Workout",
+            headerRight: () => (
+                <TouchableOpacity onPress={() => setShowForm(true)} style={{ marginRight: 12 }}>
+                    <Text style={{ color: "#007AFF", fontWeight: "600" }}>+ Add</Text>
+                </TouchableOpacity>
+            ),
+        });
+    }, [navigation]);
 
     const loadWorkouts = async () => {
         try {
@@ -266,12 +280,27 @@ export const WorkoutLibrary: React.FC = () => {
                 {viewingWorkout && (
                     <WorkoutDetail
                         workout={viewingWorkout}
-                        onEdit={() => handleEditWorkout(viewingWorkout)}
+                        onEdit={(updated) => {
+                            // Update list
+                            setWorkouts((prev) => prev.map((w) => (w.id === updated.id ? updated : w)));
+                            // Update current viewing workout
+                            setViewingWorkout(updated);
+                        }}
                         onDelete={() => handleDeleteWorkout(viewingWorkout)}
                         onClose={handleCloseDetail}
                     />
                 )}
             </Modal>
+
+            {/* Floating Add button to ensure visibility */}
+            <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Add workout"
+                onPress={() => setShowForm(true)}
+                style={[styles.fab, { backgroundColor: theme.colors.accent }]}
+            >
+                <Text style={styles.fabText}>＋</Text>
+            </TouchableOpacity>
         </SafeAreaView>
     );
 };
@@ -330,5 +359,27 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         fontSize: 16,
+    },
+    fab: {
+        position: "absolute",
+        right: 16,
+        bottom: 24,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        alignItems: "center",
+        justifyContent: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 4,
+    },
+    fabText: {
+        color: "#fff",
+        fontSize: 28,
+        lineHeight: 30,
+        fontWeight: "700",
+        marginTop: -2,
     },
 });

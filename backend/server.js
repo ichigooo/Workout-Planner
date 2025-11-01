@@ -167,6 +167,90 @@ async function uploadAvatarToStorage(userId, input) {
 }
 
 /**
+ * uploadImageToStorage
+ * Generic uploader for images to a specified Supabase storage bucket.
+ * Supports data URLs, raw base64 strings, and http(s) URLs (downloaded then re-uploaded).
+ * Falls back to returning the original http(s) URL if fetch is unavailable.
+ * @param {string} bucket - storage bucket name (e.g., "workouts", "avatars")
+ * @param {string} pathPrefix - folder/prefix path (e.g., userId or workoutId)
+ * @param {string} input - data URL, base64, or http(s) URL
+ * @returns {Promise<string|null>} public URL or null on failure
+ */
+async function uploadImageToStorage(bucket, pathPrefix, input) {
+    try {
+        if (!input || typeof input !== "string") return null;
+        if (/^file:\/\//i.test(input)) {
+            const err = new Error("UNSUPPORTED_LOCAL_URI");
+            err.code = "UNSUPPORTED_LOCAL_URI";
+            throw err;
+        }
+
+        let contentType = "image/jpeg";
+        let buffer = null;
+
+        // data URL
+        const dataUrlMatch = input.match(/^data:(?<ct>[^;]+);base64,(?<data>[A-Za-z0-9+/=]+)$/);
+        if (dataUrlMatch && dataUrlMatch.groups) {
+            contentType = dataUrlMatch.groups.ct || contentType;
+            const base64Data = dataUrlMatch.groups.data || "";
+            buffer = Buffer.from(base64Data, "base64");
+        } else if (/^https?:\/\//i.test(input)) {
+            // External URL: download then upload
+            if (typeof fetch !== "function") {
+                // Environment cannot download; return as-is
+                return input;
+            }
+            const resp = await fetch(input);
+            if (!resp.ok) return null;
+            const ct = resp.headers.get("content-type");
+            if (ct) contentType = ct;
+            const ab = await resp.arrayBuffer();
+            buffer = Buffer.from(ab);
+        } else {
+            // Assume raw base64
+            buffer = Buffer.from(input, "base64");
+        }
+
+        if (!buffer || buffer.length === 0) return null;
+
+        const normalizedCt = (contentType || "image/jpeg").toLowerCase();
+        const ext = normalizedCt.includes("png")
+            ? "png"
+            : normalizedCt.includes("webp")
+              ? "webp"
+              : normalizedCt.includes("gif")
+                ? "gif"
+                : "jpg";
+
+        const filePath = `${pathPrefix}/${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage
+            .from(bucket)
+            .upload(filePath, buffer, { contentType: normalizedCt, upsert: true });
+        if (uploadErr) {
+            console.error(`Supabase storage upload error to bucket ${bucket}:`, uploadErr);
+            return null;
+        }
+        const { data: pub } = supabase.storage.from(bucket).getPublicUrl(filePath);
+        return pub?.publicUrl || null;
+    } catch (e) {
+        console.error("uploadImageToStorage failed:", e);
+        return null;
+    }
+}
+
+/**
+ * uploadWorkoutImageToStorage
+ * Convenience wrapper for uploading workout images to the 'workouts' bucket.
+ * @param {string} workoutId
+ * @param {string} input
+ */
+async function uploadWorkoutImageToStorage(workoutId, input) {
+    return uploadImageToStorage("workouts", workoutId, input);
+}
+
+//
+
+/**
  * mapWorkoutRow
  * Maps a database workout row to API-friendly camelCase fields.
  * Normalizes snake_case or camelCase column names and fills defaults.
@@ -333,7 +417,6 @@ app.get("/api/workouts", async (req, res) => {
 
         if (error) throw error;
         const mapped = Array.isArray(data) ? data.map(mapWorkoutRow) : [];
-        console.log("[GET /api/workouts] get data!!!!");
         res.json(mapped);
     } catch (error) {
         console.error("Error fetching workouts:", error);
@@ -349,9 +432,37 @@ app.post("/api/workouts", async (req, res) => {
         // Auto-detect workout type based on category
         const workoutType = body.category === "Cardio" ? "cardio" : "strength";
 
+        // Pre-generate id so we can use it for storage path
+        const workoutId = require("crypto").randomUUID();
+
+        // Handle images: upload data/base64 and http(s) URLs to 'workouts' storage; reject file://
+        let imageUrl = null;
+        if (body.imageUrl !== undefined) {
+            if (/^file:\/\//i.test(body.imageUrl)) {
+                return res.status(400).json({
+                    error: "Please send imageUrl as a data URL (base64) or http(s) URL, not a file:// URI.",
+                });
+            } else {
+                const uploaded = await uploadWorkoutImageToStorage(workoutId, body.imageUrl);
+                imageUrl = uploaded || (/^https?:\/\//i.test(body.imageUrl) ? body.imageUrl : null);
+            }
+        }
+
+        let imageUrl2 = null;
+        if (body.imageUrl2 !== undefined) {
+            if (/^file:\/\//i.test(body.imageUrl2)) {
+                return res.status(400).json({
+                    error: "Please send imageUrl2 as a data URL (base64) or http(s) URL, not a file:// URI.",
+                });
+            } else {
+                const uploaded2 = await uploadWorkoutImageToStorage(workoutId, body.imageUrl2);
+                imageUrl2 = uploaded2 || (/^https?:\/\//i.test(body.imageUrl2) ? body.imageUrl2 : null);
+            }
+        }
+
         // Map camelCase from client to snake_case columns
         const insert = {
-            id: require("crypto").randomUUID(),
+            id: workoutId,
             title: body.title,
             category: body.category,
             description: body.description ?? null,
@@ -360,7 +471,8 @@ app.post("/api/workouts", async (req, res) => {
             reps: body.reps ?? null,
             duration: body.duration ?? null,
             intensity: body.intensity,
-            imageUrl: body.imageUrl ?? null,
+            imageUrl: imageUrl,
+            imageUrl2: imageUrl2,
             isGlobal: true, // All workouts are global by default
             createdBy: body.createdBy ?? null, // Optional: who created this workout
         };
@@ -401,9 +513,41 @@ app.get("/api/workouts/:id", async (req, res) => {
 app.put("/api/workouts/:id", async (req, res) => {
     try {
         const body = req.body || {};
-
         // Auto-detect workout type based on category
         const workoutType = body.category === "Cardio" ? "cardio" : "strength";
+
+        const workoutId = req.params.id;
+
+        // Compute image fields only if provided, otherwise leave undefined to avoid overwriting
+        let computedImageUrl = undefined;
+        if (body.imageUrl !== undefined) {
+            if (/^file:\/\//i.test(body.imageUrl)) {
+                return res.status(400).json({
+                    error: "Please send imageUrl as a data URL (base64) or http(s) URL, not a file:// URI.",
+                });
+            } else {
+                const uploaded = await uploadWorkoutImageToStorage(workoutId, body.imageUrl);
+                if (!uploaded) {
+                    throw new Error("IMAGE_UPLOAD_FAILED");
+                }
+                computedImageUrl = uploaded;
+            }
+        }
+
+        let computedImageUrl2 = undefined;
+        if (body.imageUrl2 !== undefined) {
+            if (/^file:\/\//i.test(body.imageUrl2)) {
+                return res.status(400).json({
+                    error: "Please send imageUrl2 as a data URL (base64) or http(s) URL, not a file:// URI.",
+                });
+            } else {
+                const uploaded2 = await uploadWorkoutImageToStorage(workoutId, body.imageUrl2);
+                if (!uploaded2) {
+                    throw new Error("IMAGE_UPLOAD_FAILED");
+                }
+                computedImageUrl2 = uploaded2;
+            }
+        }
 
         const update = {
             title: body.title,
@@ -414,8 +558,10 @@ app.put("/api/workouts/:id", async (req, res) => {
             reps: body.reps ?? null,
             duration: body.duration ?? null,
             intensity: body.intensity,
-            imageUrl: body.imageUrl ?? null,
+            imageUrl: computedImageUrl,
+            imageUrl2: computedImageUrl2,
             // Note: is_global and created_by are not updated here to maintain data integrity
+            updatedAt: new Date().toISOString(),
         };
 
         const { data, error } = await supabase
@@ -665,7 +811,6 @@ app.post("/api/workout-plans/:id/plan-items", async (req, res) => {
 app.get("/api/workout-plans/:id/plan-items-sorted", async (req, res) => {
     try {
         const planId = req.params.id;
-        console.log("[GET /api/workout-plans/:id/plan-items-sorted] planId=", planId);
         // Query using camelCase columns (schema uses camelCase)
         const { data, error } = await supabase
             .from("plan_items")
@@ -705,14 +850,7 @@ app.get("/api/workout-plans/:id/plan-items-by-month", async (req, res) => {
         const nextYear = month === 12 ? year + 1 : year;
         const endDate = `${nextYear}-${pad(nextMonth)}-01`;
 
-        console.log(
-            "[GET /api/workout-plans/:id/plan-items-by-month]",
-            planId,
-            year,
-            month,
-            startDate,
-            endDate,
-        );
+        
 
         const { data, error } = await supabase
             .from("plan_items")
