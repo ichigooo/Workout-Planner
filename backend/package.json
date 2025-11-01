@@ -1,9 +1,9 @@
 {
   "name": "backend",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "main": "server.js",
   "scripts": {
-    "test": "mocha --exit --recursive --reporter spec",
+    "test": "mocha --exit --recursive --require ./test/setup.js --reporter spec",
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
