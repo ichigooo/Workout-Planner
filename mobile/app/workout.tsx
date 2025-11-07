@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
     View,
     Text,
@@ -23,7 +23,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 
 export default function WorkoutScreen() {
     const router = useRouter();
-    const params = useLocalSearchParams<{ category?: string }>();
+    const params = useLocalSearchParams<{ category?: string; id?: string }>();
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
     const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -34,6 +34,7 @@ export default function WorkoutScreen() {
     const [showForm, setShowForm] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const chipListRef = useRef<import("react-native").FlatList<string> | null>(null);
 
     useEffect(() => {
         (async () => {
@@ -54,7 +55,6 @@ export default function WorkoutScreen() {
             try {
                 // Prefer a resolved current user if available
                 const current = await getCurrentUser();
-                console.log("[linna] current", current);
                 if (mounted && current) {
                     setIsAdmin(Boolean(current.isAdmin));
                     return;
@@ -80,9 +80,46 @@ export default function WorkoutScreen() {
         if (typeof params?.category === "string" && params.category.length > 0) {
             setCategory(params.category);
         }
+        // After setting category, attempt to center the selected chip
+        const idx = typeof params?.category === "string" && params.category.length > 0
+            ? Math.max(0, categories.findIndex((c) => c === (params.category as any))) + 1
+            : 0;
+        // Defer to next frame to ensure FlatList ref is measured
+        requestAnimationFrame(() => {
+            try {
+                chipListRef.current?.scrollToIndex?.({ index: idx, animated: true, viewPosition: 0.5 });
+            } catch {}
+        });
     }, [params?.category]);
 
+    // When an id is provided, open the workout detail after data loads
+    useEffect(() => {
+        const openById = async () => {
+            if (typeof params?.id !== "string" || params.id.length === 0) return;
+            // Try to find in the loaded list first
+            const found = workouts.find((w) => w.id === params.id);
+            if (found) {
+                setSelected(found);
+                setShowDetail(true);
+                return;
+            }
+            // Fallback: fetch a single workout and show it
+            try {
+                const single = await apiService.getWorkout(params.id);
+                if (single) {
+                    setSelected(single);
+                    setShowDetail(true);
+                }
+            } catch {
+                // ignore
+            }
+        };
+        openById();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [params?.id, workouts.length]);
+
     const categories = Array.from(new Set(workouts.map((w) => w.category))).sort();
+    const categoriesWithAll = ["All", ...categories];
     const normalizedQuery = searchQuery.trim().toLowerCase();
     const filteredByCategory = category ? workouts.filter((w) => w.category === category) : workouts;
     const filtered = normalizedQuery
@@ -131,8 +168,9 @@ export default function WorkoutScreen() {
                 ]}
             >
                 <FlatList
+                    ref={chipListRef as any}
                     horizontal
-                    data={["All", ...categories]}
+                    data={categoriesWithAll}
                     keyExtractor={(item) => item}
                     renderItem={({ item }) => (
                         <TouchableOpacity
@@ -168,6 +206,18 @@ export default function WorkoutScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8 }}
                 />
+                {/* Auto-scroll chips to selected category when provided via params */}
+                {/* Execute after layout to ensure list is measured */}
+                <View onLayout={() => {
+                    try {
+                        const idx = category ? Math.max(0, categories.findIndex((c) => c === (category as any))) + 1 : 0;
+                        if (chipListRef.current && idx >= 0) {
+                            (chipListRef.current as any).scrollToIndex?.({ index: idx, animated: true, viewPosition: 0.5 });
+                        }
+                    } catch {
+                        // best-effort only
+                    }
+                }} />
                 {/* Search Bar */}
                 <View style={{ paddingHorizontal: 16, paddingBottom: 10 }}>
                     <View

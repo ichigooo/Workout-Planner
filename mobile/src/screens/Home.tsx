@@ -14,6 +14,7 @@ import { getTheme } from "../theme";
 import { apiService } from "../services/api";
 import { Workout, WorkoutPlan } from "../types";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 interface HomeProps {
     onOpenCalendar: () => void;
@@ -28,6 +29,7 @@ export const Home: React.FC<HomeProps> = ({
     onOpenLibrary,
     onOpenRoutine: _onOpenRoutine,
 }) => {
+    const router = useRouter();
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
 
@@ -156,7 +158,7 @@ export const Home: React.FC<HomeProps> = ({
                 styles.previewCard,
                 { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
             ]}
-            onPress={() => onOpenLibrary && onOpenLibrary()}
+            onPress={() => router.push(`/workout?id=${encodeURIComponent(item.id)}`)}
         >
             <View style={styles.previewHeader}>
                 <View style={[styles.categoryBadge, { backgroundColor: theme.colors.accent }]}>
@@ -305,7 +307,7 @@ export const Home: React.FC<HomeProps> = ({
                                             borderColor: theme.colors.border,
                                         },
                                     ]}
-                                    onPress={() => onOpenLibrary && onOpenLibrary()}
+                                    onPress={() => router.push(`/workout?id=${encodeURIComponent(item.id)}`)}
                                 >
                                     <View style={styles.previewHeader}>
                                         <View
