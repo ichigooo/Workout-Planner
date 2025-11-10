@@ -129,6 +129,25 @@ export default function WorkoutScreen() {
           })
         : filteredByCategory;
 
+    // After data/categories are ready, auto-scroll the chip list to the selected category
+    useEffect(() => {
+        try {
+            const idx =
+                category && categories.length > 0
+                    ? Math.max(0, categories.findIndex((c) => c === (category as any))) + 1 // +1 accounts for "All"
+                    : 0;
+            if (chipListRef.current && idx >= 0) {
+                chipListRef.current.scrollToIndex?.({
+                    index: idx,
+                    animated: true,
+                    viewPosition: 0.5,
+                });
+            }
+        } catch {
+            // best-effort only
+        }
+    }, [category, categories.length]);
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg }]}>
             <View
@@ -172,6 +191,22 @@ export default function WorkoutScreen() {
                     horizontal
                     data={categoriesWithAll}
                     keyExtractor={(item) => item}
+                    onScrollToIndexFailed={(info) => {
+                        // Retry by scrolling close to the desired offset; then try again
+                        try {
+                            const offset = Math.max(0, info.averageItemLength * info.index);
+                            (chipListRef.current as any)?.scrollToOffset?.({ offset, animated: true });
+                            setTimeout(() => {
+                                (chipListRef.current as any)?.scrollToIndex?.({
+                                    index: info.index,
+                                    animated: true,
+                                    viewPosition: 0.5,
+                                });
+                            }, 100);
+                        } catch {
+                            // ignore
+                        }
+                    }}
                     renderItem={({ item }) => (
                         <TouchableOpacity
                             onPress={() => setCategory(item === "All" ? null : item)}
