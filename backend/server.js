@@ -811,13 +811,16 @@ app.post("/api/workout-plans/:id/plan-items", async (req, res) => {
 app.get("/api/workout-plans/:id/plan-items-sorted", async (req, res) => {
     try {
         const planId = req.params.id;
-        // Query using camelCase columns (schema uses camelCase)
-        const { data, error } = await supabase
+        // Optional start date filter (YYYY-MM-DD); if provided, only return items scheduled on/after this date
+        const start = req.query.start;
+        let query = supabase
             .from("plan_items")
             .select("*, workouts(*)")
-            .eq("workoutPlanId", planId)
-            .order("scheduled_date", { ascending: true })
-            .limit(30);
+            .eq("workoutPlanId", planId);
+        if (typeof start === "string" && start.length >= 10) {
+            query = query.gte("scheduled_date", start);
+        }
+        const { data, error } = await query.order("scheduled_date", { ascending: true }).limit(30);
 
         if (error) throw error;
 

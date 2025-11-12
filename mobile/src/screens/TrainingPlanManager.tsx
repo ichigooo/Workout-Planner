@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
     View,
     Text,
@@ -18,6 +18,7 @@ import { apiService } from "../services/api";
 import { WorkoutPlan, CreateWorkoutPlanRequest, Workout, PlanItem } from "../types";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
 export const TrainingPlanManager: React.FC = () => {
     const scheme = useColorScheme();
@@ -38,25 +39,35 @@ export const TrainingPlanManager: React.FC = () => {
         }[]
     >([]);
     const scrollRef = useScrollToTopOnTabPress();
+    const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
         loadPlan();
         loadWorkouts();
     }, []);
 
-    // Preload cached plan items when the manager mounts
+    // Refresh data whenever this tab gains focus
+    useFocusEffect(
+        useCallback(() => {
+            loadPlan();
+            loadWorkouts();
+            setRefreshKey((k) => k + 1);
+        }, []),
+    );
+
+    // Preload next 5 days of plan items when the manager mounts
     useEffect(() => {
         const preload = async () => {
             if (plan && plan.id) {
                 try {
-                    await apiService.fetchAndCachePlanItems(plan.id);
+                    await apiService.fetchAndCachePlanItemsNextDays(plan.id, 5);
                 } catch (e) {
                     console.warn("preload plan items failed", e);
                 }
             }
         };
         preload();
-    }, [plan]);
+    }, [plan?.id, refreshKey]);
 
     // Build scheduled items for the next 5 days, sectioned by date
     useEffect(() => {
@@ -66,7 +77,6 @@ export const TrainingPlanManager: React.FC = () => {
         }
 
         const cachedItems: PlanItem[] = apiService.getCachedPlanItems(plan.id) || [];
-
         const today = new Date();
         const nextDates: string[] = [];
         for (let i = 0; i < 5; i++) {
@@ -95,10 +105,9 @@ export const TrainingPlanManager: React.FC = () => {
             });
 
             const itemsForDate: { id: string; workout: Workout; intensity?: string }[] = [];
-
             // explicit dated items from cache (handle both string dates and timestamps without UTC shift)
             cachedItems.forEach((ci) => {
-                const sd = (ci as any).scheduledDate ?? (ci as any).scheduled_date;
+                const sd = (ci as any).scheduledDate;
                 if (!sd) return;
                 let sdStr = "";
                 if (typeof sd === "string") {

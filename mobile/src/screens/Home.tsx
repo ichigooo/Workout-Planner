@@ -14,6 +14,7 @@ import { getTheme } from "../theme";
 import { apiService } from "../services/api";
 import { Workout, WorkoutPlan } from "../types";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 interface HomeProps {
     onOpenCalendar: () => void;
@@ -28,6 +29,7 @@ export const Home: React.FC<HomeProps> = ({
     onOpenLibrary,
     onOpenRoutine: _onOpenRoutine,
 }) => {
+    const router = useRouter();
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
 
@@ -150,33 +152,6 @@ export const Home: React.FC<HomeProps> = ({
 
     const _todaysWorkout = workouts.length > 0 ? workouts[0] : undefined;
 
-    const _renderWorkoutPreview = ({ item }: { item: Workout }) => (
-        <TouchableOpacity
-            style={[
-                styles.previewCard,
-                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-            ]}
-            onPress={() => onOpenLibrary && onOpenLibrary()}
-        >
-            <View style={styles.previewHeader}>
-                <View style={[styles.categoryBadge, { backgroundColor: theme.colors.accent }]}>
-                    <Text style={styles.categoryBadgeText}>{item.category.toUpperCase()}</Text>
-                </View>
-            </View>
-            <Text style={[styles.previewTitle, { color: theme.colors.text }]} numberOfLines={1}>
-                {item.title}
-            </Text>
-            {item.description ? (
-                <Text
-                    style={[styles.previewDesc, { color: theme.colors.subtext }]}
-                    numberOfLines={2}
-                >
-                    {item.description}
-                </Text>
-            ) : null}
-        </TouchableOpacity>
-    );
-
     // Simple week snapshot UI
     const WeekSnapshot = () => {
         const dayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -203,13 +178,17 @@ export const Home: React.FC<HomeProps> = ({
                                     style={[
                                         styles.dayCol,
                                         {
-                                            backgroundColor: isSelected
-                                                ? theme.colors.accent + "20"
-                                                : "transparent",
-                                            borderColor: isSelected
-                                                ? theme.colors.accent
-                                                : "transparent",
-                                            borderWidth: isSelected ? 2 : 0,
+                                        backgroundColor: isSelected
+                                            ? theme.colors.accent + "20"
+                                            : isToday
+                                              ? theme.colors.accent + "10"
+                                              : "transparent",
+                                        borderColor: isSelected
+                                            ? theme.colors.accent
+                                            : isToday
+                                              ? theme.colors.accent
+                                              : "transparent",
+                                        borderWidth: isSelected ? 2 : isToday ? 1 : 0,
                                             borderRadius: 8,
                                             paddingHorizontal: 6,
                                             paddingVertical: 6,
@@ -226,6 +205,8 @@ export const Home: React.FC<HomeProps> = ({
                                                     : isToday
                                                       ? theme.colors.accent
                                                       : theme.colors.subtext,
+                                                // Stronger weight so it appears distinctly bold on iOS/Android
+                                                fontWeight: isSelected ? "900" : (isToday ? "800" : "600"),
                                             },
                                         ]}
                                     >
@@ -305,7 +286,7 @@ export const Home: React.FC<HomeProps> = ({
                                             borderColor: theme.colors.border,
                                         },
                                     ]}
-                                    onPress={() => onOpenLibrary && onOpenLibrary()}
+                                    onPress={() => router.push(`/workout?id=${encodeURIComponent(item.id)}`)}
                                 >
                                     <View style={styles.previewHeader}>
                                         <View
