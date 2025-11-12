@@ -125,10 +125,12 @@ class ApiService {
     }
 
     /**
-     * Get plan items for a specific workout plan sorted by scheduled_date (limit 30)
+     * Get plan items for a specific workout plan sorted by scheduled_date (limit 30),
+     * starting from the given start date (YYYY-MM-DD). If startDate is omitted, the server default applies.
      */
-    async getPlanItemsSorted(planId: string): Promise<PlanItem[]> {
-        return this.request<PlanItem[]>(`/workout-plans/${planId}/plan-items-sorted`);
+    async getPlanItemsSorted(planId: string, startDate?: string): Promise<PlanItem[]> {
+        const qs = startDate ? `?start=${encodeURIComponent(startDate)}` : "";
+        return this.request<PlanItem[]>(`/workout-plans/${planId}/plan-items-sorted${qs}`);
     }
 
     /**
@@ -156,10 +158,83 @@ class ApiService {
      * Fetch plan items for the given plan id and store in local cache
      */
     async fetchAndCachePlanItems(planId: string): Promise<PlanItem[]> {
-        const items = await this.getPlanItemsSorted(planId);
-        console.log("[api] fetched and cached plan items", items.length);
+        // Ask the server for items starting from today to avoid fetching the entire history
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = (today.getMonth() + 1).toString().padStart(2, "0");
+        const dd = today.getDate().toString().padStart(2, "0");
+        const todayStr = `${yyyy}-${mm}-${dd}`;
+        const items = await this.getPlanItemsSorted(planId, todayStr);
+
+        console.log("[api] fetched plan items starting from today:", items.length);
         this._planItemsCache[planId] = items || [];
         return this._planItemsCache[planId];
+    }
+
+    /**
+     * Fetch plan items only for the next `days` days starting today, cache and return them.
+     * Uses the month endpoint to avoid fetching the entire history.
+     */
+    async fetchAndCachePlanItemsNextDays(planId: string, days: number = 5): Promise<PlanItem[]> {
+        const today = new Date();
+        const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const end = new Date(start);
+        end.setDate(start.getDate() + (days - 1));
+
+        const monthsToFetch: Array<{ year: number; month: number }> = [];
+        const addMonth = (d: Date) => {
+            const y = d.getFullYear();
+            const m = d.getMonth() + 1;
+            if (!monthsToFetch.find((x) => x.year === y && x.month === m)) {
+                monthsToFetch.push({ year: y, month: m });
+            }
+        };
+        addMonth(start);
+        addMonth(end);
+
+        let collected: PlanItem[] = [];
+        for (const m of monthsToFetch) {
+            try {
+                const resp = await this.getPlanItemsByMonth(planId, m.year, m.month);
+                collected = collected.concat(resp.items || []);
+            } catch (e) {
+                console.warn("[api] getPlanItemsByMonth failed", m, e);
+            }
+        }
+
+        const toDateStr = (sd: unknown): string | null => {
+            if (!sd) return null;
+            if (typeof sd === "string") return sd.split("T")[0].split(" ")[0];
+            try {
+                const d = new Date(sd as any);
+                const y = d.getFullYear();
+                const mm = (d.getMonth() + 1).toString().padStart(2, "0");
+                const dd = d.getDate().toString().padStart(2, "0");
+                return `${y}-${mm}-${dd}`;
+            } catch {
+                return null;
+            }
+        };
+
+        const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+        const startStr = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
+        const endStr = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}`;
+
+        const inRange = (ds: string) => ds >= startStr && ds <= endStr;
+
+        const nextDays = (collected || [])
+            .map((it) => {
+                const sd = (it as any).scheduledDate ?? (it as any).scheduled_date;
+                const dateStr = toDateStr(sd);
+                return { it, dateStr };
+            })
+            .filter((row) => row.dateStr && inRange(row.dateStr))
+            .sort((a, b) => (a.dateStr! < b.dateStr! ? -1 : a.dateStr! > b.dateStr! ? 1 : 0))
+            .map((row) => row.it);
+
+        console.log("[api] cached next-days items:", nextDays.length, "range", startStr, "to", endStr);
+        this._planItemsCache[planId] = nextDays;
+        return nextDays;
     }
 
     /**
