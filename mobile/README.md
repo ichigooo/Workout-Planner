@@ -13,9 +13,9 @@ This document explains how to run, build, and troubleshoot the React Native (Exp
 
 - Node.js LTS (v18+ recommended)
 - Expo CLI and EAS CLI
-  ```bash
-  npm i -g expo-cli eas-cli
-  ```
+    ```bash
+    npm i -g expo-cli eas-cli
+    ```
 - Xcode (for iOS) and/or Android Studio (for Android)
 - An Apple Developer account (for device builds on iOS)
 
@@ -26,11 +26,12 @@ The app reads the backend base URL from `src/constants.ts`.
 ```ts
 // src/constants.ts
 export const API_BASE_URL = IS_DEVELOPMENT
-  ? 'http://<your-lan-ip>:3001/api'  // local server
-  : 'https://<your-vercel-app>.vercel.app/api'; // cloud
+    ? "http://<your-lan-ip>:3001/api" // local server
+    : "https://<your-vercel-app>.vercel.app/api"; // cloud
 ```
 
 Tips
+
 - For device testing on the same Wi‑Fi, replace `<your-lan-ip>` with your Mac’s IP (e.g., `ipconfig getifaddr en0`).
 - If your device can’t reach your LAN IP, use Expo tunnel for Metro; the API must still be reachable directly.
 
@@ -51,34 +52,40 @@ When the build completes, install the dev client on your iPhone via QR code or t
 
 ## Daily development workflow
 
-1) Start Metro bundler
+1. Start Metro bundler
+
 ```bash
 npx expo start --dev-client --host tunnel
 ```
 
-2) Open the app on your device (the dev client). It will connect to Metro and load your JS bundle.
+2. Open the app on your device (the dev client). It will connect to Metro and load your JS bundle.
 
 Notes
+
 - Use `--host tunnel` if LAN discovery fails.
 - Press `r` in the Metro terminal to reload, `m` to toggle menu.
 
 ## Android development (optional)
 
 If you prefer Android:
+
 ```bash
 eas build --profile development --platform android
 npx expo start --dev-client --host tunnel
 ```
+
 Install the resulting APK/AAB on your Android device or emulator, then open the app.
 
 ## Rebuild the dev client when native changes
 
 Rebuild if ANY of the following occurs:
+
 - New Expo module with native code is added
 - SDK version changes
 - `app.json` native config changes
 
 Commands
+
 ```bash
 eas build --profile development --platform ios
 npx expo start --dev-client --host tunnel
@@ -100,20 +107,21 @@ curl -sS http://<your-lan-ip>:3001/health | jq .
 ## Troubleshooting
 
 - Device cannot connect to Metro
-  - Use `--host tunnel` (firewall/NAT often blocks LAN)
-  - Ensure phone and computer are on the same Wi‑Fi
+    - Use `--host tunnel` (firewall/NAT often blocks LAN)
+    - Ensure phone and computer are on the same Wi‑Fi
 
 - API calls fail on device but work in the simulator
-  - Verify `API_BASE_URL` points to a reachable host from the device (LAN IP or cloud URL)
-  - Confirm your server’s CORS settings allow the mobile app (current server uses permissive CORS)
+    - Verify `API_BASE_URL` points to a reachable host from the device (LAN IP or cloud URL)
+    - Confirm your server’s CORS settings allow the mobile app (current server uses permissive CORS)
 
 - Images not saving
-  - Ensure images are converted to base64 data URLs before sending (we use `imageAssetToDataUrl`)
-  - For workouts, the server uploads to the `workouts` storage bucket and stores the public URL
+    - Ensure images are converted to base64 data URLs before sending (we use `imageAssetToDataUrl`)
+    - For workouts, the server uploads to the `workouts` storage bucket and stores the public URL
 
 ## Production builds (brief)
 
 Use EAS for distribution builds:
+
 ```bash
 # iOS (TestFlight / App Store)
 eas build --profile production --platform ios
@@ -121,6 +129,7 @@ eas build --profile production --platform ios
 # Android (Play)
 eas build --profile production --platform android
 ```
+
 Follow the prompts for signing credentials if you haven’t set them up.
 
 ## Backend smoke tests (cloud)
@@ -139,7 +148,6 @@ This project uses Expo EAS Build for development and testing on iOS devices.
 1️⃣ First-Time Setup — Create the Dev Client
 eas build --profile development --platform ios
 
-
 Builds a development client (.ipa) for your iPhone.
 
 After the build finishes, install the app on your device using the QR code or link from Expo.
@@ -151,7 +159,6 @@ This only needs to be done once — unless you later add new native modules.
 Once the dev client is installed, start the Metro bundler:
 
 npx expo start --dev-client --host tunnel
-
 
 Ensure your Mac and iPhone are on the same Wi-Fi.
 
@@ -175,11 +182,12 @@ Rebuild your dev client:
 eas build --profile development --platform ios
 npx expo start --dev-client --host tunnel
 
-
 Reinstall the new build, then continue development as usual.
 
 ✅ Typical Daily Flow
+
 # Start Metro bundler
+
 npx expo start --dev-client --host tunnel
 
 # Then open the app on iPhone

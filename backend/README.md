@@ -12,30 +12,34 @@ A Node.js backend for the workout planning and logging application.
 ## Setup
 
 1. Install dependencies:
-   ```bash
-   npm install
-   ```
+
+    ```bash
+    npm install
+    ```
 
 2. Copy `.env.example` to `.env` and fill in your Supabase credentials:
-   ```bash
-   cp .env.example .env
-   ```
+
+    ```bash
+    cp .env.example .env
+    ```
 
 3. Set up your Supabase database using the SQL migration in `supabase/migrations/001_initial_schema.sql`
 
 4. Generate Prisma client:
-   ```bash
-   npx prisma generate
-   ```
+
+    ```bash
+    npx prisma generate
+    ```
 
 5. Start the development server:
-   ```bash
-   npm run dev
-   ```
+    ```bash
+    npm run dev
+    ```
 
 ## API Endpoints
 
 ### Workouts
+
 - `GET /api/workouts` - Get all workouts
 - `POST /api/workouts` - Create a new workout
 - `GET /api/workouts/:id` - Get a specific workout
@@ -43,6 +47,7 @@ A Node.js backend for the workout planning and logging application.
 - `DELETE /api/workouts/:id` - Delete a workout
 
 ### Workout Plans
+
 - `GET /api/workout-plans` - Get all workout plans with plan items
 - `POST /api/workout-plans` - Create a new workout plan
 - `POST /api/workout-plans/:id/plan-items` - Add a workout to a plan
@@ -50,6 +55,7 @@ A Node.js backend for the workout planning and logging application.
 ## Database Schema
 
 The application uses the following main tables:
+
 - `users` - User accounts
 - `workouts` - Individual workout exercises
 - `workout_plans` - Workout plans with date ranges

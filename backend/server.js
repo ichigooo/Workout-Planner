@@ -456,7 +456,8 @@ app.post("/api/workouts", async (req, res) => {
                 });
             } else {
                 const uploaded2 = await uploadWorkoutImageToStorage(workoutId, body.imageUrl2);
-                imageUrl2 = uploaded2 || (/^https?:\/\//i.test(body.imageUrl2) ? body.imageUrl2 : null);
+                imageUrl2 =
+                    uploaded2 || (/^https?:\/\//i.test(body.imageUrl2) ? body.imageUrl2 : null);
             }
         }
 
@@ -852,8 +853,6 @@ app.get("/api/workout-plans/:id/plan-items-by-month", async (req, res) => {
         const nextMonth = month === 12 ? 1 : month + 1;
         const nextYear = month === 12 ? year + 1 : year;
         const endDate = `${nextYear}-${pad(nextMonth)}-01`;
-
-        
 
         const { data, error } = await supabase
             .from("plan_items")

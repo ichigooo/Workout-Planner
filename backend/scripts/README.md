@@ -6,18 +6,19 @@ These scripts help you bulk import workout data from Excel or CSV files into you
 
 Your file must have these columns (exact names):
 
-| Column | Required | Description | Example |
-|--------|----------|-------------|---------|
-| **Category** | ✅ Yes | Must be one of the predefined categories | "Upper Body - Push" |
-| **Exercise** | ✅ Yes | Name of the exercise | "Push-ups" |
-| **Description** | ❌ No | Optional description | "Standard push-up exercise" |
-| **Illustration** | ❌ No | URL to exercise image | "https://example.com/image.jpg" |
-| **Intensity** | ✅ Yes | Intensity description | "bodyweight", "50kg", "8:30/mile" |
-| **Sets** | ✅ Yes* | Number of sets (for strength workouts) | "3" |
-| **Reps** | ✅ Yes* | Number of reps (for strength workouts) | "15" |
-| **Duration** | ✅ Yes* | Duration in minutes (for cardio workouts) | "30" |
+| Column           | Required | Description                               | Example                           |
+| ---------------- | -------- | ----------------------------------------- | --------------------------------- |
+| **Category**     | ✅ Yes   | Must be one of the predefined categories  | "Upper Body - Push"               |
+| **Exercise**     | ✅ Yes   | Name of the exercise                      | "Push-ups"                        |
+| **Description**  | ❌ No    | Optional description                      | "Standard push-up exercise"       |
+| **Illustration** | ❌ No    | URL to exercise image                     | "https://example.com/image.jpg"   |
+| **Intensity**    | ✅ Yes   | Intensity description                     | "bodyweight", "50kg", "8:30/mile" |
+| **Sets**         | ✅ Yes\* | Number of sets (for strength workouts)    | "3"                               |
+| **Reps**         | ✅ Yes\* | Number of reps (for strength workouts)    | "15"                              |
+| **Duration**     | ✅ Yes\* | Duration in minutes (for cardio workouts) | "30"                              |
 
-*Required based on workout type:
+\*Required based on workout type:
+
 - **Strength workouts** (all categories except "Cardio"): Need Sets and Reps
 - **Cardio workouts** ("Cardio" category): Need Duration
 
@@ -50,18 +51,18 @@ node scripts/importWorkoutsCSV.js path/to/your/workouts.csv
 
 ## 📊 Example Data
 
-| Category | Exercise | Description | Intensity | Sets | Reps | Duration | Illustration |
-|----------|----------|-------------|-----------|------|------|----------|---------------|
-| Upper Body - Push | Push-ups | Standard push-up | bodyweight | 3 | 15 | | https://example.com/pushup.jpg |
-| Cardio | Running | Moderate pace | 8:30/mile | | | 30 | https://example.com/running.jpg |
-| Legs | Squats | Weighted squats | 50kg | 4 | 12 | | https://example.com/squat.jpg |
+| Category          | Exercise | Description      | Intensity  | Sets | Reps | Duration | Illustration                    |
+| ----------------- | -------- | ---------------- | ---------- | ---- | ---- | -------- | ------------------------------- |
+| Upper Body - Push | Push-ups | Standard push-up | bodyweight | 3    | 15   |          | https://example.com/pushup.jpg  |
+| Cardio            | Running  | Moderate pace    | 8:30/mile  |      |      | 30       | https://example.com/running.jpg |
+| Legs              | Squats   | Weighted squats  | 50kg       | 4    | 12   |          | https://example.com/squat.jpg   |
 
 ## ✅ What the Scripts Do
 
 1. **Validate Data**: Check all required fields and data types
-2. **Auto-detect Workout Type**: 
-   - "Cardio" category → cardio workout
-   - All other categories → strength workout
+2. **Auto-detect Workout Type**:
+    - "Cardio" category → cardio workout
+    - All other categories → strength workout
 3. **Upload in Batches**: Process workouts in groups of 10
 4. **Error Handling**: Show detailed error messages for any issues
 5. **Progress Tracking**: Display upload progress and summary
@@ -84,6 +85,7 @@ node scripts/importWorkoutsCSV.js path/to/your/workouts.csv
 ## 📈 After Import
 
 Once imported, your workouts will be available in the global workout library for all users to:
+
 - Browse by category
 - Add to their personal workout plans
 - Track their progress
