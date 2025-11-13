@@ -8,11 +8,25 @@ import {
     CreatePlanItemRequest,
     UpdateUserProfileRequest,
 } from "../types";
+import { getLocalIp } from "../utils/getlocalIP";
 
-import { API_BASE_URL } from "../constants";
+const USE_CLOUD = (process.env.EXPO_PUBLIC_USE_CLOUD ?? "false").toLowerCase() === "true";
 
-// Log which API base the app is using (helps confirm local vs cloud)
-console.log("[api] API_BASE_URL=", API_BASE_URL);
+const CLOUD_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+
+const detectedLocalIp = getLocalIp();
+console.log("[api] detectedLocalIp", detectedLocalIp);
+
+const AUTO_LOCAL_URL = detectedLocalIp ? `http://${detectedLocalIp}:3001/api` : null;
+
+const LOCAL_BASE_URL = AUTO_LOCAL_URL ?? "http://localhost:3001/api";
+
+if (USE_CLOUD && !CLOUD_BASE_URL) {
+    throw new Error("EXPO_PUBLIC_USE_CLOUD is true but EXPO_PUBLIC_API_BASE_URL is not set");
+} // Log which API base the app is using (helps confirm local vs cloud)
+console.log("[api] API_BASE_URL=", LOCAL_BASE_URL);
+
+const API_BASE_URL = USE_CLOUD ? CLOUD_BASE_URL! : LOCAL_BASE_URL;
 
 class ApiService {
     private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -232,7 +246,14 @@ class ApiService {
             .sort((a, b) => (a.dateStr! < b.dateStr! ? -1 : a.dateStr! > b.dateStr! ? 1 : 0))
             .map((row) => row.it);
 
-        console.log("[api] cached next-days items:", nextDays.length, "range", startStr, "to", endStr);
+        console.log(
+            "[api] cached next-days items:",
+            nextDays.length,
+            "range",
+            startStr,
+            "to",
+            endStr,
+        );
         this._planItemsCache[planId] = nextDays;
         return nextDays;
     }

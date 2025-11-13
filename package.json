@@ -1,43 +1,47 @@
 {
-  "name": "workout-planner",
-  "version": "1.0.0",
-  "description": "A full-stack workout planning and logging application",
-  "main": "index.js",
-  "scripts": {
-    "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && npx react-native start",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "setup:db": "cd backend && npx prisma generate && npx prisma db push",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "workout",
-    "fitness",
-    "react-native",
-    "nodejs",
-    "supabase",
-    "typescript"
-  ],
-  "author": "",
-  "license": "MIT",
-  "workspaces": [
-    "backend",
-    "frontend"
-  ],
-  "devDependencies": {
-    "@eslint/js": "^9.38.0",
-    "@typescript-eslint/eslint-plugin": "^8.46.2",
-    "@typescript-eslint/parser": "^8.46.2",
-    "eslint": "^9.38.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-prettier": "^5.5.4",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-native": "^5.0.0",
-    "globals": "^16.4.0",
-    "prettier": "^3.6.2",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.2"
-  }
+    "name": "workout-planner",
+    "version": "1.0.0",
+    "description": "A full-stack workout planning and logging application",
+    "main": "index.js",
+    "scripts": {
+        "dev:backend": "cd backend && npm run dev",
+        "dev:frontend": "cd frontend && npx react-native start",
+        "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+        "setup:db": "cd backend && npx prisma generate && npx prisma db push",
+        "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+        "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "workout",
+        "fitness",
+        "react-native",
+        "nodejs",
+        "supabase",
+        "typescript"
+    ],
+    "author": "",
+    "license": "MIT",
+    "workspaces": [
+        "backend",
+        "frontend"
+    ],
+    "devDependencies": {
+        "@eslint/js": "^9.38.0",
+        "@typescript-eslint/eslint-plugin": "^8.46.2",
+        "@typescript-eslint/parser": "^8.46.2",
+        "eslint": "^9.38.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-jsx-a11y": "^6.10.2",
+        "eslint-plugin-prettier": "^5.5.4",
+        "eslint-plugin-react": "^7.37.5",
+        "eslint-plugin-react-hooks": "^7.0.1",
+        "eslint-plugin-react-native": "^5.0.0",
+        "globals": "^16.4.0",
+        "prettier": "^3.6.2",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.46.2"
+    }
 }

@@ -178,17 +178,17 @@ export const Home: React.FC<HomeProps> = ({
                                     style={[
                                         styles.dayCol,
                                         {
-                                        backgroundColor: isSelected
-                                            ? theme.colors.accent + "20"
-                                            : isToday
-                                              ? theme.colors.accent + "10"
-                                              : "transparent",
-                                        borderColor: isSelected
-                                            ? theme.colors.accent
-                                            : isToday
-                                              ? theme.colors.accent
-                                              : "transparent",
-                                        borderWidth: isSelected ? 2 : isToday ? 1 : 0,
+                                            backgroundColor: isSelected
+                                                ? theme.colors.accent + "20"
+                                                : isToday
+                                                  ? theme.colors.accent + "10"
+                                                  : "transparent",
+                                            borderColor: isSelected
+                                                ? theme.colors.accent
+                                                : isToday
+                                                  ? theme.colors.accent
+                                                  : "transparent",
+                                            borderWidth: isSelected ? 2 : isToday ? 1 : 0,
                                             borderRadius: 8,
                                             paddingHorizontal: 6,
                                             paddingVertical: 6,
@@ -206,7 +206,11 @@ export const Home: React.FC<HomeProps> = ({
                                                       ? theme.colors.accent
                                                       : theme.colors.subtext,
                                                 // Stronger weight so it appears distinctly bold on iOS/Android
-                                                fontWeight: isSelected ? "900" : (isToday ? "800" : "600"),
+                                                fontWeight: isSelected
+                                                    ? "900"
+                                                    : isToday
+                                                      ? "800"
+                                                      : "600",
                                             },
                                         ]}
                                     >
@@ -286,7 +290,9 @@ export const Home: React.FC<HomeProps> = ({
                                             borderColor: theme.colors.border,
                                         },
                                     ]}
-                                    onPress={() => router.push(`/workout?id=${encodeURIComponent(item.id)}`)}
+                                    onPress={() =>
+                                        router.push(`/workout?id=${encodeURIComponent(item.id)}`)
+                                    }
                                 >
                                     <View style={styles.previewHeader}>
                                         <View

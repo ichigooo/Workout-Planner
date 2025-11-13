@@ -81,13 +81,21 @@ export default function WorkoutScreen() {
             setCategory(params.category);
         }
         // After setting category, attempt to center the selected chip
-        const idx = typeof params?.category === "string" && params.category.length > 0
-            ? Math.max(0, categories.findIndex((c) => c === (params.category as any))) + 1
-            : 0;
+        const idx =
+            typeof params?.category === "string" && params.category.length > 0
+                ? Math.max(
+                      0,
+                      categories.findIndex((c) => c === (params.category as any)),
+                  ) + 1
+                : 0;
         // Defer to next frame to ensure FlatList ref is measured
         requestAnimationFrame(() => {
             try {
-                chipListRef.current?.scrollToIndex?.({ index: idx, animated: true, viewPosition: 0.5 });
+                chipListRef.current?.scrollToIndex?.({
+                    index: idx,
+                    animated: true,
+                    viewPosition: 0.5,
+                });
             } catch {}
         });
     }, [params?.category]);
@@ -121,7 +129,9 @@ export default function WorkoutScreen() {
     const categories = Array.from(new Set(workouts.map((w) => w.category))).sort();
     const categoriesWithAll = ["All", ...categories];
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    const filteredByCategory = category ? workouts.filter((w) => w.category === category) : workouts;
+    const filteredByCategory = category
+        ? workouts.filter((w) => w.category === category)
+        : workouts;
     const filtered = normalizedQuery
         ? filteredByCategory.filter((w) => {
               const hay = `${w.title}\n${w.description ?? ""}\n${w.intensity ?? ""}`.toLowerCase();
@@ -134,7 +144,10 @@ export default function WorkoutScreen() {
         try {
             const idx =
                 category && categories.length > 0
-                    ? Math.max(0, categories.findIndex((c) => c === (category as any))) + 1 // +1 accounts for "All"
+                    ? Math.max(
+                          0,
+                          categories.findIndex((c) => c === (category as any)),
+                      ) + 1 // +1 accounts for "All"
                     : 0;
             if (chipListRef.current && idx >= 0) {
                 chipListRef.current.scrollToIndex?.({
@@ -195,7 +208,10 @@ export default function WorkoutScreen() {
                         // Retry by scrolling close to the desired offset; then try again
                         try {
                             const offset = Math.max(0, info.averageItemLength * info.index);
-                            (chipListRef.current as any)?.scrollToOffset?.({ offset, animated: true });
+                            (chipListRef.current as any)?.scrollToOffset?.({
+                                offset,
+                                animated: true,
+                            });
                             setTimeout(() => {
                                 (chipListRef.current as any)?.scrollToIndex?.({
                                     index: info.index,
@@ -243,16 +259,27 @@ export default function WorkoutScreen() {
                 />
                 {/* Auto-scroll chips to selected category when provided via params */}
                 {/* Execute after layout to ensure list is measured */}
-                <View onLayout={() => {
-                    try {
-                        const idx = category ? Math.max(0, categories.findIndex((c) => c === (category as any))) + 1 : 0;
-                        if (chipListRef.current && idx >= 0) {
-                            (chipListRef.current as any).scrollToIndex?.({ index: idx, animated: true, viewPosition: 0.5 });
+                <View
+                    onLayout={() => {
+                        try {
+                            const idx = category
+                                ? Math.max(
+                                      0,
+                                      categories.findIndex((c) => c === (category as any)),
+                                  ) + 1
+                                : 0;
+                            if (chipListRef.current && idx >= 0) {
+                                (chipListRef.current as any).scrollToIndex?.({
+                                    index: idx,
+                                    animated: true,
+                                    viewPosition: 0.5,
+                                });
+                            }
+                        } catch {
+                            // best-effort only
                         }
-                    } catch {
-                        // best-effort only
-                    }
-                }} />
+                    }}
+                />
                 {/* Search Bar */}
                 <View style={{ paddingHorizontal: 16, paddingBottom: 10 }}>
                     <View
@@ -279,11 +306,16 @@ export default function WorkoutScreen() {
                             accessibilityLabel="Search workouts"
                         />
                         {searchQuery.length > 0 ? (
-                            <TouchableOpacity onPress={() => setSearchQuery("")}
+                            <TouchableOpacity
+                                onPress={() => setSearchQuery("")}
                                 accessibilityRole="button"
                                 accessibilityLabel="Clear search"
                             >
-                                <Ionicons name="close-circle" size={18} color={theme.colors.subtext} />
+                                <Ionicons
+                                    name="close-circle"
+                                    size={18}
+                                    color={theme.colors.subtext}
+                                />
                             </TouchableOpacity>
                         ) : null}
                     </View>
@@ -318,7 +350,9 @@ export default function WorkoutScreen() {
                         workout={selected}
                         onEdit={(updated) => {
                             // replace in list and update selection so UI reflects new data
-                            setWorkouts((prev) => prev.map((w) => (w.id === updated.id ? updated : w)));
+                            setWorkouts((prev) =>
+                                prev.map((w) => (w.id === updated.id ? updated : w)),
+                            );
                             setSelected(updated);
                         }}
                         onDelete={() => {}}

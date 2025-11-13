@@ -46,11 +46,11 @@ export async function imageAssetToDataUrl(
 
     // First, try to resize/compress and get base64 via manipulator
     try {
-        const manipulated = await manipulateAsync(
-            asset.uri,
-            [{ resize: { width: maxWidth } }],
-            { compress, format: SaveFormat[format.toUpperCase() as keyof typeof SaveFormat], base64: true },
-        );
+        const manipulated = await manipulateAsync(asset.uri, [{ resize: { width: maxWidth } }], {
+            compress,
+            format: SaveFormat[format.toUpperCase() as keyof typeof SaveFormat],
+            base64: true,
+        });
         if (manipulated?.base64) {
             return {
                 dataUrl: `data:${contentType};base64,${manipulated.base64}`,
@@ -74,5 +74,3 @@ export async function imageAssetToDataUrl(
 
     throw new Error("IMAGE_BASE64_UNAVAILABLE");
 }
-
-

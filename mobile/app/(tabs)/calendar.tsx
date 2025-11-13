@@ -159,7 +159,8 @@ export default function CalendarScreen() {
                                     {s.workout.title}
                                 </Text>
                                 <Text style={{ color: theme.colors.subtext }}>
-                                    {s.workout.sets} sets × {s.workout.reps} reps • {s.workout.category}
+                                    {s.workout.sets} sets × {s.workout.reps} reps •{" "}
+                                    {s.workout.category}
                                 </Text>
                             </View>
                         ))

@@ -242,11 +242,14 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
                                     });
                                     if (!res.canceled && res.assets[0]) {
                                         try {
-                                            const { dataUrl } = await imageAssetToDataUrl(res.assets[0] as any, {
-                                                maxWidth: 1024,
-                                                compress: 0.8,
-                                                format: "jpeg",
-                                            });
+                                            const { dataUrl } = await imageAssetToDataUrl(
+                                                res.assets[0] as any,
+                                                {
+                                                    maxWidth: 1024,
+                                                    compress: 0.8,
+                                                    format: "jpeg",
+                                                },
+                                            );
                                             setImageUrl(dataUrl);
                                         } catch (e) {
                                             Alert.alert(
@@ -288,11 +291,14 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
                                     });
                                     if (!res.canceled && res.assets[0]) {
                                         try {
-                                            const { dataUrl } = await imageAssetToDataUrl(res.assets[0] as any, {
-                                                maxWidth: 1024,
-                                                compress: 0.8,
-                                                format: "jpeg",
-                                            });
+                                            const { dataUrl } = await imageAssetToDataUrl(
+                                                res.assets[0] as any,
+                                                {
+                                                    maxWidth: 1024,
+                                                    compress: 0.8,
+                                                    format: "jpeg",
+                                                },
+                                            );
                                             setImageUrl2(dataUrl);
                                         } catch (e) {
                                             Alert.alert(

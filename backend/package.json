@@ -1,36 +1,36 @@
 {
-  "name": "backend",
-  "version": "1.1.1",
-  "main": "server.js",
-  "scripts": {
-    "test": "mocha --exit --recursive --require ./test/setup.js --reporter spec",
-    "dev": "nodemon server.js",
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "@prisma/client": "^6.15.0",
-    "@supabase/supabase-js": "^2.57.0",
-    "cors": "^2.8.5",
-    "csv-parser": "^3.2.0",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "pg": "^8.16.3",
-    "postgres": "^3.4.7",
-    "prisma": "^6.15.0",
-    "xlsx": "^0.18.5"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/node": "^24.3.0",
-    "chai": "^4.3.8",
-    "mocha": "^10.2.0",
-    "nodemon": "^3.1.10",
-    "sinon": "^15.2.0",
-    "supertest": "^6.3.3"
-  }
+    "name": "backend",
+    "version": "1.1.1",
+    "main": "server.js",
+    "scripts": {
+        "test": "mocha --exit --recursive --require ./test/setup.js --reporter spec",
+        "dev": "nodemon server.js",
+        "start": "node server.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "description": "",
+    "dependencies": {
+        "@prisma/client": "^6.15.0",
+        "@supabase/supabase-js": "^2.57.0",
+        "cors": "^2.8.5",
+        "csv-parser": "^3.2.0",
+        "dotenv": "^17.2.2",
+        "express": "^5.1.0",
+        "pg": "^8.16.3",
+        "postgres": "^3.4.7",
+        "prisma": "^6.15.0",
+        "xlsx": "^0.18.5"
+    },
+    "devDependencies": {
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.3",
+        "@types/node": "^24.3.0",
+        "chai": "^4.3.8",
+        "mocha": "^10.2.0",
+        "nodemon": "^3.1.10",
+        "sinon": "^15.2.0",
+        "supertest": "^6.3.3"
+    }
 }
