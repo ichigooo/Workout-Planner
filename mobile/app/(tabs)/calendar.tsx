@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
 import { getTheme } from "@/src/theme";
 import { apiService } from "@/src/services/api";
+import { getCurrentPlanId } from "@/src/state/session";
 import { PlanItem, Workout } from "@/src/types";
 
 interface ScheduledWorkout {
@@ -25,25 +26,16 @@ export default function CalendarScreen() {
     useEffect(() => {
         let mounted = true;
         const load = async () => {
-            try {
-                const plans = await apiService.getWorkoutPlans();
-                if (!mounted) return;
-                if (plans && plans.length > 0) {
-                    const pid = plans[0].id;
-                    const now = new Date();
-                    const resp = await apiService.getPlanItemsByMonth(
-                        pid,
-                        now.getFullYear(),
-                        now.getMonth() + 1,
-                    );
-                    if (!mounted) return;
-                    setMonthItems(resp.items || []);
-                }
-            } catch (e) {
-                console.warn("CalendarView load error", e);
-            } finally {
-                // no-op
-            }
+            const pid = getCurrentPlanId()!;
+            if (!mounted) return;
+            const now = new Date();
+            const resp = await apiService.getPlanItemsByMonth(
+                pid,
+                now.getFullYear(),
+                now.getMonth() + 1,
+            );
+            if (!mounted) return;
+            setMonthItems(resp.items || []);
         };
         load();
         return () => {

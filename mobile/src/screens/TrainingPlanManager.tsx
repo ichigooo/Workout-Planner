@@ -15,6 +15,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
+import { planItemsCache } from "../services/planItemsCache";
+import { getCurrentPlanId } from "../state/session";
 import { WorkoutPlan, CreateWorkoutPlanRequest, Workout, PlanItem } from "../types";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -55,12 +57,12 @@ export const TrainingPlanManager: React.FC = () => {
         }, []),
     );
 
-    // Preload next 5 days of plan items when the manager mounts
+    // Preload cached plan items when the manager mounts
     useEffect(() => {
         const preload = async () => {
             if (plan && plan.id) {
                 try {
-                    await apiService.fetchAndCachePlanItemsNextDays(plan.id, 5);
+                    await planItemsCache.getCachedItems();
                 } catch (e) {
                     console.warn("preload plan items failed", e);
                 }
@@ -76,67 +78,79 @@ export const TrainingPlanManager: React.FC = () => {
             return;
         }
 
-        const cachedItems: PlanItem[] = apiService.getCachedPlanItems(plan.id) || [];
-        const today = new Date();
-        const nextDates: string[] = [];
-        for (let i = 0; i < 5; i++) {
-            const d = new Date(today);
-            d.setDate(today.getDate() + i);
-            const y = d.getFullYear();
-            const m = (d.getMonth() + 1).toString().padStart(2, "0");
-            const day = d.getDate().toString().padStart(2, "0");
-            nextDates.push(`${y}-${m}-${day}`);
-        }
-
-        const result: {
-            date: string;
-            label: string;
-            items: { id: string; workout: Workout; intensity?: string }[];
-        }[] = [];
-
-        nextDates.forEach((dateStr) => {
-            // construct a local Date using numeric components to avoid timezone shifts
-            const [yy, mm, dd] = dateStr.split("-").map((s) => parseInt(s, 10));
-            const dateObj = new Date(yy, mm - 1, dd);
-            const label = dateObj.toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-            });
-
-            const itemsForDate: { id: string; workout: Workout; intensity?: string }[] = [];
-            // explicit dated items from cache (handle both string dates and timestamps without UTC shift)
-            cachedItems.forEach((ci) => {
-                const sd = (ci as any).scheduledDate;
-                if (!sd) return;
-                let sdStr = "";
-                if (typeof sd === "string") {
-                    sdStr = sd.split("T")[0].split(" ")[0];
-                } else {
-                    const dt = new Date(sd as any);
-                    sdStr = `${dt.getFullYear()}-${(dt.getMonth() + 1).toString().padStart(2, "0")}-${dt.getDate().toString().padStart(2, "0")}`;
+        const buildSchedule = async () => {
+            try {
+                // Get items for next 5 days from centralized cache
+                const nextDaysItems = await planItemsCache.getItemsForNextDays(5);
+                const today = new Date();
+                const nextDates: string[] = [];
+                for (let i = 0; i < 5; i++) {
+                    const d = new Date(today);
+                    d.setDate(today.getDate() + i);
+                    const y = d.getFullYear();
+                    const m = (d.getMonth() + 1).toString().padStart(2, "0");
+                    const day = d.getDate().toString().padStart(2, "0");
+                    nextDates.push(`${y}-${m}-${day}`);
                 }
-                if (sdStr === dateStr && ci.workout) {
-                    itemsForDate.push({
-                        id: ci.id,
-                        workout: ci.workout,
-                        intensity: ci.intensity || ci.workout.intensity,
+
+                const result: {
+                    date: string;
+                    label: string;
+                    items: { id: string; workout: Workout; intensity?: string }[];
+                }[] = [];
+
+                nextDates.forEach((dateStr) => {
+                    // construct a local Date using numeric components to avoid timezone shifts
+                    const [yy, mm, dd] = dateStr.split("-").map((s) => parseInt(s, 10));
+                    const dateObj = new Date(yy, mm - 1, dd);
+                    const label = dateObj.toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
                     });
-                }
-            });
 
-            result.push({ date: dateStr, label, items: itemsForDate });
-        });
+                    const itemsForDate: { id: string; workout: Workout; intensity?: string }[] = [];
+                    // Filter items for this specific date
+                    nextDaysItems.forEach((ci) => {
+                        const sd = (ci as any).scheduledDate ?? (ci as any).scheduled_date;
+                        if (!sd) return;
+                        let sdStr = "";
+                        if (typeof sd === "string") {
+                            sdStr = sd.split("T")[0].split(" ")[0];
+                        } else {
+                            const dt = new Date(sd as any);
+                            sdStr = `${dt.getFullYear()}-${(dt.getMonth() + 1).toString().padStart(2, "0")}-${dt.getDate().toString().padStart(2, "0")}`;
+                        }
+                        if (sdStr === dateStr && ci.workout) {
+                            itemsForDate.push({
+                                id: ci.id,
+                                workout: ci.workout,
+                                intensity: ci.intensity || ci.workout.intensity,
+                            });
+                        }
+                    });
 
-        setScheduledByDate(result);
-    }, [plan]);
+                    result.push({ date: dateStr, label, items: itemsForDate });
+                });
+
+                setScheduledByDate(result);
+            } catch (error) {
+                console.error("Failed to build schedule:", error);
+                setScheduledByDate([]);
+            }
+        };
+
+        buildSchedule();
+    }, [plan?.id, refreshKey]);
 
     const loadPlan = async () => {
         try {
             setLoading(true);
-            const data = await apiService.getWorkoutPlans();
-            const routine = data && data.length > 0 ? data[0] : undefined;
-            setPlan(routine);
+            // Get plan data from cache - no API call needed!
+            const cachedPlanId = getCurrentPlanId();
+            const planData = await apiService.getWorkoutPlan(cachedPlanId!);
+            setPlan(planData);
+            console.log("[TrainingPlanManager] Loaded plan from API");
         } catch (e) {
             Alert.alert("Error", "Failed to load routine");
         } finally {

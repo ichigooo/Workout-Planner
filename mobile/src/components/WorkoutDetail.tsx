@@ -16,7 +16,9 @@ import { Calendar } from "react-native-calendars";
 import { Workout, CreateWorkoutRequest } from "../types";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
+import { getCurrentPlanId } from "../state/session";
 import { WorkoutForm } from "./WorkoutForm";
+import { planItemsCache } from "../services/planItemsCache";
 
 interface WorkoutDetailProps {
     workout: Workout;
@@ -76,12 +78,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
 
     const openAddSheet = async () => {
         setShowAddSheet(true);
-        try {
-            const plans = await apiService.getWorkoutPlans();
-            if (Array.isArray(plans) && plans.length > 0) setPlanId(plans[0].id);
-        } catch (e) {
-            console.warn("Failed to load plans for add sheet", e);
-        }
+        const cachedPlanId = getCurrentPlanId();
+        setPlanId(cachedPlanId!);
     };
 
     const handleAddToPlan = async () => {
@@ -99,7 +97,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
             await apiService.addWorkoutToPlanOnDates(planId, { workoutId: workout.id, dates });
             // refresh cache
             try {
-                await apiService.fetchAndCachePlanItems(planId);
+                await planItemsCache.getCachedItems();
             } catch (e) {
                 console.warn("Failed to refresh plan items cache", e);
             }

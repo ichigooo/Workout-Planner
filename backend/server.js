@@ -593,8 +593,56 @@ app.delete("/api/workouts/:id", async (req, res) => {
 });
 
 // Workout Plan routes
-app.get("/api/workout-plans", async (req, res) => {
+// Get or create workout plan ID for user
+app.get("/api/users/:userId/workout-plan-id", async (req, res) => {
     try {
+        const userId = req.params.userId;
+
+        // Try to get existing plans
+        const { data: existingPlans, error: fetchError } = await supabase
+            .from("workout_plans")
+            .select("id, name, userId, createdAt, updatedAt")
+            .eq("userId", userId)
+            .order("createdAt", { ascending: false })
+            .limit(1);
+
+        if (fetchError) throw fetchError;
+
+        // If user has a plan, return it
+        if (existingPlans && existingPlans.length > 0) {
+            const mapped = mapPlanRow(existingPlans[0]);
+            return res.json({ planId: mapped.id });
+        }
+
+        // No plans exist, create a default one
+        const defaultPlan = {
+            name: "My Workout Plan",
+            userId: userId,
+            startDate: new Date().toISOString().split("T")[0],
+            endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 90 days from now
+        };
+
+        const { data: newPlan, error: createError } = await supabase
+            .from("workout_plans")
+            .insert([defaultPlan])
+            .select("id, name, userId, createdAt, updatedAt")
+            .single();
+
+        if (createError) throw createError;
+
+        const mapped = mapPlanRow(newPlan);
+        res.json({ planId: mapped.id });
+    } catch (error) {
+        console.error("Error fetching/creating workout plan:", error);
+        res.status(500).json({ error: "Failed to get workout plan" });
+    }
+});
+
+// Get specific workout plan with all plan items
+app.get("/api/workout-plans/:id", async (req, res) => {
+    try {
+        const planId = req.params.id;
+
         const { data, error } = await supabase
             .from("workout_plans")
             .select(
@@ -606,14 +654,15 @@ app.get("/api/workout-plans", async (req, res) => {
         )
       `,
             )
-            .order("createdAt", { ascending: false });
+            .eq("id", planId)
+            .single();
 
         if (error) throw error;
-        const mapped = Array.isArray(data) ? data.map(mapPlanRow) : [];
+        const mapped = mapPlanRow(data);
         res.json(mapped);
     } catch (error) {
-        console.error("Error fetching workout plans:", error);
-        res.status(500).json({ error: "Failed to fetch workout plans" });
+        console.error("Error fetching workout plan:", error);
+        res.status(500).json({ error: "Failed to fetch workout plan" });
     }
 });
 
@@ -808,20 +857,43 @@ app.post("/api/workout-plans/:id/plan-items", async (req, res) => {
     }
 });
 
-// Get plan items for a specific workout plan, sorted by scheduled_date (limit 30)
+// Get plan items for a specific workout plan, sorted by scheduled_date
+// Query params:
+//   - start: YYYY-MM-DD (optional) - filter items on/after this date
+//   - end: YYYY-MM-DD (optional) - filter items on/before this date
+//   - limit: number (optional, default: 100, max: 1000) - max items to return
+// Returns: Array of plan items with embedded workout details, sorted by scheduled_date ASC
 app.get("/api/workout-plans/:id/plan-items-sorted", async (req, res) => {
     try {
         const planId = req.params.id;
         // Optional start date filter (YYYY-MM-DD); if provided, only return items scheduled on/after this date
         const start = req.query.start;
+        // Optional end date filter (YYYY-MM-DD); if provided, only return items scheduled on/before this date
+        const end = req.query.end;
+        // Optional limit parameter (default: 100, max: 1000 to prevent abuse)
+        const limitParam = req.query.limit;
+        let limit = 100;
+        if (limitParam) {
+            const parsedLimit = parseInt(limitParam, 10);
+            if (!isNaN(parsedLimit) && parsedLimit > 0 && parsedLimit <= 1000) {
+                limit = parsedLimit;
+            }
+        }
+
         let query = supabase
             .from("plan_items")
             .select("*, workouts(*)")
             .eq("workoutPlanId", planId);
+
         if (typeof start === "string" && start.length >= 10) {
             query = query.gte("scheduled_date", start);
         }
-        const { data, error } = await query.order("scheduled_date", { ascending: true }).limit(30);
+        if (typeof end === "string" && end.length >= 10) {
+            query = query.lte("scheduled_date", end);
+        }
+        const { data, error } = await query
+            .order("scheduled_date", { ascending: true })
+            .limit(limit);
 
         if (error) throw error;
 
