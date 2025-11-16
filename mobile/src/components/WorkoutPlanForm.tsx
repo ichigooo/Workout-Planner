@@ -14,6 +14,7 @@ import { RenderItemParams } from "react-native-draggable-flatlist";
 import { WorkoutPlan, CreateWorkoutPlanRequest, Workout } from "../types";
 import { CalendarWidget } from "./CalendarWidget";
 import { apiService } from "../services/api";
+import { getCurrentPlanId } from "../state/session";
 import { getTheme } from "../theme";
 
 interface WorkoutPlanFormProps {
@@ -77,16 +78,15 @@ export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
         try {
             setLoadingWorkouts(true);
             console.log("[WorkoutPlanForm] SETTING WORKOUT DATA..");
-            const [workouts, planData] = await Promise.all([
-                apiService.getWorkouts(),
-                apiService.getWorkoutPlans(),
-            ]);
+            const cachedPlanId = getCurrentPlanId();
+            const planData = await apiService.getWorkoutPlan(cachedPlanId!);
+            const workouts = await apiService.getWorkouts();
 
             console.log("[WorkoutPlanForm] GET WORKOUT DATA!");
             setAvailableWorkouts(workouts);
 
             // Convert plan items to scheduled workouts with days
-            const currentPlan = planData.find((p) => p.id === plan?.id);
+            const currentPlan = planData;
             const scheduled: WorkoutWithDays[] = [];
 
             // Group dated plan items by workout id and build scheduledDays from scheduledDate
@@ -205,8 +205,8 @@ export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
         if (plan) {
             try {
                 // Fetch current plan items from server to ensure we remove any deleted items
-                const planData = await apiService.getWorkoutPlans();
-                const currentPlan = planData.find((p) => p.id === plan.id);
+                const cachedPlanId = getCurrentPlanId();
+                const currentPlan = await apiService.getWorkoutPlan(cachedPlanId!);
 
                 // Remove all existing plan items for this plan (server-side source of truth)
                 if (currentPlan?.planItems?.length) {

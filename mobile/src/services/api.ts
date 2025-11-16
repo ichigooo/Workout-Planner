@@ -17,9 +17,7 @@ const CLOUD_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 const detectedLocalIp = getLocalIp();
 console.log("[api] detectedLocalIp", detectedLocalIp);
 
-const AUTO_LOCAL_URL = detectedLocalIp ? `http://${detectedLocalIp}:3001/api` : null;
-
-const LOCAL_BASE_URL = AUTO_LOCAL_URL ?? "http://localhost:3001/api";
+const LOCAL_BASE_URL = detectedLocalIp ? `http://${detectedLocalIp}:3001/api` : null;
 
 if (USE_CLOUD && !CLOUD_BASE_URL) {
     throw new Error("EXPO_PUBLIC_USE_CLOUD is true but EXPO_PUBLIC_API_BASE_URL is not set");
@@ -41,7 +39,10 @@ class ApiService {
         });
 
         if (!response.ok) {
-            throw new Error(`API request failed: ${response.statusText}`);
+            const method = options?.method ?? "GET";
+            throw new Error(
+                `API request failed: ${method} ${API_BASE_URL}${endpoint} - ${response.status} ${response.statusText}`,
+            );
         }
 
         // Handle empty responses (like 204 No Content)
@@ -58,10 +59,14 @@ class ApiService {
     }
 
     async createWorkout(workout: CreateWorkoutRequest): Promise<Workout> {
-        return this.request<Workout>("/workouts", {
+        const result = await this.request<Workout>("/workouts", {
             method: "POST",
             body: JSON.stringify(workout),
         });
+        // Invalidate workouts cache since we added a new workout
+        const { planItemsCache } = await import("./planItemsCache");
+        planItemsCache.invalidateWorkouts();
+        return result;
     }
 
     async getWorkout(id: string): Promise<Workout> {
@@ -69,21 +74,35 @@ class ApiService {
     }
 
     async updateWorkout(id: string, workout: Partial<Workout>): Promise<Workout> {
-        return this.request<Workout>(`/workouts/${id}`, {
+        const result = await this.request<Workout>(`/workouts/${id}`, {
             method: "PUT",
             body: JSON.stringify(workout),
         });
+        // Invalidate workouts cache since we updated a workout
+        const { planItemsCache } = await import("./planItemsCache");
+        planItemsCache.invalidateWorkouts();
+        return result;
     }
 
     async deleteWorkout(id: string): Promise<void> {
-        return this.request<void>(`/workouts/${id}`, {
+        await this.request<void>(`/workouts/${id}`, {
             method: "DELETE",
         });
+        // Invalidate workouts cache since we deleted a workout
+        const { planItemsCache } = await import("./planItemsCache");
+        planItemsCache.invalidateWorkouts();
     }
 
     // Workout Plan endpoints
-    async getWorkoutPlans(): Promise<WorkoutPlan[]> {
-        return this.request<WorkoutPlan[]>("/workout-plans");
+    async getWorkoutPlanId(userId: string): Promise<string> {
+        const response = await this.request<{ planId: string }>(
+            `/users/${encodeURIComponent(userId)}/workout-plan-id`,
+        );
+        return response.planId;
+    }
+
+    async getWorkoutPlan(planId: string): Promise<WorkoutPlan> {
+        return this.request<WorkoutPlan>(`/workout-plans/${planId}`);
     }
 
     async createWorkoutPlan(plan: CreateWorkoutPlanRequest): Promise<WorkoutPlan> {
@@ -112,8 +131,9 @@ class ApiService {
             method: "POST",
             body: JSON.stringify(payload),
         });
-        // update cache for this plan
-        this._planItemsCache[planId] = (this._planItemsCache[planId] || []).concat([res]);
+        // Invalidate cache since we added a new item
+        const { planItemsCache } = await import("./planItemsCache");
+        planItemsCache.invalidate();
         return res;
     }
 
@@ -132,19 +152,36 @@ class ApiService {
                 body: JSON.stringify(payload),
             },
         );
-        // normalize to array and update cache
-        const created = Array.isArray(res) ? res : [res];
-        this._planItemsCache[planId] = (this._planItemsCache[planId] || []).concat(created);
+        // Invalidate cache since we added new items
+        const { planItemsCache } = await import("./planItemsCache");
+        planItemsCache.invalidate();
         return res;
     }
 
     /**
-     * Get plan items for a specific workout plan sorted by scheduled_date (limit 30),
-     * starting from the given start date (YYYY-MM-DD). If startDate is omitted, the server default applies.
+     * Get plan items for a specific workout plan sorted by scheduled_date,
+     * optionally filtered by date range.
+     *
+     * @param planId The workout plan ID
+     * @param startDate Optional start date in YYYY-MM-DD format
+     * @param endDate Optional end date in YYYY-MM-DD format
+     * @param limit Optional limit for number of items to return (default: 100)
      */
-    async getPlanItemsSorted(planId: string, startDate?: string): Promise<PlanItem[]> {
-        const qs = startDate ? `?start=${encodeURIComponent(startDate)}` : "";
-        return this.request<PlanItem[]>(`/workout-plans/${planId}/plan-items-sorted${qs}`);
+    async getPlanItemsSorted(
+        planId: string,
+        startDate?: string,
+        endDate?: string,
+        limit?: number,
+    ): Promise<PlanItem[]> {
+        const params: string[] = [];
+        if (startDate) params.push(`start=${encodeURIComponent(startDate)}`);
+        if (endDate) params.push(`end=${encodeURIComponent(endDate)}`);
+        if (limit !== undefined) params.push(`limit=${limit}`);
+
+        const qs = params.length > 0 ? `?${params.join("&")}` : "";
+        const url = `/workout-plans/${planId}/plan-items-sorted${qs}`;
+
+        return this.request<PlanItem[]>(url);
     }
 
     /**
@@ -165,121 +202,13 @@ class ApiService {
         );
     }
 
-    // Simple in-memory cache for plan items (keyed by planId)
-    private _planItemsCache: { [planId: string]: PlanItem[] } = {};
-
-    /**
-     * Fetch plan items for the given plan id and store in local cache
-     */
-    async fetchAndCachePlanItems(planId: string): Promise<PlanItem[]> {
-        // Ask the server for items starting from today to avoid fetching the entire history
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = (today.getMonth() + 1).toString().padStart(2, "0");
-        const dd = today.getDate().toString().padStart(2, "0");
-        const todayStr = `${yyyy}-${mm}-${dd}`;
-        const items = await this.getPlanItemsSorted(planId, todayStr);
-
-        console.log("[api] fetched plan items starting from today:", items.length);
-        this._planItemsCache[planId] = items || [];
-        return this._planItemsCache[planId];
-    }
-
-    /**
-     * Fetch plan items only for the next `days` days starting today, cache and return them.
-     * Uses the month endpoint to avoid fetching the entire history.
-     */
-    async fetchAndCachePlanItemsNextDays(planId: string, days: number = 5): Promise<PlanItem[]> {
-        const today = new Date();
-        const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const end = new Date(start);
-        end.setDate(start.getDate() + (days - 1));
-
-        const monthsToFetch: Array<{ year: number; month: number }> = [];
-        const addMonth = (d: Date) => {
-            const y = d.getFullYear();
-            const m = d.getMonth() + 1;
-            if (!monthsToFetch.find((x) => x.year === y && x.month === m)) {
-                monthsToFetch.push({ year: y, month: m });
-            }
-        };
-        addMonth(start);
-        addMonth(end);
-
-        let collected: PlanItem[] = [];
-        for (const m of monthsToFetch) {
-            try {
-                const resp = await this.getPlanItemsByMonth(planId, m.year, m.month);
-                collected = collected.concat(resp.items || []);
-            } catch (e) {
-                console.warn("[api] getPlanItemsByMonth failed", m, e);
-            }
-        }
-
-        const toDateStr = (sd: unknown): string | null => {
-            if (!sd) return null;
-            if (typeof sd === "string") return sd.split("T")[0].split(" ")[0];
-            try {
-                const d = new Date(sd as any);
-                const y = d.getFullYear();
-                const mm = (d.getMonth() + 1).toString().padStart(2, "0");
-                const dd = d.getDate().toString().padStart(2, "0");
-                return `${y}-${mm}-${dd}`;
-            } catch {
-                return null;
-            }
-        };
-
-        const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-        const startStr = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
-        const endStr = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}`;
-
-        const inRange = (ds: string) => ds >= startStr && ds <= endStr;
-
-        const nextDays = (collected || [])
-            .map((it) => {
-                const sd = (it as any).scheduledDate ?? (it as any).scheduled_date;
-                const dateStr = toDateStr(sd);
-                return { it, dateStr };
-            })
-            .filter((row) => row.dateStr && inRange(row.dateStr))
-            .sort((a, b) => (a.dateStr! < b.dateStr! ? -1 : a.dateStr! > b.dateStr! ? 1 : 0))
-            .map((row) => row.it);
-
-        console.log(
-            "[api] cached next-days items:",
-            nextDays.length,
-            "range",
-            startStr,
-            "to",
-            endStr,
-        );
-        this._planItemsCache[planId] = nextDays;
-        return nextDays;
-    }
-
-    /**
-     * Return cached plan items for a plan id (or empty array)
-     */
-    getCachedPlanItems(planId: string): PlanItem[] {
-        return this._planItemsCache[planId] || [];
-    }
-
-    clearPlanItemsCache(planId?: string) {
-        if (planId) delete this._planItemsCache[planId];
-        else this._planItemsCache = {};
-    }
-
     async removeWorkoutFromPlan(planItemId: string): Promise<void> {
         await this.request<void>(`/plan-items/${planItemId}`, {
             method: "DELETE",
         });
-        // remove from cache entries
-        for (const pid of Object.keys(this._planItemsCache)) {
-            const list = this._planItemsCache[pid] || [];
-            const filtered = list.filter((item) => item.id !== planItemId);
-            if (filtered.length !== list.length) this._planItemsCache[pid] = filtered;
-        }
+        // Invalidate cache since we removed an item
+        const { planItemsCache } = await import("./planItemsCache");
+        planItemsCache.invalidate();
     }
 
     // User Profile Methods

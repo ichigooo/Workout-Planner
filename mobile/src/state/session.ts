@@ -2,6 +2,7 @@ import { apiService } from "../services/api";
 import { User } from "../types";
 
 let currentUserIdMemory: string | null = null;
+let currentPlanIdMemory: string | null = null;
 
 export function setCurrentUserId(userId: string | null) {
     currentUserIdMemory = userId;
@@ -9,6 +10,14 @@ export function setCurrentUserId(userId: string | null) {
 
 export function getCurrentUserId(): string | null {
     return currentUserIdMemory;
+}
+
+export function setCurrentPlanId(planId: string | null) {
+    currentPlanIdMemory = planId;
+}
+
+export function getCurrentPlanId(): string | null {
+    return currentPlanIdMemory;
 }
 
 export async function getCurrentUser(): Promise<User | null> {

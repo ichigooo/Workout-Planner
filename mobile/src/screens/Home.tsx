@@ -12,7 +12,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
-import { Workout, WorkoutPlan } from "../types";
+import { getCurrentPlanId } from "../state/session";
+import { planItemsCache } from "../services/planItemsCache";
+import { Workout, PlanItem } from "../types";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
@@ -22,6 +24,106 @@ interface HomeProps {
     onOpenLibrary: (category?: string) => void;
     onOpenRoutine?: () => void;
 }
+
+interface WeekSnapshotProps {
+    weekDates: string[];
+    weekWorkouts: Record<string, Workout[]>;
+    todayISO: string;
+    selectedDate: string;
+    setSelectedDate: (date: string) => void;
+    theme: ReturnType<typeof getTheme>;
+    styles: any;
+}
+
+const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
+    weekDates,
+    weekWorkouts,
+    todayISO,
+    selectedDate,
+    setSelectedDate,
+    theme,
+    styles,
+}) => {
+    const dayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    return (
+        <View style={styles.weekContainer}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>This week</Text>
+            <View
+                style={[
+                    styles.weekCard,
+                    { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                ]}
+            >
+                <View style={styles.weekRow}>
+                    {weekDates.map((dateISO) => {
+                        const [yy, mm, dd] = dateISO.split("-").map((s) => parseInt(s, 10));
+                        const d = new Date(yy, mm - 1, dd);
+                        const label = dayShort[d.getDay()];
+                        const hasWorkouts = (weekWorkouts[dateISO] || []).length > 0;
+                        const isToday = dateISO === todayISO;
+                        const isSelected = dateISO === selectedDate;
+                        return (
+                            <TouchableOpacity
+                                key={dateISO}
+                                style={[
+                                    styles.dayCol,
+                                    {
+                                        backgroundColor: isSelected
+                                            ? theme.colors.accent + "20"
+                                            : isToday
+                                              ? theme.colors.accent + "10"
+                                              : "transparent",
+                                        borderColor: isSelected
+                                            ? theme.colors.accent
+                                            : isToday
+                                              ? theme.colors.accent
+                                              : "transparent",
+                                        borderWidth: isSelected ? 2 : isToday ? 1 : 0,
+                                        borderRadius: 8,
+                                        paddingHorizontal: 6,
+                                        paddingVertical: 6,
+                                    },
+                                ]}
+                                onPress={() => setSelectedDate(dateISO)}
+                            >
+                                <Text
+                                    style={[
+                                        styles.dayLabel,
+                                        {
+                                            color: isSelected
+                                                ? theme.colors.accent
+                                                : isToday
+                                                  ? theme.colors.accent
+                                                  : theme.colors.subtext,
+                                            // Stronger weight so it appears distinctly bold on iOS/Android
+                                            fontWeight: isSelected
+                                                ? "900"
+                                                : isToday
+                                                  ? "800"
+                                                  : "600",
+                                        },
+                                    ]}
+                                >
+                                    {label}
+                                </Text>
+                                <View
+                                    style={[
+                                        styles.dot,
+                                        {
+                                            backgroundColor: hasWorkouts
+                                                ? theme.colors.accent
+                                                : theme.colors.border,
+                                        },
+                                    ]}
+                                />
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </View>
+        </View>
+    );
+};
 
 export const Home: React.FC<HomeProps> = ({
     onOpenCalendar,
@@ -34,7 +136,7 @@ export const Home: React.FC<HomeProps> = ({
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
 
     const [workouts, setWorkouts] = useState<Workout[]>([]);
-    const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
+    const [planItems, setPlanItems] = useState<PlanItem[]>([]);
     const [_loading, setLoading] = useState(true);
     const nowLocal = new Date();
     const localTodayStr = `${nowLocal.getFullYear()}-${(nowLocal.getMonth() + 1).toString().padStart(2, "0")}-${nowLocal.getDate().toString().padStart(2, "0")}`;
@@ -42,33 +144,25 @@ export const Home: React.FC<HomeProps> = ({
     const scrollRef = useScrollToTopOnTabPress();
 
     useEffect(() => {
-        loadWorkouts();
-        loadPlans();
+        const loadPreloadedData = async () => {
+            // Get workouts from planItemsCache (will use cache or fetch if needed)
+            const cachedWorkouts = await planItemsCache.getWorkouts();
+            setWorkouts(cachedWorkouts);
+
+            // Get plan items from cache (already preloaded in startup)
+            const cachedPlanItems = await planItemsCache.getCachedItems();
+            setPlanItems(cachedPlanItems);
+
+            console.log("[Home] Loaded cached workouts:", cachedWorkouts.length);
+            console.log("[Home] Loaded cached plan items:", cachedPlanItems.length);
+            setLoading(false);
+        };
+
+        loadPreloadedData();
     }, []);
 
     // scroll to top when tab is pressed (handled by hook)
     useEffect(() => {}, []);
-
-    const loadWorkouts = async () => {
-        try {
-            setLoading(true);
-            const data = await apiService.getWorkouts();
-            setWorkouts(data || []);
-        } catch (err) {
-            console.error("Failed to load workouts", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const loadPlans = async () => {
-        try {
-            const plans = await apiService.getWorkoutPlans();
-            setWorkoutPlans(plans || []);
-        } catch (err) {
-            console.error("Failed to load plans", err);
-        }
-    };
 
     // Helpers to compute scheduled workouts similar to CalendarView
     // Legacy frequency-based scheduling is deprecated. We'll only consider explicit dated plan items.
@@ -97,44 +191,20 @@ export const Home: React.FC<HomeProps> = ({
         const result: Record<string, Workout[]> = {};
         weekDates.forEach((d) => (result[d] = []));
 
-        workoutPlans.forEach((plan) => {
-            const planStart = plan.startDate
-                ? (() => {
-                      const p = plan.startDate.split("T")[0];
-                      const [y, m, d] = p.split("-").map((s) => parseInt(s, 10));
-                      return new Date(y, m - 1, d);
-                  })()
-                : null;
-            const planEnd = plan.endDate
-                ? (() => {
-                      const p = plan.endDate.split("T")[0];
-                      const [y, m, d] = p.split("-").map((s) => parseInt(s, 10));
-                      return new Date(y, m - 1, d);
-                  })()
-                : null;
-
-            weekDates.forEach((dateISO) => {
-                const [yy, mm, dd] = dateISO.split("-").map((s) => parseInt(s, 10));
-                const dateObj = new Date(yy, mm - 1, dd);
-                // If plan has no start/end date (perpetual routine), include for all dates
-                const inRange =
-                    (!planStart && !planEnd) ||
-                    (planStart && planEnd && dateObj >= planStart && dateObj <= planEnd);
-                if (inRange) {
-                    plan.planItems?.forEach((item) => {
-                        if (!item || !item.workout) return;
-                        const sd = (item as any).scheduledDate ?? (item as any).scheduled_date;
-                        if (!sd) return; // we only handle explicit dated items here
-                        const sdStr =
-                            typeof sd === "string"
-                                ? sd.split("T")[0].split(" ")[0]
-                                : (() => {
-                                      const dt = new Date(sd as any);
-                                      return `${dt.getFullYear()}-${(dt.getMonth() + 1).toString().padStart(2, "0")}-${dt.getDate().toString().padStart(2, "0")}`;
-                                  })();
-                        if (sdStr === dateISO) result[dateISO].push(item.workout);
-                    });
-                }
+        // Process plan items directly (no need for workout plan wrapper)
+        weekDates.forEach((dateISO) => {
+            planItems.forEach((item) => {
+                if (!item || !item.workout) return;
+                const sd = (item as any).scheduledDate ?? (item as any).scheduled_date;
+                if (!sd) return; // we only handle explicit dated items here
+                const sdStr =
+                    typeof sd === "string"
+                        ? sd.split("T")[0].split(" ")[0]
+                        : (() => {
+                              const dt = new Date(sd as any);
+                              return `${dt.getFullYear()}-${(dt.getMonth() + 1).toString().padStart(2, "0")}-${dt.getDate().toString().padStart(2, "0")}`;
+                          })();
+                if (sdStr === dateISO) result[dateISO].push(item.workout);
             });
         });
         return result;
@@ -151,89 +221,6 @@ export const Home: React.FC<HomeProps> = ({
             : weekDates.find((d) => (weekWorkouts[d] || []).length > 0) || selectedDate;
 
     const _todaysWorkout = workouts.length > 0 ? workouts[0] : undefined;
-
-    // Simple week snapshot UI
-    const WeekSnapshot = () => {
-        const dayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-        return (
-            <View style={styles.weekContainer}>
-                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>This week</Text>
-                <View
-                    style={[
-                        styles.weekCard,
-                        { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-                    ]}
-                >
-                    <View style={styles.weekRow}>
-                        {weekDates.map((dateISO) => {
-                            const [yy, mm, dd] = dateISO.split("-").map((s) => parseInt(s, 10));
-                            const d = new Date(yy, mm - 1, dd);
-                            const label = dayShort[d.getDay()];
-                            const hasWorkouts = (weekWorkouts[dateISO] || []).length > 0;
-                            const isToday = dateISO === todayISO;
-                            const isSelected = dateISO === selectedDate;
-                            return (
-                                <TouchableOpacity
-                                    key={dateISO}
-                                    style={[
-                                        styles.dayCol,
-                                        {
-                                            backgroundColor: isSelected
-                                                ? theme.colors.accent + "20"
-                                                : isToday
-                                                  ? theme.colors.accent + "10"
-                                                  : "transparent",
-                                            borderColor: isSelected
-                                                ? theme.colors.accent
-                                                : isToday
-                                                  ? theme.colors.accent
-                                                  : "transparent",
-                                            borderWidth: isSelected ? 2 : isToday ? 1 : 0,
-                                            borderRadius: 8,
-                                            paddingHorizontal: 6,
-                                            paddingVertical: 6,
-                                        },
-                                    ]}
-                                    onPress={() => setSelectedDate(dateISO)}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.dayLabel,
-                                            {
-                                                color: isSelected
-                                                    ? theme.colors.accent
-                                                    : isToday
-                                                      ? theme.colors.accent
-                                                      : theme.colors.subtext,
-                                                // Stronger weight so it appears distinctly bold on iOS/Android
-                                                fontWeight: isSelected
-                                                    ? "900"
-                                                    : isToday
-                                                      ? "800"
-                                                      : "600",
-                                            },
-                                        ]}
-                                    >
-                                        {label}
-                                    </Text>
-                                    <View
-                                        style={[
-                                            styles.dot,
-                                            {
-                                                backgroundColor: hasWorkouts
-                                                    ? theme.colors.accent
-                                                    : theme.colors.border,
-                                            },
-                                        ]}
-                                    />
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                </View>
-            </View>
-        );
-    };
 
     return (
         <SafeAreaView
@@ -261,7 +248,15 @@ export const Home: React.FC<HomeProps> = ({
 
                 <Text style={[styles.heroTitle, { color: theme.colors.text }]}>Good morning</Text>
 
-                <WeekSnapshot />
+                <WeekSnapshot
+                    weekDates={weekDates}
+                    weekWorkouts={weekWorkouts}
+                    todayISO={localTodayStr}
+                    selectedDate={selectedDate}
+                    setSelectedDate={setSelectedDate}
+                    theme={theme}
+                    styles={styles}
+                />
 
                 <View style={styles.section}>
                     <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>

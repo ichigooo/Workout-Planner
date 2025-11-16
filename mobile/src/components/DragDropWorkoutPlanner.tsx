@@ -11,6 +11,7 @@ import {
 import DraggableFlatList, { RenderItemParams } from "react-native-draggable-flatlist";
 import { Workout, WorkoutPlan } from "../types";
 import { apiService } from "../services/api";
+import { getCurrentPlanId } from "../state/session";
 import { getTheme } from "../theme";
 
 interface DragDropWorkoutPlannerProps {
@@ -50,15 +51,14 @@ export const DragDropWorkoutPlanner: React.FC<DragDropWorkoutPlannerProps> = ({
 
     const loadData = useCallback(async () => {
         try {
-            const [workouts, planData] = await Promise.all([
-                apiService.getWorkouts(),
-                apiService.getWorkoutPlans(),
-            ]);
+            const cachedPlanId = getCurrentPlanId();
+            const planData = await apiService.getWorkoutPlan(cachedPlanId!);
+            const workouts = await apiService.getWorkouts();
 
             setAvailableWorkouts(workouts);
 
             // Convert plan items to scheduled workouts with days
-            const currentPlan = planData.find((p) => p.id === plan.id);
+            const currentPlan = planData;
             const scheduled: WorkoutWithDays[] = [];
 
             currentPlan?.planItems?.forEach((planItem) => {
