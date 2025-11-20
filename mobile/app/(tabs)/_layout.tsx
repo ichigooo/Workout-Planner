@@ -1,9 +1,8 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useColorScheme } from "react-native";
 import { getTheme } from "@/src/theme";
-import initApp from "@/src/services/startup";
 
 function TabBarIcon(props: { name: React.ComponentProps<typeof Ionicons>["name"]; color: string }) {
     return <Ionicons size={24} style={{ marginBottom: -3 }} {...props} />;
@@ -12,11 +11,6 @@ function TabBarIcon(props: { name: React.ComponentProps<typeof Ionicons>["name"]
 export default function TabLayout() {
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
-
-    // Guaranteed preload at app start: fetch and cache plan items for the user's routine
-    useEffect(() => {
-        initApp();
-    }, []);
 
     return (
         <Tabs
