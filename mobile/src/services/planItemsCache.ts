@@ -106,6 +106,13 @@ class PlanItemsCache {
     }
 
     /**
+     * Get the current plan ID
+     */
+    getPlanId(): string {
+        return this.planId;
+    }
+
+    /**
      * Fetch plan items for the date window and cache them
      */
     async fetchAndCache(): Promise<PlanItem[]> {

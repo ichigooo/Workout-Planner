@@ -10,12 +10,11 @@ import {
     Alert,
     TextInput,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getTheme } from "@/src/theme";
 import { apiService } from "@/src/services/api";
 import { Workout, CreateWorkoutRequest } from "@/src/types";
 import { WorkoutCard } from "@/src/components/WorkoutCard";
-import { WorkoutDetail } from "@/src/components/WorkoutDetail";
 import { WorkoutForm } from "@/src/components/WorkoutForm";
 import { getCurrentUser, getCurrentUserId } from "@/src/state/session";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,11 +25,10 @@ export default function WorkoutScreen() {
     const params = useLocalSearchParams<{ category?: string; id?: string }>();
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
+    const insets = useSafeAreaInsets();
     const [workouts, setWorkouts] = useState<Workout[]>([]);
     const [loading, setLoading] = useState(true);
     const [category, setCategory] = useState<string | null>(null);
-    const [selected, setSelected] = useState<Workout | undefined>();
-    const [showDetail, setShowDetail] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -100,31 +98,12 @@ export default function WorkoutScreen() {
         });
     }, [params?.category]);
 
-    // When an id is provided, open the workout detail after data loads
+    // When an id is provided, navigate to workout detail
     useEffect(() => {
-        const openById = async () => {
-            if (typeof params?.id !== "string" || params.id.length === 0) return;
-            // Try to find in the loaded list first
-            const found = workouts.find((w) => w.id === params.id);
-            if (found) {
-                setSelected(found);
-                setShowDetail(true);
-                return;
-            }
-            // Fallback: fetch a single workout and show it
-            try {
-                const single = await apiService.getWorkout(params.id);
-                if (single) {
-                    setSelected(single);
-                    setShowDetail(true);
-                }
-            } catch {
-                // ignore
-            }
-        };
-        openById();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [params?.id, workouts.length]);
+        if (typeof params.id === "string" && params.id.length > 0) {
+            router.push(`/workout-detail?id=${encodeURIComponent(params.id)}`);
+        }
+    }, [params?.id, router]);
 
     const categories = Array.from(new Set(workouts.map((w) => w.category))).sort();
     const categoriesWithAll = ["All", ...categories];
@@ -162,13 +141,14 @@ export default function WorkoutScreen() {
     }, [category, categories.length]);
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg }]}>
+        <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
             <View
                 style={[
                     styles.header,
                     {
                         backgroundColor: theme.colors.surface,
                         borderBottomColor: theme.colors.border,
+                        paddingTop: insets.top,
                     },
                 ]}
             >
@@ -334,8 +314,7 @@ export default function WorkoutScreen() {
                         <WorkoutCard
                             workout={item}
                             onPress={() => {
-                                setSelected(item);
-                                setShowDetail(true);
+                                router.push(`/workout-detail?id=${encodeURIComponent(item.id)}`);
                             }}
                         />
                     )}
@@ -344,26 +323,9 @@ export default function WorkoutScreen() {
                 />
             )}
 
-            <Modal visible={showDetail} animationType="slide" presentationStyle="pageSheet">
-                {selected && (
-                    <WorkoutDetail
-                        workout={selected}
-                        onEdit={(updated) => {
-                            // replace in list and update selection so UI reflects new data
-                            setWorkouts((prev) =>
-                                prev.map((w) => (w.id === updated.id ? updated : w)),
-                            );
-                            setSelected(updated);
-                        }}
-                        onDelete={() => {}}
-                        onClose={() => setShowDetail(false)}
-                    />
-                )}
-            </Modal>
-
             {/* Create / Edit Workout */}
             <Modal visible={showForm} animationType="slide" presentationStyle="pageSheet">
-                <SafeAreaView style={{ flex: 1 }}>
+                <View style={{ flex: 1 }}>
                     <WorkoutForm
                         onCancel={() => setShowForm(false)}
                         onSubmit={async (payload: CreateWorkoutRequest) => {
@@ -377,9 +339,9 @@ export default function WorkoutScreen() {
                             }
                         }}
                     />
-                </SafeAreaView>
+                </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 }
 

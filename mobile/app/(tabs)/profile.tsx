@@ -1,7 +1,11 @@
 import React from "react";
 import { UserProfile } from "@/src/screens/UserProfile";
+import { getCurrentUserId } from "@/src/state/session";
 
 export default function ProfileScreen() {
-    const userId = "48a1fd02-b5d4-4942-9356-439ecfbf13f8";
+    const userId = getCurrentUserId();
+    if (!userId) {
+        return null; // or show an error/loading state
+    }
     return <UserProfile userId={userId} />;
 }

@@ -16,8 +16,7 @@ import { Calendar } from "react-native-calendars";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
 import { planItemsCache } from "../services/planItemsCache";
-import { getCurrentPlanId } from "../state/session";
-import { WorkoutPlan, CreateWorkoutPlanRequest, Workout, PlanItem } from "../types";
+import { CreateWorkoutPlanRequest, Workout, PlanItem } from "../types";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -26,7 +25,6 @@ export const TrainingPlanManager: React.FC = () => {
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
     const router = useRouter();
-    const [plan, setPlan] = useState<WorkoutPlan | undefined>();
     const [loading, setLoading] = useState(true);
     const [allWorkouts, setAllWorkouts] = useState<Workout[]>([]);
     const [showAddSheet, setShowAddSheet] = useState(false);
@@ -44,14 +42,13 @@ export const TrainingPlanManager: React.FC = () => {
     const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
-        loadPlan();
         loadWorkouts();
+        setLoading(false);
     }, []);
 
     // Refresh data whenever this tab gains focus
     useFocusEffect(
         useCallback(() => {
-            loadPlan();
             loadWorkouts();
             setRefreshKey((k) => k + 1);
         }, []),
@@ -60,24 +57,17 @@ export const TrainingPlanManager: React.FC = () => {
     // Preload cached plan items when the manager mounts
     useEffect(() => {
         const preload = async () => {
-            if (plan && plan.id) {
-                try {
-                    await planItemsCache.getCachedItems();
-                } catch (e) {
-                    console.warn("preload plan items failed", e);
-                }
+            try {
+                await planItemsCache.getCachedItems();
+            } catch (e) {
+                console.warn("preload plan items failed", e);
             }
         };
         preload();
-    }, [plan?.id, refreshKey]);
+    }, [refreshKey]);
 
     // Build scheduled items for the next 5 days, sectioned by date
     useEffect(() => {
-        if (!plan || !plan.id) {
-            setScheduledByDate([]);
-            return;
-        }
-
         const buildSchedule = async () => {
             try {
                 // Get items for next 5 days from centralized cache
@@ -141,22 +131,8 @@ export const TrainingPlanManager: React.FC = () => {
         };
 
         buildSchedule();
-    }, [plan?.id, refreshKey]);
+    }, [refreshKey]);
 
-    const loadPlan = async () => {
-        try {
-            setLoading(true);
-            // Get plan data from cache - no API call needed!
-            const cachedPlanId = getCurrentPlanId();
-            const planData = await apiService.getWorkoutPlan(cachedPlanId!);
-            setPlan(planData);
-            console.log("[TrainingPlanManager] Loaded plan from API");
-        } catch (e) {
-            Alert.alert("Error", "Failed to load routine");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const _handleSubmit = async (_payload: CreateWorkoutPlanRequest) => {
         // For now, delegate to the embedded form flow which already saves plan items via callbacks
@@ -199,7 +175,7 @@ export const TrainingPlanManager: React.FC = () => {
     }, [selectedCategory, categories]);
 
     const handleQuickAdd = async () => {
-        if (!plan || !selectedWorkoutId) return;
+        if (!selectedWorkoutId) return;
 
         const selectedDateStrings = Object.keys(selectedDates);
         if (selectedDateStrings.length === 0) {
@@ -209,7 +185,8 @@ export const TrainingPlanManager: React.FC = () => {
 
         try {
             // Use the new API to add workout to specific dates
-            await apiService.addWorkoutToPlanOnDates(plan.id, {
+            const planId = planItemsCache.getPlanId();
+            await apiService.addWorkoutToPlanOnDates(planId, {
                 workoutId: selectedWorkoutId,
                 dates: selectedDateStrings,
                 intensity: undefined,
@@ -220,8 +197,12 @@ export const TrainingPlanManager: React.FC = () => {
             setSelectedCategory(null);
             setSelectedDates({});
 
-            // Refresh the plan to show the new workouts
-            await loadPlan();
+            // Invalidate and refetch cache to get the latest plan items
+            planItemsCache.invalidate();
+            await planItemsCache.getCachedItems();
+
+            // Trigger refresh to update the UI
+            setRefreshKey((k) => k + 1);
 
             Alert.alert("Added", `Workout added to ${selectedDateStrings.length} date(s)`);
         } catch (e) {

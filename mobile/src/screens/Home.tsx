@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
     View,
     Text,
@@ -18,6 +18,7 @@ import { planItemsCache } from "../services/planItemsCache";
 import { Workout, PlanItem } from "../types";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 
 interface HomeProps {
     onOpenCalendar: () => void;
@@ -243,22 +244,42 @@ export const Home: React.FC<HomeProps> = ({
         loadPreloadedData();
     }, []);
 
-    useEffect(() => {
-        const loadUserProfile = async () => {
-            const userId = getCurrentUserId();
-            if (!userId) return;
+    const loadUserProfile = useCallback(async () => {
+        const userId = getCurrentUserId();
+        if (!userId) return;
 
-            try {
-                const user = await apiService.getUserProfile(userId);
-                setProfilePhoto(user.profilePhoto || null);
-                setUserName(user.name || null);
-            } catch (error) {
-                console.error("[Home] Error loading user profile:", error);
-            }
-        };
-
-        loadUserProfile();
+        try {
+            const user = await apiService.getUserProfile(userId);
+            setProfilePhoto(user.profilePhoto || null);
+            setUserName(user.name || null);
+        } catch (error) {
+            console.error("[Home] Error loading user profile:", error);
+        }
     }, []);
+
+    useEffect(() => {
+        loadUserProfile();
+    }, [loadUserProfile]);
+
+    // Refresh profile photo and cache when screen comes into focus (e.g., after updating profile or re-tapping tab)
+    useFocusEffect(
+        useCallback(() => {
+            loadUserProfile();
+            // Refresh cache when Home tab is tapped
+            const refreshCache = async () => {
+                try {
+                    planItemsCache.invalidate();
+                    await Promise.all([
+                        planItemsCache.getCachedItems(),
+                        planItemsCache.getWorkouts(),
+                    ]);
+                } catch (error) {
+                    console.error("[Home] Error refreshing cache:", error);
+                }
+            };
+            refreshCache();
+        }, [loadUserProfile])
+    );
 
     // scroll to top when tab is pressed (handled by hook)
     useEffect(() => {}, []);

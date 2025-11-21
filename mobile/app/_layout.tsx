@@ -49,11 +49,18 @@ function RootLayoutNav() {
 
     return (
         <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-            <Stack>
-                <Stack.Screen name="index" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="workout" options={{ headerShown: false }} />
-                <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+            <Stack
+                screenOptions={{
+                    gestureEnabled: true,
+                    gestureDirection: "horizontal",
+                    animation: "slide_from_right",
+                }}
+            >
+                <Stack.Screen name="index" options={{ headerShown: false, gestureEnabled: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
+                <Stack.Screen name="workout" options={{ headerShown: false, gestureEnabled: true }} />
+                <Stack.Screen name="workout-detail" options={{ headerShown: false, gestureEnabled: true }} />
+                <Stack.Screen name="modal" options={{ presentation: "modal", gestureEnabled: true }} />
             </Stack>
         </ThemeProvider>
     );

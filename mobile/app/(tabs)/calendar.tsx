@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, useColorScheme } from "react-native";
+import { View, Text, ScrollView, useColorScheme, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
 import { getTheme } from "@/src/theme";
 import { apiService } from "@/src/services/api";
 import { getCurrentPlanId } from "@/src/state/session";
 import { PlanItem, Workout } from "@/src/types";
+import { useRouter } from "expo-router";
 
 interface ScheduledWorkout {
     id: string;
@@ -15,6 +16,7 @@ interface ScheduledWorkout {
 }
 
 export default function CalendarScreen() {
+    const router = useRouter();
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
 
@@ -103,17 +105,34 @@ export default function CalendarScreen() {
 
     return (
         <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-            <ScrollView contentContainerStyle={{ padding: 16 }}>
+            <View
+                style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    backgroundColor: theme.colors.bg,
+                }}
+            >
+                <TouchableOpacity onPress={() => router.back()} style={{ width: 60 }}>
+                    <Text style={{ fontSize: 16, fontWeight: "600", color: theme.colors.accent }}>
+                        ‹ Back
+                    </Text>
+                </TouchableOpacity>
                 <Text
                     style={{
                         fontSize: 18,
                         fontWeight: "700",
                         color: theme.colors.text,
-                        marginBottom: 12,
+                        flex: 1,
+                        textAlign: "center",
                     }}
                 >
                     Workout Calendar
                 </Text>
+                <View style={{ width: 60 }} />
+            </View>
+            <ScrollView contentContainerStyle={{ padding: 16 }}>
                 <View
                     style={{
                         backgroundColor: scheme === "dark" ? "#1E1E1E" : "#FFFFFF",
