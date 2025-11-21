@@ -616,10 +616,12 @@ app.get("/api/users/:userId/workout-plan-id", async (req, res) => {
 
         // No plans exist, create a default one
         const defaultPlan = {
+            id: require("crypto").randomUUID(),
             name: "My Workout Plan",
             userId: userId,
             startDate: new Date().toISOString().split("T")[0],
             endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 90 days from now
+            updatedAt: new Date().toISOString(),
         };
 
         const { data: newPlan, error: createError } = await supabase

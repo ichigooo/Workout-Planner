@@ -21,8 +21,8 @@ export function initApp(): Promise<void> {
         try {
             console.log("[startup] initApp starting");
             // Establish a session user as early as possible (temporary until real auth)
-            const TEST_CURRENT_USER_ID = "48a1fd02-b5d4-4942-9356-439ecfbf13f8";
-
+            // const TEST_CURRENT_USER_ID = "48a1fd02-b5d4-4942-9356-439ecfbf13f8"; // linna
+            const TEST_CURRENT_USER_ID = "527efa72-5f2e-4a01-a618-25f3749cf69b";
             // Step 1: Set user session
             setCurrentUserId(TEST_CURRENT_USER_ID);
             console.log("[startup] User session established");

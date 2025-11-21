@@ -10,15 +10,16 @@ import {
     Alert,
     Modal,
     Dimensions,
-    SafeAreaView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
 import { Workout, CreateWorkoutRequest } from "../types";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
-import { getCurrentPlanId } from "../state/session";
+import { getCurrentPlanId, getCurrentUserId, getCurrentUser } from "../state/session";
 import { WorkoutForm } from "./WorkoutForm";
 import { planItemsCache } from "../services/planItemsCache";
+import { useRouter } from "expo-router";
 
 interface WorkoutDetailProps {
     workout: Workout;
@@ -33,8 +34,10 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     onDelete,
     onClose,
 }) => {
+    const router = useRouter();
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
+    const insets = useSafeAreaInsets();
 
     // Menu state
     const [showMenu, setShowMenu] = useState(false);
@@ -46,15 +49,28 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     const [adding, setAdding] = useState(false);
     const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
 
-    // Temporary: test user id used elsewhere in the app for local testing
-    const TEST_CURRENT_USER_ID = "48a1fd02-b5d4-4942-9356-439ecfbf13f8";
-
     useEffect(() => {
         let mounted = true;
         (async () => {
-            const u = await apiService.getUserProfile(TEST_CURRENT_USER_ID);
-            if (!mounted) return;
-            setIsCurrentUserAdmin(u.isAdmin);
+            try {
+                // Try to get current user from session first
+                const current = await getCurrentUser();
+                if (!mounted) return;
+                if (current) {
+                    setIsCurrentUserAdmin(Boolean(current.isAdmin));
+                    return;
+                }
+                // Fallback: if only an id is available, fetch it
+                const userId = getCurrentUserId();
+                if (userId) {
+                    const u = await apiService.getUserProfile(userId);
+                    if (!mounted) return;
+                    setIsCurrentUserAdmin(Boolean(u?.isAdmin));
+                }
+            } catch (error) {
+                console.error("Error checking admin status:", error);
+                setIsCurrentUserAdmin(false);
+            }
         })();
         return () => {
             mounted = false;
@@ -120,10 +136,11 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                     {
                         backgroundColor: theme.colors.surface,
                         borderBottomColor: theme.colors.border,
+                        paddingTop: insets.top,
                     },
                 ]}
             >
-                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
                     <Text style={[styles.closeButtonText, { color: theme.colors.accent }]}>✕</Text>
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
@@ -133,7 +150,9 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                     <TouchableOpacity onPress={() => setShowMenu(true)} style={styles.menuButton}>
                         <Text style={[styles.menuButtonText, { color: theme.colors.text }]}>⋯</Text>
                     </TouchableOpacity>
-                ) : null}
+                ) : (
+                    <View style={styles.menuButton} />
+                )}
             </View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -276,14 +295,6 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                             </View>
                         </View>
                     </View>
-
-                    {/* Add to Plan Button */}
-                    <TouchableOpacity
-                        style={[styles.addToPlanButton, { backgroundColor: theme.colors.accent }]}
-                        onPress={openAddSheet}
-                    >
-                        <Text style={styles.addToPlanButtonText}>Add to Plan</Text>
-                    </TouchableOpacity>
                 </View>
             </ScrollView>
 
@@ -331,7 +342,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                 presentationStyle="pageSheet"
                 onRequestClose={() => setShowEditModal(false)}
             >
-                <SafeAreaView style={{ flex: 1 }}>
+                <View style={{ flex: 1 }}>
                     <WorkoutForm
                         workout={workout}
                         onCancel={() => setShowEditModal(false)}
@@ -352,7 +363,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                             }
                         }}
                     />
-                </SafeAreaView>
+                </View>
             </Modal>
             <Modal
                 visible={showAddSheet}
@@ -360,7 +371,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                 presentationStyle="pageSheet"
                 onRequestClose={() => setShowAddSheet(false)}
             >
-                <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.colors.bg }]}>
+                <View style={[styles.modalContainer, { backgroundColor: theme.colors.bg }]}>
                     <View
                         style={[
                             styles.modalHeader,
@@ -421,7 +432,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                             </Text>
                         </TouchableOpacity>
                     </ScrollView>
-                </SafeAreaView>
+                </View>
             </Modal>
         </View>
     );
