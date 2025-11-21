@@ -112,21 +112,48 @@ export default function CalendarScreen() {
                         marginBottom: 12,
                     }}
                 >
-                    Calendar
+                    Workout Calendar
                 </Text>
-                <Calendar
-                    onDayPress={(day) => setSelectedDate(day.dateString)}
-                    markedDates={getMarkedDates()}
-                    markingType="custom"
-                    theme={{
-                        backgroundColor: theme.colors.surface,
-                        calendarBackground: theme.colors.surface,
-                        textSectionTitleColor: theme.colors.text,
-                        selectedDayBackgroundColor: theme.colors.accent,
-                        selectedDayTextColor: "#fff",
-                        todayTextColor: theme.colors.accent,
+                <View
+                    style={{
+                        backgroundColor: scheme === "dark" ? "#1E1E1E" : "#FFFFFF",
+                        borderRadius: 16,
+                        padding: 8,
+                        marginBottom: 16,
                     }}
-                />
+                >
+                    <Calendar
+                        onDayPress={(day) => setSelectedDate(day.dateString)}
+                        markedDates={getMarkedDates()}
+                        markingType="custom"
+                        style={{
+                            backgroundColor: scheme === "dark" ? "#1E1E1E" : "#FFFFFF",
+                        }}
+                        theme={{
+                            backgroundColor: scheme === "dark" ? "#1E1E1E" : "#FFFFFF",
+                            calendarBackground: scheme === "dark" ? "#1E1E1E" : "#FFFFFF",
+                            textSectionTitleColor: scheme === "dark" ? "#FFFFFF" : "#000000",
+                            textSectionTitleDisabledColor: scheme === "dark" ? "#888888" : "#999999",
+                            selectedDayBackgroundColor: theme.colors.accent,
+                            selectedDayTextColor: "#FFFFFF",
+                            todayTextColor: theme.colors.accent,
+                            dayTextColor: scheme === "dark" ? "#FFFFFF" : "#000000",
+                            textDisabledColor: scheme === "dark" ? "#555555" : "#BBBBBB",
+                            monthTextColor: scheme === "dark" ? "#FFFFFF" : "#000000",
+                            textDayFontSize: 16,
+                            textDayFontWeight: "700",
+                            textMonthFontSize: 20,
+                            textMonthFontWeight: "700",
+                            textDayHeaderFontSize: 14,
+                            textDayHeaderFontWeight: "700",
+                            arrowColor: theme.colors.accent,
+                            disabledArrowColor: scheme === "dark" ? "#555555" : "#BBBBBB",
+                            dotColor: theme.colors.accent,
+                            selectedDotColor: "#FFFFFF",
+                            indicatorColor: theme.colors.accent,
+                        }}
+                    />
+                </View>
 
                 <View style={{ marginTop: 16 }}>
                     <Text style={{ color: theme.colors.text, fontWeight: "700", marginBottom: 8 }}>

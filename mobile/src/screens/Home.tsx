@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
     View,
     Text,
@@ -7,12 +7,13 @@ import {
     ScrollView,
     Image,
     useColorScheme,
+    Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
-import { getCurrentPlanId } from "../state/session";
+import { getCurrentPlanId, getCurrentUserId } from "../state/session";
 import { planItemsCache } from "../services/planItemsCache";
 import { Workout, PlanItem } from "../types";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,6 +36,45 @@ interface WeekSnapshotProps {
     styles: any;
 }
 
+// Helper function to get greeting based on time of day
+const getTimeBasedGreeting = (): string => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+        return "Good morning";
+    } else if (hour >= 12 && hour < 17) {
+        return "Good afternoon";
+    } else if (hour >= 17 && hour < 21) {
+        return "Good evening";
+    } else {
+        return "Good night";
+    }
+};
+
+// Helper function to get time-appropriate emoji
+const getTimeBasedEmoji = (): string => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 17) {
+        return "☀️"; // Sunrise for morning
+    } else {
+        return "🌙"; // Moon for night
+    }
+};
+
+// Mapping of category names to emojis
+const getCategoryEmoji = (category: string): string => {
+    const categoryMap: Record<string, string> = {
+        "Cardio": "🏃‍♀️",
+        "Climbing - Endurance": "🧗‍♀️",
+        "Climbing - Warm Up": "🧎‍♀️",
+        "Climbing - Power": "⚡️",
+        "Core": "🎯",
+        "Legs": "🏋️‍♂️",
+        "Upper Body - Pull": "💪",
+        "Upper Body - Push": "💪",
+    };
+    return categoryMap[category] || "🏋️";
+};
+
 const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
     weekDates,
     weekWorkouts,
@@ -45,13 +85,48 @@ const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
     styles,
 }) => {
     const dayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dotAnimations = useRef<Record<string, Animated.Value>>({});
+
+    // Initialize animations for each day
+    weekDates.forEach((dateISO) => {
+        if (!dotAnimations.current[dateISO]) {
+            dotAnimations.current[dateISO] = new Animated.Value(1);
+        }
+    });
+
+    const handleDayPress = (dateISO: string) => {
+        setSelectedDate(dateISO);
+        
+        // Animate the dot when tapped
+        const anim = dotAnimations.current[dateISO];
+        if (anim) {
+            Animated.sequence([
+                Animated.spring(anim, {
+                    toValue: 1.3,
+                    useNativeDriver: true,
+                    tension: 300,
+                    friction: 7,
+                }),
+                Animated.spring(anim, {
+                    toValue: 1,
+                    useNativeDriver: true,
+                    tension: 300,
+                    friction: 7,
+                }),
+            ]).start();
+        }
+    };
+
     return (
         <View style={styles.weekContainer}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>This week</Text>
             <View
                 style={[
                     styles.weekCard,
-                    { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                    {
+                        backgroundColor: theme.colors.surface + "E6",
+                        borderColor: theme.colors.border + "40",
+                    },
                 ]}
             >
                 <View style={styles.weekRow}>
@@ -62,60 +137,65 @@ const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
                         const hasWorkouts = (weekWorkouts[dateISO] || []).length > 0;
                         const isToday = dateISO === todayISO;
                         const isSelected = dateISO === selectedDate;
+                        const dotScale = dotAnimations.current[dateISO] || new Animated.Value(1);
+                        
                         return (
                             <TouchableOpacity
                                 key={dateISO}
                                 style={[
                                     styles.dayCol,
-                                    {
-                                        backgroundColor: isSelected
-                                            ? theme.colors.accent + "20"
-                                            : isToday
-                                              ? theme.colors.accent + "10"
-                                              : "transparent",
-                                        borderColor: isSelected
-                                            ? theme.colors.accent
-                                            : isToday
-                                              ? theme.colors.accent
-                                              : "transparent",
-                                        borderWidth: isSelected ? 2 : isToday ? 1 : 0,
-                                        borderRadius: 8,
-                                        paddingHorizontal: 6,
-                                        paddingVertical: 6,
-                                    },
                                 ]}
-                                onPress={() => setSelectedDate(dateISO)}
+                                onPress={() => handleDayPress(dateISO)}
+                                activeOpacity={0.7}
                             >
-                                <Text
+                                <View
                                     style={[
-                                        styles.dayLabel,
+                                        styles.dayCircle,
                                         {
-                                            color: isSelected
+                                            backgroundColor: isSelected
                                                 ? theme.colors.accent
-                                                : isToday
-                                                  ? theme.colors.accent
-                                                  : theme.colors.subtext,
-                                            // Stronger weight so it appears distinctly bold on iOS/Android
-                                            fontWeight: isSelected
-                                                ? "900"
-                                                : isToday
-                                                  ? "800"
-                                                  : "600",
+                                                : "transparent",
                                         },
                                     ]}
                                 >
-                                    {label}
-                                </Text>
-                                <View
-                                    style={[
-                                        styles.dot,
-                                        {
-                                            backgroundColor: hasWorkouts
-                                                ? theme.colors.accent
-                                                : theme.colors.border,
-                                        },
-                                    ]}
-                                />
+                                    <Text
+                                        style={[
+                                            styles.dayLabel,
+                                            {
+                                                color: isSelected
+                                                    ? "#FFFFFF"
+                                                    : isToday
+                                                      ? theme.colors.accent
+                                                      : theme.colors.subtext,
+                                                fontWeight: isSelected
+                                                    ? "700"
+                                                    : isToday
+                                                      ? "600"
+                                                      : "500",
+                                            },
+                                        ]}
+                                    >
+                                        {label}
+                                    </Text>
+                                    <Animated.View
+                                        style={[
+                                            styles.dot,
+                                            {
+                                                backgroundColor: hasWorkouts
+                                                    ? (isSelected ? "#FFFFFF" : theme.colors.accent)
+                                                    : theme.colors.border,
+                                                transform: [
+                                                    {
+                                                        scale: dotScale,
+                                                    },
+                                                ],
+                                                width: 6,
+                                                height: 6,
+                                                borderRadius: 3,
+                                            },
+                                        ]}
+                                    />
+                                </View>
                             </TouchableOpacity>
                         );
                     })}
@@ -138,6 +218,8 @@ export const Home: React.FC<HomeProps> = ({
     const [workouts, setWorkouts] = useState<Workout[]>([]);
     const [planItems, setPlanItems] = useState<PlanItem[]>([]);
     const [_loading, setLoading] = useState(true);
+    const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+    const [userName, setUserName] = useState<string | null>(null);
     const nowLocal = new Date();
     const localTodayStr = `${nowLocal.getFullYear()}-${(nowLocal.getMonth() + 1).toString().padStart(2, "0")}-${nowLocal.getDate().toString().padStart(2, "0")}`;
     const [selectedDate, setSelectedDate] = useState<string>(localTodayStr);
@@ -159,6 +241,23 @@ export const Home: React.FC<HomeProps> = ({
         };
 
         loadPreloadedData();
+    }, []);
+
+    useEffect(() => {
+        const loadUserProfile = async () => {
+            const userId = getCurrentUserId();
+            if (!userId) return;
+
+            try {
+                const user = await apiService.getUserProfile(userId);
+                setProfilePhoto(user.profilePhoto || null);
+                setUserName(user.name || null);
+            } catch (error) {
+                console.error("[Home] Error loading user profile:", error);
+            }
+        };
+
+        loadUserProfile();
     }, []);
 
     // scroll to top when tab is pressed (handled by hook)
@@ -235,10 +334,22 @@ export const Home: React.FC<HomeProps> = ({
             >
                 <View style={styles.headerRow}>
                     <TouchableOpacity onPress={onOpenProfile} style={styles.iconButton}>
-                        <Image
-                            source={require("../../assets/images/catt.png")}
-                            style={styles.profileImage}
-                        />
+                        {profilePhoto ? (
+                            <Image
+                                source={{ uri: profilePhoto }}
+                                style={styles.profileImage}
+                            />
+                        ) : (
+                            <View
+                                style={[
+                                    styles.profileImage,
+                                    styles.profileImagePlaceholder,
+                                    { backgroundColor: theme.colors.surface },
+                                ]}
+                            >
+                                <Ionicons name="person" size={20} color={theme.colors.subtext} />
+                            </View>
+                        )}
                     </TouchableOpacity>
 
                     <TouchableOpacity onPress={onOpenCalendar} style={styles.iconButton}>
@@ -246,7 +357,10 @@ export const Home: React.FC<HomeProps> = ({
                     </TouchableOpacity>
                 </View>
 
-                <Text style={[styles.heroTitle, { color: theme.colors.text }]}>Good morning</Text>
+                <Text style={[styles.heroTitle, { color: theme.colors.text }]}>
+                    {getTimeBasedGreeting()}
+                    {userName ? `, ${userName}` : ""} {getTimeBasedEmoji()}
+                </Text>
 
                 <WeekSnapshot
                     weekDates={weekDates}
@@ -353,41 +467,49 @@ export const Home: React.FC<HomeProps> = ({
                     <View style={styles.categoryGrid}>
                         {Array.from(new Set(workouts.map((w) => w.category)))
                             .sort()
-                            .map((cat) => (
-                                <TouchableOpacity
-                                    key={String(cat)}
-                                    style={[
-                                        styles.categoryTile,
-                                        {
-                                            backgroundColor: theme.colors.surface,
-                                            borderColor: theme.colors.border,
-                                            shadowColor: "#000",
-                                            shadowOpacity: 0.08,
-                                            shadowOffset: { width: 0, height: 4 },
-                                            shadowRadius: 8,
-                                            elevation: 3,
-                                        },
-                                    ]}
-                                    onPress={() => onOpenLibrary && onOpenLibrary(String(cat))}
-                                    activeOpacity={0.85}
-                                >
-                                    <Ionicons
-                                        name="barbell-outline"
-                                        size={28}
-                                        color={theme.colors.accent}
-                                        style={{ marginBottom: 8 }}
-                                    />
-                                    <Text
+                            .map((cat) => {
+                                const workoutCount = workouts.filter((w) => w.category === cat).length;
+                                return (
+                                    <TouchableOpacity
+                                        key={String(cat)}
                                         style={[
-                                            styles.categoryTileText,
-                                            { color: theme.colors.text },
+                                            styles.categoryTile,
+                                            {
+                                                backgroundColor: theme.colors.surface,
+                                                borderColor: theme.colors.border,
+                                                shadowColor: "#000",
+                                                shadowOpacity: 0.08,
+                                                shadowOffset: { width: 0, height: 4 },
+                                                shadowRadius: 8,
+                                                elevation: 3,
+                                            },
                                         ]}
-                                        numberOfLines={1}
+                                        onPress={() => onOpenLibrary && onOpenLibrary(String(cat))}
+                                        activeOpacity={0.85}
                                     >
-                                        {cat}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                        <Text style={styles.categoryTileEmoji}>
+                                            {getCategoryEmoji(cat)}
+                                        </Text>
+                                        <Text
+                                            style={[
+                                                styles.categoryTileText,
+                                                { color: theme.colors.text },
+                                            ]}
+                                            numberOfLines={1}
+                                        >
+                                            {cat}
+                                        </Text>
+                                        <Text
+                                            style={[
+                                                styles.categoryTileCount,
+                                                { color: theme.colors.subtext },
+                                            ]}
+                                        >
+                                            {workoutCount} {workoutCount === 1 ? "workout" : "workouts"}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
                     </View>
                 </View>
             </ScrollView>
@@ -424,6 +546,10 @@ const styles = StyleSheet.create({
         height: 36,
         borderRadius: 18,
     },
+    profileImagePlaceholder: {
+        alignItems: "center",
+        justifyContent: "center",
+    },
     heroTitle: {
         fontSize: 28,
         fontWeight: "700",
@@ -433,9 +559,10 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     weekCard: {
-        padding: 12,
-        borderRadius: 12,
+        padding: 16,
+        borderRadius: 16,
         borderWidth: StyleSheet.hairlineWidth,
+        overflow: "hidden",
     },
     weekRow: {
         flexDirection: "row",
@@ -443,15 +570,23 @@ const styles = StyleSheet.create({
     },
     dayCol: {
         alignItems: "center",
+        justifyContent: "center",
+    },
+    dayCircle: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        alignItems: "center",
+        justifyContent: "center",
     },
     dayLabel: {
-        fontSize: 12,
-        marginBottom: 6,
+        fontSize: 13,
+        marginBottom: 4,
     },
     dot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
     },
     section: {
         marginBottom: 20,
@@ -536,10 +671,20 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         padding: 12,
     },
+    categoryTileEmoji: {
+        fontSize: 32,
+        marginBottom: 8,
+    },
     categoryTileText: {
         fontSize: 16,
         fontWeight: "700",
         textAlign: "center",
+    },
+    categoryTileCount: {
+        fontSize: 12,
+        fontWeight: "400",
+        textAlign: "center",
+        marginTop: 4,
     },
 });
 
