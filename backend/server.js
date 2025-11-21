@@ -363,44 +363,6 @@ function mapPlanRow(row) {
         planItems: Array.isArray(row.plan_items) ? row.plan_items.map(mapPlanItemRow) : [],
     };
 }
-/**
- * resolveUserIdOrCreateFallback
- * Verifies the provided userId exists. If missing, returns an existing test user id
- * or creates a fallback user and returns its id. Used by server-side creation flows
- * where a user context is required.
- * @param {string|null} providedUserId
- * @returns {Promise<string>} user id to use
- */
-async function resolveUserIdOrCreateFallback(providedUserId) {
-    if (providedUserId) {
-        // Validate the provided user exists
-        const { data: existing, error: findErr } = await supabase
-            .from("users")
-            .select("id")
-            .eq("id", providedUserId)
-            .single();
-        if (!findErr && existing?.id) return existing.id;
-    }
-
-    // Try to use an existing user
-    const { data: anyUser } = await supabase
-        .from("users")
-        .select("id")
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-    if (anyUser?.id) return anyUser.id;
-
-    // Create a fallback user
-    const { data: created, error: createErr } = await supabase
-        .from("users")
-        .insert([{ email: "test@example.com", name: "Test User" }])
-        .select("id")
-        .single();
-    if (createErr) throw createErr;
-    return created.id;
-}
-
 // Health check endpoint
 app.get("/health", (req, res) => {
     res.json({ status: "OK", timestamp: new Date().toISOString() });
@@ -762,7 +724,7 @@ app.post("/api/workout-plans", async (req, res) => {
             name: body.isRoutine ? null : (body.name ?? null),
             startDate: body.isRoutine ? null : (body.startDate ?? null),
             endDate: body.isRoutine ? null : (body.endDate ?? null),
-            userId: await resolveUserIdOrCreateFallback(body.userId),
+            userId: body.userId,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };

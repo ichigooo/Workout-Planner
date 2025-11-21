@@ -2,23 +2,62 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { LandingScreen } from "@/src/screens/LandingScreen";
 import initApp from "@/src/services/startup";
+import { loadStoredUserId } from "@/src/state/session";
 
 export default function Index() {
     const router = useRouter();
     const [isInitializing, setIsInitializing] = useState(false);
 
-    // Start initialization as soon as landing screen loads
+    // Start initialization in the background (non-blocking)
     useEffect(() => {
-        initApp().catch((error) => {
-            console.error("[Index] Initialization failed:", error);
-        });
+        // Try to initialize if user is already logged in
+        const tryInitialize = async () => {
+            try {
+                const userId = await loadStoredUserId();
+                if (userId) {
+                    // User is logged in, start initialization in background
+                    console.log("[Index] User found, initializing app in background");
+                    initApp().catch((error) => {
+                        console.error("[Index] Background initialization failed:", error);
+                    });
+                }
+            } catch (error) {
+                console.error("[Index] Failed to check for user:", error);
+            }
+        };
+
+        tryInitialize();
     }, []);
 
-    const handleBegin = () => {
-        // Navigate immediately - initialization is already running in background
-        router.replace("/(tabs)");
+    const handleBegin = async () => {
+        try {
+            setIsInitializing(true);
+            
+            // Check if user is logged in
+            const userId = await loadStoredUserId();
+            
+            if (!userId) {
+                // No user logged in, navigate to sign-in
+                console.log("[Index] No user found, redirecting to sign-in");
+                router.replace("/(auth)/sign-in");
+                return;
+            }
+            
+            // User is logged in, ensure app is initialized
+            console.log("[Index] User found, ensuring app is initialized");
+            await initApp();
+            
+            // Navigate to main app
+            router.replace("/(tabs)");
+        } catch (error) {
+            console.error("[Index] Failed to initialize or navigate:", error);
+            // On error, redirect to sign-in as fallback
+            router.replace("/(auth)/sign-in");
+        } finally {
+            setIsInitializing(false);
+        }
     };
 
-    // Show landing screen
+    // Always show landing screen first
     return <LandingScreen onBegin={handleBegin} isLoading={isInitializing} />;
 }

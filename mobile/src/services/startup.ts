@@ -1,5 +1,5 @@
 import { apiService } from "./api";
-import { setCurrentUserId, setCurrentPlanId } from "../state/session";
+import { setCurrentUserId, setCurrentPlanId, loadStoredUserId } from "../state/session";
 import { planItemsCache } from "./planItemsCache";
 
 let isInitialized = false;
@@ -20,15 +20,20 @@ export function initApp(): Promise<void> {
     initPromise = (async () => {
         try {
             console.log("[startup] initApp starting");
-            // Establish a session user as early as possible (temporary until real auth)
-            // const TEST_CURRENT_USER_ID = "48a1fd02-b5d4-4942-9356-439ecfbf13f8"; // linna
-            const TEST_CURRENT_USER_ID = "527efa72-5f2e-4a01-a618-25f3749cf69b";
-            // Step 1: Set user session
-            setCurrentUserId(TEST_CURRENT_USER_ID);
+            
+            // Step 1: Check for stored user ID
+            const userId = await loadStoredUserId();
+            
+            if (!userId) {
+                throw new Error("No user ID available. User must be logged in.");
+            }
+            
+            // Set user session
+            await setCurrentUserId(userId);
             console.log("[startup] User session established");
 
             // Step 2: Get/create planId and set it in session (CRITICAL - everything depends on this)
-            const planId = await apiService.getWorkoutPlanId(TEST_CURRENT_USER_ID);
+            const planId = await apiService.getWorkoutPlanId(userId);
             setCurrentPlanId(planId);
             console.log("[startup] Plan ID set in session:", planId);
 

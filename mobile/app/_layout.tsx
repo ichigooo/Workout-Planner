@@ -58,6 +58,7 @@ function RootLayoutNav() {
             >
                 <Stack.Screen name="index" options={{ headerShown: false, gestureEnabled: false }} />
                 <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false, gestureEnabled: true }} />
                 <Stack.Screen name="workout" options={{ headerShown: false, gestureEnabled: true }} />
                 <Stack.Screen name="workout-detail" options={{ headerShown: false, gestureEnabled: true }} />
                 <Stack.Screen name="modal" options={{ presentation: "modal", gestureEnabled: true }} />
