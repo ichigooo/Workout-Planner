@@ -7,4 +7,4 @@ backend/.vercel
 backend/node_modules
 mobile/node_modules
 mobile/.expo
-workout-planner.code-workspace
+*.code-workspace

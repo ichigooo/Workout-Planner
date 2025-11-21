@@ -16,7 +16,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { getTheme } from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
-// Authentication logic not yet wired
+import { supabase } from "@/src/lib/supabase";
+import initApp from "@/src/services/startup";
+import { setCurrentUserId } from "@/src/state/session";
 
 export default function SignInScreen() {
     const router = useRouter();
@@ -38,17 +40,36 @@ export default function SignInScreen() {
         setError(null);
         setIsLoading(true);
 
-        // TODO: Wire up authentication logic
-        console.log("[SignIn] Sign in attempt (not wired yet):", {
-            email: emailValue,
-            passwordLength: password.length,
-        });
+        try {
+            console.log("[SignIn] Attempting Supabase sign-in for", emailValue);
 
-        // Simulate loading
-        setTimeout(() => {
+            const { data, error: authError } = await supabase.auth.signInWithPassword({
+                email: emailValue,
+                password,
+            });
+            console.log("[SignIn] Auth data:", data);
+
+            if (authError || !data?.user) {
+                console.warn("[SignIn] Auth failed:", authError);
+                setError("Invalid email or password. Please try again.");
+                return;
+            }
+
+            // Store the authenticated user ID for the rest of the app.
+            // TODO: fetch/create corresponding profile row via backend `/api/users`.
+            await setCurrentUserId(data.user.id);
+
+            console.log("[SignIn] Auth success, user id:", data.user.id);
+
+            // Fully initialize the app (plan id, cache, etc.) then go to main content.
+            await initApp();
+            router.replace("/(tabs)");
+        } catch (e) {
+            console.error("[SignIn] Unexpected error during sign-in:", e);
+            setError("Something went wrong while signing in. Please try again.");
+        } finally {
             setIsLoading(false);
-            setError("Authentication not yet implemented. Please wire up the sign-in logic.");
-        }, 1000);
+        }
     };
 
     const handleGoogleSignIn = () => {
@@ -341,4 +362,3 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
 });
-

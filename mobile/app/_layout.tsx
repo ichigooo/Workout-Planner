@@ -6,6 +6,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
 import { useColorScheme } from "react-native";
+import { AuthProvider } from "@/src/state/AuthContext";
 
 export {
     // Catch any errors thrown by the Layout component.
@@ -41,7 +42,11 @@ export default function RootLayout() {
         return null;
     }
 
-    return <RootLayoutNav />;
+    return (
+        <AuthProvider>
+            <RootLayoutNav />
+        </AuthProvider>
+    );
 }
 
 function RootLayoutNav() {
