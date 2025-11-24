@@ -272,7 +272,7 @@ export const TrainingPlanManager: React.FC = () => {
                         </Text>
                         {section.items.length > 0 ? (
                             section.items.map((it) => (
-                                <View
+                                <TouchableOpacity
                                     key={it.id}
                                     style={[
                                         styles.scheduledCard,
@@ -281,6 +281,12 @@ export const TrainingPlanManager: React.FC = () => {
                                             borderColor: theme.colors.border,
                                         },
                                     ]}
+                                    activeOpacity={0.8}
+                                    onPress={() =>
+                                        router.push(
+                                            `/workout-detail?id=${encodeURIComponent(it.workout.id)}`,
+                                        )
+                                    }
                                 >
                                     <Text style={{ color: theme.colors.text, fontWeight: "600" }}>
                                         {it.workout.title}
@@ -294,7 +300,7 @@ export const TrainingPlanManager: React.FC = () => {
                                             {it.intensity}
                                         </Text>
                                     ) : null}
-                                </View>
+                                </TouchableOpacity>
                             ))
                         ) : (
                             <Text style={{ color: theme.colors.subtext }}>
@@ -312,6 +318,7 @@ export const TrainingPlanManager: React.FC = () => {
             </TouchableOpacity>
 
             <Modal
+                name="add_workout_sheet"
                 visible={showAddSheet}
                 animationType="slide"
                 presentationStyle="pageSheet"
@@ -332,7 +339,7 @@ export const TrainingPlanManager: React.FC = () => {
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView contentContainerStyle={{ padding: 16 }}>
+                    <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 40 }}>
                         <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
                             Category
                         </Text>
@@ -522,7 +529,8 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingTop: 24,
+        paddingBottom: 12,
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
     sheetTitle: { fontSize: 18, fontWeight: "700" },

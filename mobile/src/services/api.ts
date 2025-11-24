@@ -7,6 +7,7 @@ import {
     CreateWorkoutPlanRequest,
     CreatePlanItemRequest,
     UpdateUserProfileRequest,
+    WorkoutPersonalRecord,
 } from "../types";
 import { getLocalIp } from "../utils/getlocalIP";
 
@@ -91,6 +92,31 @@ class ApiService {
         // Invalidate workouts cache since we deleted a workout
         const { planItemsCache } = await import("./planItemsCache");
         planItemsCache.invalidateWorkouts();
+    }
+
+    async getPersonalRecord(workoutId: string, userId: string): Promise<WorkoutPersonalRecord | null> {
+        const result = await this.request<WorkoutPersonalRecord | null>(
+            `/workouts/${encodeURIComponent(workoutId)}/personal-record?userId=${encodeURIComponent(userId)}`,
+        );
+        return result;
+    }
+
+    async upsertPersonalRecord(
+        workoutId: string,
+        userId: string,
+        value: string,
+    ): Promise<WorkoutPersonalRecord> {
+        return this.request<WorkoutPersonalRecord>(`/workouts/${encodeURIComponent(workoutId)}/personal-record`, {
+            method: "PUT",
+            body: JSON.stringify({ userId, value }),
+        });
+    }
+
+    async deletePersonalRecord(workoutId: string, userId: string): Promise<void> {
+        await this.request<void>(`/workouts/${encodeURIComponent(workoutId)}/personal-record`, {
+            method: "DELETE",
+            body: JSON.stringify({ userId }),
+        });
     }
 
     // Workout Plan endpoints

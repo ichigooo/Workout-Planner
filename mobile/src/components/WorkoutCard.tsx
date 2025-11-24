@@ -49,14 +49,25 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
                     </Text>
                 )}
                 <View style={styles.details}>
-                    <Text style={[styles.detailText, { color: theme.colors.text }]}>
-                        {workout.workoutType === "cardio"
-                            ? `${workout.duration} min`
-                            : `${workout.sets} sets × ${workout.reps} reps`}
-                    </Text>
-                    <Text style={[styles.detailText, { color: theme.colors.subtext }]}>
-                        {workout.intensity}
-                    </Text>
+                    <View style={styles.detailMeta}>
+                        <Text style={[styles.detailText, { color: theme.colors.text }]}>
+                            {workout.workoutType === "cardio"
+                                ? `${workout.duration} min`
+                                : `${workout.sets} sets × ${workout.reps} reps`}
+                        </Text>
+                    </View>
+                    {!!workout.intensity && (
+                        <View style={styles.detailIntensityContainer}>
+                            <Text
+                                style={[
+                                    styles.detailIntensityText,
+                                    { color: theme.colors.subtext },
+                                ]}
+                            >
+                                {workout.intensity}
+                            </Text>
+                        </View>
+                    )}
                 </View>
             </View>
         </TouchableOpacity>
@@ -107,12 +118,25 @@ const styles = StyleSheet.create({
     },
     details: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
+        alignItems: "flex-start",
+        marginTop: 4,
+    },
+    detailMeta: {
+        flexShrink: 0,
+        marginRight: 12,
     },
     detailText: {
         fontSize: 14,
         fontWeight: "500",
         fontFamily: "Inter_500Medium",
+    },
+    detailIntensityContainer: {
+        flex: 1,
+    },
+    detailIntensityText: {
+        fontSize: 14,
+        fontWeight: "500",
+        fontFamily: "Inter_500Medium",
+        textAlign: "right",
     },
 });

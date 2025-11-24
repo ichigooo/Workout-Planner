@@ -56,6 +56,15 @@ export interface WorkoutLog {
     updatedAt: Date;
 }
 
+export interface WorkoutPersonalRecord {
+    id: string;
+    userId: string;
+    workoutId: string;
+    value: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export interface CreateWorkoutRequest {
     title: string;
     category: string;

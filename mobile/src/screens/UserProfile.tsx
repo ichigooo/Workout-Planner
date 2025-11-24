@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
+import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 // image manipulation moved to shared util
 import { imageAssetToDataUrl } from "../utils/image";
@@ -22,6 +23,8 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { User, UpdateUserProfileRequest } from "../types";
 import { apiService } from "../services/api";
 import { getTheme } from "../theme";
+import { supabase } from "../lib/supabase";
+import { clearCurrentUserId, setCurrentPlanId } from "../state/session";
 
 interface UserProfileProps {
     userId: string;
@@ -43,9 +46,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
     const [email, setEmail] = useState("");
     const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
     const [birthday, setBirthday] = useState<Date | null>(null);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     const scrollRef = useScrollToTopOnTabPress();
     const navigation = useNavigation();
+    const router = useRouter();
 
     const loadUserProfile = useCallback(async () => {
         try {
@@ -180,6 +185,19 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
     const formatDate = (date: Date | null) => {
         if (!date) return "Select birthday";
         return date.toLocaleDateString();
+    };
+
+    const performLogout = async () => {
+        try {
+            await supabase.auth.signOut();
+            await clearCurrentUserId();
+            setCurrentPlanId(null);
+            setShowLogoutConfirm(false);
+            router.replace("/");
+        } catch (error) {
+            console.error("[UserProfile] Failed to log out:", error);
+            Alert.alert("Error", "Could not log out. Please try again.");
+        }
     };
 
     if (loading) {
@@ -344,8 +362,77 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                             {saving ? "Saving..." : "Save Profile"}
                         </Text>
                     </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.logoutButton}
+                        onPress={() => setShowLogoutConfirm(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Log out"
+                    >
+                        <Text style={styles.logoutButtonText}>Log Out</Text>
+                    </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            {showLogoutConfirm && (
+                <View style={styles.logoutOverlay}>
+                    <TouchableOpacity
+                        style={styles.logoutOverlayBackdrop}
+                        activeOpacity={1}
+                        onPress={() => setShowLogoutConfirm(false)}
+                    />
+                    <View
+                        style={[
+                            styles.logoutSheet,
+                            { backgroundColor: theme.colors.surface },
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                styles.logoutTitle,
+                                { color: theme.colors.text },
+                            ]}
+                        >
+                            Log out?
+                        </Text>
+                        <Text
+                            style={[
+                                styles.logoutMessage,
+                                { color: theme.colors.subtext },
+                            ]}
+                        >
+                            You’ll need to sign in again to access your workouts and routine.
+                        </Text>
+                        <View style={styles.logoutActions}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.logoutCancelButton,
+                                    {
+                                        borderColor: theme.colors.border,
+                                        backgroundColor: theme.colors.bg,
+                                    },
+                                ]}
+                                onPress={() => setShowLogoutConfirm(false)}
+                            >
+                                <Text
+                                    style={[
+                                        styles.logoutCancelText,
+                                        { color: theme.colors.text },
+                                    ]}
+                                >
+                                    Cancel
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.logoutConfirmButton}
+                                onPress={performLogout}
+                            >
+                                <Text style={styles.logoutConfirmText}>Log Out</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            )}
         </SafeAreaView>
     );
 };
@@ -472,5 +559,76 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: "Inter_600SemiBold",
         letterSpacing: -0.2,
+    },
+    logoutButton: {
+        marginTop: 16,
+        paddingVertical: 14,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#EF4444",
+        alignItems: "center",
+    },
+    logoutButtonText: {
+        fontSize: 15,
+        fontFamily: "Inter_500Medium",
+        color: "#EF4444",
+    },
+    logoutOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: "flex-end",
+    },
+    logoutOverlayBackdrop: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "rgba(0,0,0,0.35)",
+    },
+    logoutSheet: {
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 28,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        borderWidth: 1,
+        borderColor: "rgba(148, 163, 184, 0.35)",
+    },
+    logoutTitle: {
+        fontSize: 18,
+        fontFamily: "Inter_600SemiBold",
+        marginBottom: 8,
+    },
+    logoutMessage: {
+        fontSize: 14,
+        fontFamily: "Inter_400Regular",
+        lineHeight: 20,
+        marginBottom: 20,
+    },
+    logoutActions: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        gap: 12,
+    },
+    logoutCancelButton: {
+        flex: 1,
+        borderRadius: 10,
+        borderWidth: 1,
+        paddingVertical: 12,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    logoutCancelText: {
+        fontSize: 15,
+        fontFamily: "Inter_500Medium",
+    },
+    logoutConfirmButton: {
+        flex: 1,
+        borderRadius: 10,
+        paddingVertical: 12,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#EF4444",
+    },
+    logoutConfirmText: {
+        fontSize: 15,
+        fontFamily: "Inter_500Medium",
+        color: "#FFFFFF",
     },
 });
