@@ -159,9 +159,20 @@ export default function SignInScreen() {
                     </View>
 
                     {error && (
-                        <View style={[styles.errorContainer, { backgroundColor: theme.colors.surface }]}>
-                            <Ionicons name="alert-circle-outline" size={20} color={theme.colors.danger} />
-                            <Text style={[styles.errorText, { color: theme.colors.danger }]}>{error}</Text>
+                        <View
+                            style={[
+                                styles.errorContainer,
+                                { backgroundColor: theme.colors.surface },
+                            ]}
+                        >
+                            <Ionicons
+                                name="alert-circle-outline"
+                                size={20}
+                                color={theme.colors.danger}
+                            />
+                            <Text style={[styles.errorText, { color: theme.colors.danger }]}>
+                                {error}
+                            </Text>
                         </View>
                     )}
 
@@ -178,9 +189,10 @@ export default function SignInScreen() {
                         style={[
                             styles.primaryButton,
                             {
-                                backgroundColor: isFormValid && !isLoading
-                                    ? theme.colors.accent
-                                    : theme.colors.border,
+                                backgroundColor:
+                                    isFormValid && !isLoading
+                                        ? theme.colors.accent
+                                        : theme.colors.border,
                             },
                         ]}
                         onPress={handleSignIn}
@@ -194,7 +206,10 @@ export default function SignInScreen() {
                                 style={[
                                     styles.primaryButtonText,
                                     {
-                                        color: isFormValid && !isLoading ? "#FFFFFF" : theme.colors.subtext,
+                                        color:
+                                            isFormValid && !isLoading
+                                                ? "#FFFFFF"
+                                                : theme.colors.subtext,
                                     },
                                 ]}
                             >
@@ -204,9 +219,15 @@ export default function SignInScreen() {
                     </TouchableOpacity>
 
                     <View style={styles.divider}>
-                        <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-                        <Text style={[styles.dividerText, { color: theme.colors.subtext }]}>OR</Text>
-                        <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+                        <View
+                            style={[styles.dividerLine, { backgroundColor: theme.colors.border }]}
+                        />
+                        <Text style={[styles.dividerText, { color: theme.colors.subtext }]}>
+                            OR
+                        </Text>
+                        <View
+                            style={[styles.dividerLine, { backgroundColor: theme.colors.border }]}
+                        />
                     </View>
 
                     <TouchableOpacity

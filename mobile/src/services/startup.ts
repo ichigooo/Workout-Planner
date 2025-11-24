@@ -20,14 +20,14 @@ export function initApp(): Promise<void> {
     initPromise = (async () => {
         try {
             console.log("[startup] initApp starting");
-            
+
             // Step 1: Check for stored user ID
             const userId = await loadStoredUserId();
-            
+
             if (!userId) {
                 throw new Error("No user ID available. User must be logged in.");
             }
-            
+
             // Set user session
             await setCurrentUserId(userId);
             console.log("[startup] User session established");

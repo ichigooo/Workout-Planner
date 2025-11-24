@@ -152,7 +152,8 @@ export default function CalendarScreen() {
                             backgroundColor: scheme === "dark" ? "#1E1E1E" : "#FFFFFF",
                             calendarBackground: scheme === "dark" ? "#1E1E1E" : "#FFFFFF",
                             textSectionTitleColor: scheme === "dark" ? "#FFFFFF" : "#000000",
-                            textSectionTitleDisabledColor: scheme === "dark" ? "#888888" : "#999999",
+                            textSectionTitleDisabledColor:
+                                scheme === "dark" ? "#888888" : "#999999",
                             selectedDayBackgroundColor: theme.colors.accent,
                             selectedDayTextColor: "#FFFFFF",
                             todayTextColor: theme.colors.accent,

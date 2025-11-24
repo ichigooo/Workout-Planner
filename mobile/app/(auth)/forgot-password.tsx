@@ -10,7 +10,9 @@ export default function ForgotPasswordScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
-            <Text style={[styles.text, { color: theme.colors.text }]}>Forgot Password (Coming Soon)</Text>
+            <Text style={[styles.text, { color: theme.colors.text }]}>
+                Forgot Password (Coming Soon)
+            </Text>
         </View>
     );
 }
@@ -25,4 +27,3 @@ const styles = StyleSheet.create({
         fontSize: 18,
     },
 });
-

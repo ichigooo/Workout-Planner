@@ -94,7 +94,10 @@ class ApiService {
         planItemsCache.invalidateWorkouts();
     }
 
-    async getPersonalRecord(workoutId: string, userId: string): Promise<WorkoutPersonalRecord | null> {
+    async getPersonalRecord(
+        workoutId: string,
+        userId: string,
+    ): Promise<WorkoutPersonalRecord | null> {
         const result = await this.request<WorkoutPersonalRecord | null>(
             `/workouts/${encodeURIComponent(workoutId)}/personal-record?userId=${encodeURIComponent(userId)}`,
         );
@@ -106,10 +109,13 @@ class ApiService {
         userId: string,
         value: string,
     ): Promise<WorkoutPersonalRecord> {
-        return this.request<WorkoutPersonalRecord>(`/workouts/${encodeURIComponent(workoutId)}/personal-record`, {
-            method: "PUT",
-            body: JSON.stringify({ userId, value }),
-        });
+        return this.request<WorkoutPersonalRecord>(
+            `/workouts/${encodeURIComponent(workoutId)}/personal-record`,
+            {
+                method: "PUT",
+                body: JSON.stringify({ userId, value }),
+            },
+        );
     }
 
     async deletePersonalRecord(workoutId: string, userId: string): Promise<void> {

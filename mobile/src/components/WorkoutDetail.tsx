@@ -343,48 +343,129 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                         </View>
                     )}
 
-                <View
-                    style={[
-                        styles.body,
-                        {
-                            backgroundColor:
-                                scheme === "dark" ? theme.colors.bg : "#F7F7F7",
-                        },
-                    ]}
-                >
-                    <View style={styles.categoryPill}>
-                        <Text style={styles.categoryPillText}>
-                            {workout.category?.toUpperCase()}
-                        </Text>
-                    </View>
-
-                    <Text style={[styles.title, { color: theme.colors.text }]}>
-                        {workout.title}
-                    </Text>
-
-                    {workout.description && (
-                        <View style={styles.section}>
-                            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                                Description
-                            </Text>
-                            <Text style={[styles.description, { color: theme.colors.subtext }]}>
-                                {workout.description}
+                    <View
+                        style={[
+                            styles.body,
+                            {
+                                backgroundColor: scheme === "dark" ? theme.colors.bg : "#F7F7F7",
+                            },
+                        ]}
+                    >
+                        <View style={styles.categoryPill}>
+                            <Text style={styles.categoryPillText}>
+                                {workout.category?.toUpperCase()}
                             </Text>
                         </View>
-                    )}
 
-                    <View style={styles.section}>
-                        <Text
-                            style={[
-                                styles.sectionTitle,
-                                { color: theme.colors.subtext, textTransform: "uppercase" },
-                            ]}
-                        >
-                            Workout details
+                        <Text style={[styles.title, { color: theme.colors.text }]}>
+                            {workout.title}
                         </Text>
 
-                        <View style={styles.detailsGrid}>
-                            {workout.workoutType === "cardio" ? (
+                        {workout.description && (
+                            <View style={styles.section}>
+                                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                                    Description
+                                </Text>
+                                <Text style={[styles.description, { color: theme.colors.subtext }]}>
+                                    {workout.description}
+                                </Text>
+                            </View>
+                        )}
+
+                        <View style={styles.section}>
+                            <Text
+                                style={[
+                                    styles.sectionTitle,
+                                    { color: theme.colors.subtext, textTransform: "uppercase" },
+                                ]}
+                            >
+                                Workout details
+                            </Text>
+
+                            <View style={styles.detailsGrid}>
+                                {workout.workoutType === "cardio" ? (
+                                    <View
+                                        style={[
+                                            styles.detailItem,
+                                            {
+                                                backgroundColor: theme.colors.surface,
+                                                borderColor: theme.colors.border,
+                                            },
+                                        ]}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.detailLabel,
+                                                { color: theme.colors.subtext },
+                                            ]}
+                                        >
+                                            Duration
+                                        </Text>
+                                        <Text
+                                            style={[
+                                                styles.detailValue,
+                                                { color: theme.colors.text },
+                                            ]}
+                                        >
+                                            {workout.duration} min
+                                        </Text>
+                                    </View>
+                                ) : (
+                                    <>
+                                        <View
+                                            style={[
+                                                styles.detailItem,
+                                                {
+                                                    backgroundColor: theme.colors.surface,
+                                                    borderColor: theme.colors.border,
+                                                },
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.detailLabel,
+                                                    { color: theme.colors.subtext },
+                                                ]}
+                                            >
+                                                Sets
+                                            </Text>
+                                            <Text
+                                                style={[
+                                                    styles.detailValue,
+                                                    { color: theme.colors.text },
+                                                ]}
+                                            >
+                                                {workout.sets}
+                                            </Text>
+                                        </View>
+                                        <View
+                                            style={[
+                                                styles.detailItem,
+                                                {
+                                                    backgroundColor: theme.colors.surface,
+                                                    borderColor: theme.colors.border,
+                                                },
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.detailLabel,
+                                                    { color: theme.colors.subtext },
+                                                ]}
+                                            >
+                                                Reps
+                                            </Text>
+                                            <Text
+                                                style={[
+                                                    styles.detailValue,
+                                                    { color: theme.colors.text },
+                                                ]}
+                                            >
+                                                {workout.reps}
+                                            </Text>
+                                        </View>
+                                    </>
+                                )}
                                 <View
                                     style={[
                                         styles.detailItem,
@@ -395,183 +476,68 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                     ]}
                                 >
                                     <Text
-                                        style={[styles.detailLabel, { color: theme.colors.subtext }]}
+                                        style={[
+                                            styles.detailLabel,
+                                            { color: theme.colors.subtext },
+                                        ]}
                                     >
-                                        Duration
+                                        Intensity
                                     </Text>
-                                    <Text style={[styles.detailValue, { color: theme.colors.text }]}>
-                                        {workout.duration} min
+                                    <Text
+                                        style={[styles.detailValue, { color: theme.colors.text }]}
+                                    >
+                                        {workout.intensity}
                                     </Text>
                                 </View>
-                            ) : (
-                                <>
-                                    <View
-                                        style={[
-                                            styles.detailItem,
-                                            {
-                                                backgroundColor: theme.colors.surface,
-                                                borderColor: theme.colors.border,
-                                            },
-                                        ]}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.detailLabel,
-                                                { color: theme.colors.subtext },
-                                            ]}
-                                        >
-                                            Sets
-                                        </Text>
-                                        <Text
-                                            style={[styles.detailValue, { color: theme.colors.text }]}
-                                        >
-                                            {workout.sets}
-                                        </Text>
-                                    </View>
-                                    <View
-                                        style={[
-                                            styles.detailItem,
-                                            {
-                                                backgroundColor: theme.colors.surface,
-                                                borderColor: theme.colors.border,
-                                            },
-                                        ]}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.detailLabel,
-                                                { color: theme.colors.subtext },
-                                            ]}
-                                        >
-                                            Reps
-                                        </Text>
-                                        <Text
-                                            style={[styles.detailValue, { color: theme.colors.text }]}
-                                        >
-                                            {workout.reps}
-                                        </Text>
-                                    </View>
-                                </>
-                            )}
-                            <View
-                                style={[
-                                    styles.detailItem,
-                                    {
-                                        backgroundColor: theme.colors.surface,
-                                        borderColor: theme.colors.border,
-                                    },
-                                ]}
-                            >
-                                <Text style={[styles.detailLabel, { color: theme.colors.subtext }]}>
-                                    Intensity
-                                </Text>
-                                <Text style={[styles.detailValue, { color: theme.colors.text }]}>
-                                    {workout.intensity}
-                                </Text>
                             </View>
                         </View>
-                    </View>
 
-                    <View style={styles.section}>
-                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                            My Personal Record
-                        </Text>
-                        {personalRecord && !isEditingRecord ? (
-                            <View
-                                style={[
-                                    styles.personalRecordDisplay,
-                                    {
-                                        borderColor: theme.colors.border,
-                                        backgroundColor: theme.colors.surface,
-                                    },
-                                ]}
-                            >
-                                <Text style={[styles.personalRecordValue, { color: theme.colors.text }]}>
-                                    {personalRecord.value}
-                                </Text>
-                                <View style={styles.recordActions}>
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.recordButton,
-                                            {
-                                                backgroundColor: theme.colors.accent,
-                                                flex: undefined,
-                                                paddingHorizontal: 20,
-                                            },
-                                        ]}
-                                        onPress={() => setIsEditingRecord(true)}
-                                    >
-                                        <Text style={styles.recordButtonText}>Update</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.recordButton,
-                                            styles.recordButtonSecondary,
-                                            { borderColor: theme.colors.border, flex: undefined },
-                                        ]}
-                                        onPress={handleClearPersonalRecord}
-                                        disabled={recordSaving}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.recordButtonSecondaryText,
-                                                { color: theme.colors.text },
-                                            ]}
-                                        >
-                                            Clear
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        ) : (
-                            <>
-                                <TextInput
+                        <View style={styles.section}>
+                            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                                My Personal Record
+                            </Text>
+                            {personalRecord && !isEditingRecord ? (
+                                <View
                                     style={[
-                                        styles.personalRecordInput,
+                                        styles.personalRecordDisplay,
                                         {
                                             borderColor: theme.colors.border,
-                                            color: theme.colors.text,
                                             backgroundColor: theme.colors.surface,
                                         },
                                     ]}
-                                    placeholder="e.g., 225 lb x 5 or 6:20 mile"
-                                    placeholderTextColor={theme.colors.subtext}
-                                    value={personalRecordValue}
-                                    onChangeText={setPersonalRecordValue}
-                                    editable={!recordSaving && Boolean(recordUserId)}
-                                />
-                                <Text style={[styles.personalRecordHint, { color: theme.colors.subtext }]}>
-                                    {recordLoading
-                                        ? "Loading your record..."
-                                        : "Track your best set, rep, or time so you always know what to beat."}
-                                </Text>
-                                <View style={styles.recordActions}>
-                                    <TouchableOpacity
+                                >
+                                    <Text
                                         style={[
-                                            styles.recordButton,
-                                            {
-                                                backgroundColor: theme.colors.accent,
-                                                opacity: recordSaving ? 0.7 : 1,
-                                            },
+                                            styles.personalRecordValue,
+                                            { color: theme.colors.text },
                                         ]}
-                                        onPress={handleSavePersonalRecord}
-                                        disabled={recordSaving || !recordUserId}
                                     >
-                                        <Text style={styles.recordButtonText}>
-                                            {recordSaving ? "Saving..." : "Save Record"}
-                                        </Text>
-                                    </TouchableOpacity>
-                                    {personalRecord ? (
+                                        {personalRecord.value}
+                                    </Text>
+                                    <View style={styles.recordActions}>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.recordButton,
+                                                {
+                                                    backgroundColor: theme.colors.accent,
+                                                    flex: undefined,
+                                                    paddingHorizontal: 20,
+                                                },
+                                            ]}
+                                            onPress={() => setIsEditingRecord(true)}
+                                        >
+                                            <Text style={styles.recordButtonText}>Update</Text>
+                                        </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[
                                                 styles.recordButton,
                                                 styles.recordButtonSecondary,
-                                                { borderColor: theme.colors.border },
+                                                {
+                                                    borderColor: theme.colors.border,
+                                                    flex: undefined,
+                                                },
                                             ]}
-                                            onPress={() => {
-                                                setIsEditingRecord(false);
-                                                setPersonalRecordValue(personalRecord?.value ?? "");
-                                            }}
+                                            onPress={handleClearPersonalRecord}
                                             disabled={recordSaving}
                                         >
                                             <Text
@@ -580,20 +546,94 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                     { color: theme.colors.text },
                                                 ]}
                                             >
-                                                Cancel
+                                                Clear
                                             </Text>
                                         </TouchableOpacity>
-                                    ) : null}
+                                    </View>
                                 </View>
-                            </>
-                        )}
-                        {!recordUserId && (
-                            <Text style={[styles.personalRecordHint, { color: theme.colors.subtext }]}>
-                                Sign in to save personal records.
-                            </Text>
-                        )}
+                            ) : (
+                                <>
+                                    <TextInput
+                                        style={[
+                                            styles.personalRecordInput,
+                                            {
+                                                borderColor: theme.colors.border,
+                                                color: theme.colors.text,
+                                                backgroundColor: theme.colors.surface,
+                                            },
+                                        ]}
+                                        placeholder="e.g., 225 lb x 5 or 6:20 mile"
+                                        placeholderTextColor={theme.colors.subtext}
+                                        value={personalRecordValue}
+                                        onChangeText={setPersonalRecordValue}
+                                        editable={!recordSaving && Boolean(recordUserId)}
+                                    />
+                                    <Text
+                                        style={[
+                                            styles.personalRecordHint,
+                                            { color: theme.colors.subtext },
+                                        ]}
+                                    >
+                                        {recordLoading
+                                            ? "Loading your record..."
+                                            : "Track your best set, rep, or time so you always know what to beat."}
+                                    </Text>
+                                    <View style={styles.recordActions}>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.recordButton,
+                                                {
+                                                    backgroundColor: theme.colors.accent,
+                                                    opacity: recordSaving ? 0.7 : 1,
+                                                },
+                                            ]}
+                                            onPress={handleSavePersonalRecord}
+                                            disabled={recordSaving || !recordUserId}
+                                        >
+                                            <Text style={styles.recordButtonText}>
+                                                {recordSaving ? "Saving..." : "Save Record"}
+                                            </Text>
+                                        </TouchableOpacity>
+                                        {personalRecord ? (
+                                            <TouchableOpacity
+                                                style={[
+                                                    styles.recordButton,
+                                                    styles.recordButtonSecondary,
+                                                    { borderColor: theme.colors.border },
+                                                ]}
+                                                onPress={() => {
+                                                    setIsEditingRecord(false);
+                                                    setPersonalRecordValue(
+                                                        personalRecord?.value ?? "",
+                                                    );
+                                                }}
+                                                disabled={recordSaving}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.recordButtonSecondaryText,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                >
+                                                    Cancel
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ) : null}
+                                    </View>
+                                </>
+                            )}
+                            {!recordUserId && (
+                                <Text
+                                    style={[
+                                        styles.personalRecordHint,
+                                        { color: theme.colors.subtext },
+                                    ]}
+                                >
+                                    Sign in to save personal records.
+                                </Text>
+                            )}
+                        </View>
                     </View>
-                </View>
                 </ScrollView>
             </KeyboardAvoidingView>
 

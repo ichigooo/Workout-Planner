@@ -8,7 +8,6 @@ import {
     ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getTheme } from "../theme";
 import { useColorScheme } from "react-native";
 
 interface LandingScreenProps {
@@ -82,8 +81,7 @@ const renderQuoteWithEmphasis = (quote: string) => {
 };
 
 export const LandingScreen: React.FC<LandingScreenProps> = ({ onBegin, isLoading = false }) => {
-    const scheme = useColorScheme();
-    const theme = getTheme(scheme === "dark" ? "dark" : "light");
+    useColorScheme();
 
     // Select a random quote once when component mounts
     const [quote] = useState(() => {
