@@ -182,8 +182,9 @@ export default function CalendarScreen() {
                     </Text>
                     {selectedDayWorkouts.length > 0 ? (
                         selectedDayWorkouts.map((s) => (
-                            <View
+                            <TouchableOpacity
                                 key={s.id}
+                                activeOpacity={0.8}
                                 style={{
                                     backgroundColor: theme.colors.surface,
                                     borderColor: theme.colors.border,
@@ -192,6 +193,11 @@ export default function CalendarScreen() {
                                     borderRadius: 12,
                                     marginBottom: 8,
                                 }}
+                                onPress={() =>
+                                    router.push(
+                                        `/workout-detail?id=${encodeURIComponent(s.workout.id)}`,
+                                    )
+                                }
                             >
                                 <Text style={{ color: theme.colors.text, fontWeight: "600" }}>
                                     {s.workout.title}
@@ -200,7 +206,7 @@ export default function CalendarScreen() {
                                     {s.workout.sets} sets × {s.workout.reps} reps •{" "}
                                     {s.workout.category}
                                 </Text>
-                            </View>
+                            </TouchableOpacity>
                         ))
                     ) : (
                         <Text style={{ color: theme.colors.subtext }}>No workouts scheduled.</Text>

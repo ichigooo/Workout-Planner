@@ -22,6 +22,9 @@ import {
     WORKOUT_TYPES,
 } from "../constants/workoutCategories";
 
+const IMAGE_CROP_ASPECT: [number, number] = [5, 7];
+const IMAGE_ASPECT_RATIO = IMAGE_CROP_ASPECT[0] / IMAGE_CROP_ASPECT[1];
+
 interface WorkoutFormProps {
     workout?: Workout;
     onSubmit: (workout: CreateWorkoutRequest) => void;
@@ -225,11 +228,19 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
                                     source={{ uri: imageUrl }}
                                     style={{
                                         width: "100%",
-                                        height: 80,
+                                        aspectRatio: IMAGE_ASPECT_RATIO,
                                         borderRadius: 8,
                                         marginBottom: 6,
                                     }}
                                 />
+                            ) : null}
+                            {imageUrl ? (
+                                <TouchableOpacity
+                                    style={[styles.smallBtn, styles.outlineBtn]}
+                                    onPress={() => setImageUrl("")}
+                                >
+                                    <Text style={{ color: "#333", fontWeight: "600" }}>Delete</Text>
+                                </TouchableOpacity>
                             ) : null}
                             <TouchableOpacity
                                 style={[styles.smallBtn, { backgroundColor: "#007AFF" }]}
@@ -237,6 +248,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
                                     const res = await ImagePicker.launchImageLibraryAsync({
                                         mediaTypes: ImagePicker.MediaTypeOptions.Images,
                                         allowsEditing: true,
+                                        aspect: IMAGE_CROP_ASPECT,
                                         quality: 0.8,
                                         base64: true,
                                     });
@@ -274,11 +286,19 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
                                     source={{ uri: imageUrl2 }}
                                     style={{
                                         width: "100%",
-                                        height: 80,
+                                        aspectRatio: IMAGE_ASPECT_RATIO,
                                         borderRadius: 8,
                                         marginBottom: 6,
                                     }}
                                 />
+                            ) : null}
+                            {imageUrl2 ? (
+                                <TouchableOpacity
+                                    style={[styles.smallBtn, styles.outlineBtn]}
+                                    onPress={() => setImageUrl2("")}
+                                >
+                                    <Text style={{ color: "#333", fontWeight: "600" }}>Delete</Text>
+                                </TouchableOpacity>
                             ) : null}
                             <TouchableOpacity
                                 style={[styles.smallBtn, { backgroundColor: "#007AFF" }]}
@@ -286,6 +306,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
                                     const res = await ImagePicker.launchImageLibraryAsync({
                                         mediaTypes: ImagePicker.MediaTypeOptions.Images,
                                         allowsEditing: true,
+                                        aspect: IMAGE_CROP_ASPECT,
                                         quality: 0.8,
                                         base64: true,
                                     });
@@ -370,6 +391,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         borderRadius: 8,
         alignItems: "center",
+    },
+    outlineBtn: {
+        borderWidth: 1,
+        borderColor: "#ddd",
+        backgroundColor: "#fff",
+        marginBottom: 6,
     },
     scrollView: {
         flex: 1,

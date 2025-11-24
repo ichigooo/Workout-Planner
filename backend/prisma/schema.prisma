@@ -20,9 +20,10 @@ model User {
   updatedAt    DateTime  @updatedAt
 
   // Relations
-  createdWorkouts Workout[] @relation("WorkoutCreator") // Workouts they created (admin)
-  workoutPlans     WorkoutPlan[] // Their personal workout plans
-  workoutLogs      WorkoutLog[] // Their personal workout logs
+  createdWorkouts   Workout[]               @relation("WorkoutCreator") // Workouts they created (admin)
+  workoutPlans      WorkoutPlan[]          // Their personal workout plans
+  workoutLogs       WorkoutLog[]           // Their personal workout logs
+  personalRecords   WorkoutPersonalRecord[]
 
   @@map("users")
 }
@@ -45,9 +46,10 @@ model Workout {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  creator     User?        @relation("WorkoutCreator", fields: [createdBy], references: [id], onDelete: SetNull)
-  planItems   PlanItem[]
-  workoutLogs WorkoutLog[]
+  creator         User?                   @relation("WorkoutCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  planItems       PlanItem[]
+  workoutLogs     WorkoutLog[]
+  personalRecords WorkoutPersonalRecord[]
 
   @@map("workouts")
 }
@@ -107,4 +109,19 @@ model WorkoutLog {
   user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("workout_logs")
+}
+
+model WorkoutPersonalRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  workoutId String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workout Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workoutId])
+  @@map("workout_personal_records")
 }

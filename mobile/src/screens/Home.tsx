@@ -6,16 +6,18 @@ import {
     TouchableOpacity,
     ScrollView,
     Image,
-    useColorScheme,
     Animated,
+    useColorScheme,
+    ImageSourcePropType,
+    LayoutChangeEvent,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
-import { getCurrentPlanId, getCurrentUserId } from "../state/session";
+import { getCurrentUserId } from "../state/session";
 import { planItemsCache } from "../services/planItemsCache";
-import { Workout, PlanItem } from "../types";
+import { Workout, PlanItem, WorkoutCategory } from "../types";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -60,20 +62,19 @@ const getTimeBasedEmoji = (): string => {
         return "🌙"; // Moon for night
     }
 };
+const categoryIconSources: Record<string, ImageSourcePropType> = {
+    "Upper Body - Pull": require("../../assets/images/workout_types/upper_body_pull.png"),
+    "Upper Body - Push": require("../../assets/images/workout_types/upper_body_push.png"),
+    "Legs": require("../../assets/images/workout_types/legs.png"),
+    "Core": require("../../assets/images/workout_types/core.png"),
+    "Climbing - Power": require("../../assets/images/workout_types/climbing.png"),
+    "Climbing - Endurance": require("../../assets/images/workout_types/climbing.png"),
+    "Climbing - Warm Up": require("../../assets/images/workout_types/climbing.png"),
+    "Cardio": require("../../assets/images/workout_types/warmup.png"),
+};
 
-// Mapping of category names to emojis
-const getCategoryEmoji = (category: string): string => {
-    const categoryMap: Record<string, string> = {
-        "Cardio": "🏃‍♀️",
-        "Climbing - Endurance": "🧗‍♀️",
-        "Climbing - Warm Up": "🧎‍♀️",
-        "Climbing - Power": "⚡️",
-        "Core": "🎯",
-        "Legs": "🏋️‍♂️",
-        "Upper Body - Pull": "💪",
-        "Upper Body - Push": "💪",
-    };
-    return categoryMap[category] || "🏋️";
+const getTypeIcon = (category: WorkoutCategory): ImageSourcePropType => {
+    return categoryIconSources[category] || require("../../assets/images/workout_types/default.png");
 };
 
 const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
@@ -215,6 +216,7 @@ export const Home: React.FC<HomeProps> = ({
     const router = useRouter();
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
+    const insets = useSafeAreaInsets();
 
     const [workouts, setWorkouts] = useState<Workout[]>([]);
     const [planItems, setPlanItems] = useState<PlanItem[]>([]);
@@ -225,6 +227,9 @@ export const Home: React.FC<HomeProps> = ({
     const localTodayStr = `${nowLocal.getFullYear()}-${(nowLocal.getMonth() + 1).toString().padStart(2, "0")}-${nowLocal.getDate().toString().padStart(2, "0")}`;
     const [selectedDate, setSelectedDate] = useState<string>(localTodayStr);
     const scrollRef = useScrollToTopOnTabPress();
+    const [scrollContentHeight, setScrollContentHeight] = useState(0);
+    const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
+    const canScroll = scrollViewportHeight > 0 && scrollContentHeight > scrollViewportHeight;
 
     useEffect(() => {
         const loadPreloadedData = async () => {
@@ -341,6 +346,12 @@ export const Home: React.FC<HomeProps> = ({
             : weekDates.find((d) => (weekWorkouts[d] || []).length > 0) || selectedDate;
 
     const _todaysWorkout = workouts.length > 0 ? workouts[0] : undefined;
+    const handleScrollLayout = useCallback((event: LayoutChangeEvent) => {
+        setScrollViewportHeight(event.nativeEvent.layout.height);
+    }, []);
+    const handleContentSizeChange = useCallback((_width: number, height: number) => {
+        setScrollContentHeight(height);
+    }, []);
 
     return (
         <SafeAreaView
@@ -350,8 +361,17 @@ export const Home: React.FC<HomeProps> = ({
             <ScrollView
                 ref={scrollRef}
                 style={styles.container}
-                contentContainerStyle={styles.content}
+                contentContainerStyle={[
+                    styles.content,
+                    { paddingBottom: 16 + insets.bottom },
+                ]}
                 showsVerticalScrollIndicator={false}
+                scrollEnabled={canScroll}
+                bounces={false}
+                alwaysBounceVertical={false}
+                overScrollMode="never"
+                onLayout={handleScrollLayout}
+                onContentSizeChange={handleContentSizeChange}
             >
                 <View style={styles.headerRow}>
                     <TouchableOpacity onPress={onOpenProfile} style={styles.iconButton}>
@@ -421,7 +441,9 @@ export const Home: React.FC<HomeProps> = ({
                                         },
                                     ]}
                                     onPress={() =>
-                                        router.push(`/workout?id=${encodeURIComponent(item.id)}`)
+                                        router.push(
+                                            `/workout-detail?id=${encodeURIComponent(item.id)}`,
+                                        )
                                     }
                                 >
                                     <View style={styles.previewHeader}>
@@ -508,26 +530,34 @@ export const Home: React.FC<HomeProps> = ({
                                         onPress={() => onOpenLibrary && onOpenLibrary(String(cat))}
                                         activeOpacity={0.85}
                                     >
-                                        <Text style={styles.categoryTileEmoji}>
-                                            {getCategoryEmoji(cat)}
-                                        </Text>
-                                        <Text
-                                            style={[
-                                                styles.categoryTileText,
-                                                { color: theme.colors.text },
-                                            ]}
-                                            numberOfLines={1}
-                                        >
-                                            {cat}
-                                        </Text>
-                                        <Text
-                                            style={[
-                                                styles.categoryTileCount,
-                                                { color: theme.colors.subtext },
-                                            ]}
-                                        >
-                                            {workoutCount} {workoutCount === 1 ? "workout" : "workouts"}
-                                        </Text>
+                                        <View style={styles.categoryTileContent}>
+                                            <Text
+                                                style={[
+                                                    styles.categoryTileText,
+                                                    { color: theme.colors.text },
+                                                ]}
+                                                numberOfLines={2}
+                                                ellipsizeMode="tail"
+                                            >
+                                                {cat}
+                                            </Text>
+                                            <Text
+                                                style={[
+                                                    styles.categoryTileCount,
+                                                    { color: theme.colors.subtext },
+                                                ]}
+                                            >
+                                                {workoutCount}{" "}
+                                                {workoutCount === 1 ? "workout" : "workouts"}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.categoryTileIconWrapper}>
+                                            <Image
+                                                source={getTypeIcon(cat)}
+                                                style={styles.categoryTileIcon}
+                                                resizeMode="contain"
+                                            />
+                                        </View>
                                     </TouchableOpacity>
                                 );
                             })}
@@ -546,8 +576,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        padding: 16,
-        paddingBottom: 40,
+        paddingHorizontal: 16,
+        paddingTop: 16,
     },
     headerRow: {
         flexDirection: "row",
@@ -688,24 +718,40 @@ const styles = StyleSheet.create({
         aspectRatio: 1.2,
         borderRadius: 16,
         borderWidth: StyleSheet.hairlineWidth,
-        alignItems: "center",
-        justifyContent: "center",
+        position: "relative",
+        alignItems: "stretch",
+        justifyContent: "flex-start",
         padding: 12,
     },
-    categoryTileEmoji: {
-        fontSize: 32,
-        marginBottom: 8,
+    categoryTileContent: {
+        paddingLeft: 8,
+        paddingRight: 20,
+        paddingVertical: 8,
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
     },
     categoryTileText: {
         fontSize: 16,
         fontWeight: "700",
         textAlign: "center",
+        maxWidth: "100%",
     },
     categoryTileCount: {
         fontSize: 12,
         fontWeight: "400",
         textAlign: "center",
         marginTop: 4,
+    },
+    categoryTileIconWrapper: {
+        position: "absolute",
+        right: 8,
+        bottom: 8,
+        opacity: 0.9,
+    },
+    categoryTileIcon: {
+        width: 40,
+        height: 40,
     },
 });
 

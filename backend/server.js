@@ -300,6 +300,18 @@ function mapPlanItemRow(row) {
     };
 }
 
+function mapPersonalRecordRow(row) {
+    if (!row) return row;
+    return {
+        id: row.id,
+        userId: row.userId ?? row.user_id,
+        workoutId: row.workoutId ?? row.workout_id,
+        value: row.value,
+        createdAt: row.createdAt ?? row.created_at,
+        updatedAt: row.updatedAt ?? row.updated_at,
+    };
+}
+
 /**
  * expandFrequencyToDates
  * Expand a recurrence frequency string (e.g., "Mon,Wed,Fri" or "daily") into
@@ -551,6 +563,94 @@ app.delete("/api/workouts/:id", async (req, res) => {
     } catch (error) {
         console.error("Error deleting workout:", error);
         res.status(500).json({ error: "Failed to delete workout" });
+    }
+});
+
+app.get("/api/workouts/:id/personal-record", async (req, res) => {
+    const workoutId = req.params.id;
+    const userId = req.query.userId;
+    if (!userId) {
+        return res.status(400).json({ error: "userId query parameter is required" });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from("workout_personal_records")
+            .select("*")
+            .eq("workout_id", workoutId)
+            .eq("user_id", userId)
+            .maybeSingle();
+
+        if (error) throw error;
+        if (!data) return res.json(null);
+
+        res.json(mapPersonalRecordRow(data));
+    } catch (error) {
+        console.error("Error fetching personal record:", error);
+        res.status(500).json({ error: "Failed to fetch personal record" });
+    }
+});
+
+app.put("/api/workouts/:id/personal-record", async (req, res) => {
+    const workoutId = req.params.id;
+    const { userId, value } = req.body || {};
+    if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+    }
+
+    const normalizedValue = typeof value === "string" ? value.trim() : "";
+
+    try {
+        if (!normalizedValue) {
+            const { error } = await supabase
+                .from("workout_personal_records")
+                .delete()
+                .eq("workout_id", workoutId)
+                .eq("user_id", userId);
+            if (error) throw error;
+            return res.status(204).send();
+        }
+
+        const payload = {
+            workout_id: workoutId,
+            user_id: userId,
+            value: normalizedValue,
+            updated_at: new Date().toISOString(),
+        };
+
+        const { data, error } = await supabase
+            .from("workout_personal_records")
+            .upsert([payload], { onConflict: "user_id,workout_id" })
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.json(mapPersonalRecordRow(data));
+    } catch (error) {
+        console.error("Error upserting personal record:", error);
+        res.status(500).json({ error: "Failed to save personal record" });
+    }
+});
+
+app.delete("/api/workouts/:id/personal-record", async (req, res) => {
+    const workoutId = req.params.id;
+    const userId = req.query.userId || req.body?.userId;
+    if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+    }
+
+    try {
+        const { error } = await supabase
+            .from("workout_personal_records")
+            .delete()
+            .eq("workout_id", workoutId)
+            .eq("user_id", userId);
+
+        if (error) throw error;
+        res.status(204).send();
+    } catch (error) {
+        console.error("Error deleting personal record:", error);
+        res.status(500).json({ error: "Failed to delete personal record" });
     }
 });
 

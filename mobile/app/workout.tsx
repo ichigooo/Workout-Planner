@@ -31,7 +31,6 @@ export default function WorkoutScreen() {
     const [category, setCategory] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
     const chipListRef = useRef<import("react-native").FlatList<string> | null>(null);
 
     useEffect(() => {
@@ -107,16 +106,10 @@ export default function WorkoutScreen() {
 
     const categories = Array.from(new Set(workouts.map((w) => w.category))).sort();
     const categoriesWithAll = ["All", ...categories];
-    const normalizedQuery = searchQuery.trim().toLowerCase();
     const filteredByCategory = category
         ? workouts.filter((w) => w.category === category)
         : workouts;
-    const filtered = normalizedQuery
-        ? filteredByCategory.filter((w) => {
-              const hay = `${w.title}\n${w.description ?? ""}\n${w.intensity ?? ""}`.toLowerCase();
-              return hay.includes(normalizedQuery);
-          })
-        : filteredByCategory;
+    const filtered = filteredByCategory;
 
     // After data/categories are ready, auto-scroll the chip list to the selected category
     useEffect(() => {
@@ -260,46 +253,6 @@ export default function WorkoutScreen() {
                         }
                     }}
                 />
-                {/* Search Bar */}
-                <View style={{ paddingHorizontal: 16, paddingBottom: 10 }}>
-                    <View
-                        style={[
-                            styles.searchContainer,
-                            { borderColor: theme.colors.border, backgroundColor: theme.colors.bg },
-                        ]}
-                    >
-                        <Ionicons
-                            name="search-outline"
-                            size={18}
-                            color={theme.colors.subtext}
-                            style={{ marginRight: 8 }}
-                        />
-                        <TextInput
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            placeholder="Search workouts"
-                            placeholderTextColor={theme.colors.subtext}
-                            style={[styles.searchInput, { color: theme.colors.text }]}
-                            returnKeyType="search"
-                            autoCorrect={false}
-                            autoCapitalize="none"
-                            accessibilityLabel="Search workouts"
-                        />
-                        {searchQuery.length > 0 ? (
-                            <TouchableOpacity
-                                onPress={() => setSearchQuery("")}
-                                accessibilityRole="button"
-                                accessibilityLabel="Clear search"
-                            >
-                                <Ionicons
-                                    name="close-circle"
-                                    size={18}
-                                    color={theme.colors.subtext}
-                                />
-                            </TouchableOpacity>
-                        ) : null}
-                    </View>
-                </View>
             </View>
 
             {loading ? (
@@ -377,16 +330,4 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     filterText: { fontSize: 14, fontWeight: "600" },
-    searchContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        borderWidth: 1,
-        borderRadius: 10,
-        paddingHorizontal: 10,
-        height: 40,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 14,
-    },
 });

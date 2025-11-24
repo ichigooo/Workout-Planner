@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
     View,
     Text,
@@ -10,10 +10,13 @@ import {
     Alert,
     Modal,
     Dimensions,
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
-import { Workout, CreateWorkoutRequest } from "../types";
+import { Workout, CreateWorkoutRequest, WorkoutPersonalRecord } from "../types";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
 import { getCurrentPlanId, getCurrentUserId, getCurrentUser } from "../state/session";
@@ -48,6 +51,20 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     const [planId, setPlanId] = useState<string | null>(null);
     const [adding, setAdding] = useState(false);
     const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const windowWidth = Dimensions.get("window").width;
+    const heroHeight = Math.round(windowWidth * 0.75);
+    const heroScrollRef = useRef<ScrollView | null>(null);
+    const heroImages = useMemo(
+        () => [workout.imageUrl, workout.imageUrl2].filter(Boolean) as string[],
+        [workout.imageUrl, workout.imageUrl2],
+    );
+    const [personalRecord, setPersonalRecord] = useState<WorkoutPersonalRecord | null>(null);
+    const [personalRecordValue, setPersonalRecordValue] = useState("");
+    const [recordLoading, setRecordLoading] = useState(false);
+    const [recordSaving, setRecordSaving] = useState(false);
+    const [recordUserId, setRecordUserId] = useState<string | null>(() => getCurrentUserId());
+    const [isEditingRecord, setIsEditingRecord] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -77,6 +94,43 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
         };
     }, []);
 
+    useEffect(() => {
+        setRecordUserId(getCurrentUserId());
+    }, []);
+
+    useEffect(() => {
+        const userId = recordUserId;
+        if (!userId) {
+            setPersonalRecord(null);
+            setPersonalRecordValue("");
+            return;
+        }
+        let cancelled = false;
+        setRecordLoading(true);
+        apiService
+            .getPersonalRecord(workout.id, userId)
+            .then((record) => {
+                if (cancelled) return;
+                setPersonalRecord(record);
+                setPersonalRecordValue(record?.value ?? "");
+                setIsEditingRecord(false);
+            })
+            .catch((error) => {
+                if (cancelled) return;
+                console.error("Failed to load personal record", error);
+            })
+            .finally(() => {
+                if (!cancelled) setRecordLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [workout.id, recordUserId]);
+
+    useEffect(() => {
+        setActiveImageIndex(0);
+    }, [heroImages.length]);
+
     const _handleLogWorkout = () => {
         Alert.alert("Saved", "Notes saved.");
     };
@@ -87,9 +141,83 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
         setShowEditModal(true);
     };
 
+    const handleSavePersonalRecord = async () => {
+        const userId = recordUserId || getCurrentUserId();
+        if (!userId) {
+            Alert.alert("Unavailable", "Please sign in to save a personal record.");
+            return;
+        }
+        try {
+            setRecordSaving(true);
+            const trimmed = personalRecordValue.trim();
+            if (!trimmed) {
+                await apiService.deletePersonalRecord(workout.id, userId);
+                setPersonalRecord(null);
+                setPersonalRecordValue("");
+                setIsEditingRecord(false);
+                Alert.alert("Removed", "Personal record cleared.");
+            } else {
+                const updated = await apiService.upsertPersonalRecord(workout.id, userId, trimmed);
+                setPersonalRecord(updated);
+                setPersonalRecordValue(updated.value);
+                setIsEditingRecord(false);
+                Alert.alert("Saved", "Personal record updated.");
+            }
+        } catch (error) {
+            console.error("Failed to save personal record", error);
+            Alert.alert("Error", "Unable to save your personal record right now.");
+        } finally {
+            setRecordSaving(false);
+        }
+    };
+
+    const handleClearPersonalRecord = async () => {
+        const userId = recordUserId || getCurrentUserId();
+        if (!userId) {
+            Alert.alert("Unavailable", "Please sign in first.");
+            return;
+        }
+        try {
+            setRecordSaving(true);
+            await apiService.deletePersonalRecord(workout.id, userId);
+            setPersonalRecord(null);
+            setPersonalRecordValue("");
+            setIsEditingRecord(false);
+            Alert.alert("Removed", "Personal record cleared.");
+        } catch (error) {
+            console.error("Failed to clear personal record", error);
+            Alert.alert("Error", "Unable to clear your personal record right now.");
+        } finally {
+            setRecordSaving(false);
+        }
+    };
+
     const handleDeletePress = () => {
         setShowMenu(false);
-        onDelete();
+        Alert.alert(
+            "Delete workout",
+            "This will remove the workout from the library for everyone. Continue?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await apiService.deleteWorkout(workout.id);
+                            Alert.alert("Deleted", "Workout removed.");
+                            onDelete();
+                        } catch (error) {
+                            console.error("Failed to delete workout", error);
+                            Alert.alert(
+                                "Error",
+                                "Unable to delete the workout right now. Please try again.",
+                            );
+                        }
+                    },
+                },
+            ],
+        );
     };
 
     const openAddSheet = async () => {
@@ -129,7 +257,12 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
+        <View
+            style={[
+                styles.container,
+                { backgroundColor: scheme === "dark" ? theme.colors.bg : "#F7F7F7" },
+            ]}
+        >
             <View
                 style={[
                     styles.header,
@@ -155,47 +288,78 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                 )}
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {(() => {
-                    const imgs = [workout.imageUrl, workout.imageUrl2].filter(Boolean) as string[];
-                    if (imgs.length === 0) return null;
-                    const slideWidth = Dimensions.get("window").width - 32; // account for padding
-                    return (
-                        <View style={styles.imageContainer}>
+            <KeyboardAvoidingView
+                style={styles.flex}
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+            >
+                <ScrollView
+                    style={styles.content}
+                    contentContainerStyle={{
+                        paddingBottom: insets.bottom + 32,
+                    }}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {heroImages.length > 0 && (
+                        <View style={[styles.heroContainer, { height: heroHeight }]}>
                             <ScrollView
+                                ref={heroScrollRef}
                                 horizontal
-                                pagingEnabled
+                                pagingEnabled={heroImages.length > 1}
                                 showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={{ alignItems: "center" }}
+                                scrollEnabled={heroImages.length > 1}
+                                onMomentumScrollEnd={(event) => {
+                                    const offsetX = event.nativeEvent.contentOffset.x;
+                                    const nextIndex = Math.round(offsetX / windowWidth);
+                                    setActiveImageIndex(nextIndex);
+                                }}
                             >
-                                {imgs.map((uri, idx) => (
+                                {heroImages.map((uri, idx) => (
                                     <View
                                         key={`${uri}-${idx}`}
-                                        style={[styles.imageSlideWrapper, { width: slideWidth }]}
+                                        style={{ width: windowWidth, height: heroHeight }}
                                     >
                                         <Image
                                             source={{ uri }}
-                                            style={styles.imageSlide}
-                                            resizeMode="contain"
+                                            style={styles.heroImage}
+                                            resizeMode="cover"
                                         />
                                     </View>
                                 ))}
                             </ScrollView>
+                            {heroImages.length > 1 && (
+                                <View style={styles.imagePagination}>
+                                    {heroImages.map((_, idx) => (
+                                        <View
+                                            key={idx}
+                                            style={[
+                                                styles.imageDot,
+                                                idx === activeImageIndex && styles.imageDotActive,
+                                            ]}
+                                        />
+                                    ))}
+                                </View>
+                            )}
                         </View>
-                    );
-                })()}
+                    )}
 
                 <View
                     style={[
-                        styles.card,
-                        { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                        styles.body,
+                        {
+                            backgroundColor:
+                                scheme === "dark" ? theme.colors.bg : "#F7F7F7",
+                        },
                     ]}
                 >
+                    <View style={styles.categoryPill}>
+                        <Text style={styles.categoryPillText}>
+                            {workout.category?.toUpperCase()}
+                        </Text>
+                    </View>
+
                     <Text style={[styles.title, { color: theme.colors.text }]}>
                         {workout.title}
-                    </Text>
-                    <Text style={[styles.category, { color: theme.colors.accent }]}>
-                        {workout.category}
                     </Text>
 
                     {workout.description && (
@@ -210,28 +374,32 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                     )}
 
                     <View style={styles.section}>
-                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                            Workout Details
+                        <Text
+                            style={[
+                                styles.sectionTitle,
+                                { color: theme.colors.subtext, textTransform: "uppercase" },
+                            ]}
+                        >
+                            Workout details
                         </Text>
+
                         <View style={styles.detailsGrid}>
                             {workout.workoutType === "cardio" ? (
                                 <View
                                     style={[
                                         styles.detailItem,
-                                        { borderColor: theme.colors.border },
+                                        {
+                                            backgroundColor: theme.colors.surface,
+                                            borderColor: theme.colors.border,
+                                        },
                                     ]}
                                 >
                                     <Text
-                                        style={[
-                                            styles.detailLabel,
-                                            { color: theme.colors.subtext },
-                                        ]}
+                                        style={[styles.detailLabel, { color: theme.colors.subtext }]}
                                     >
                                         Duration
                                     </Text>
-                                    <Text
-                                        style={[styles.detailValue, { color: theme.colors.text }]}
-                                    >
+                                    <Text style={[styles.detailValue, { color: theme.colors.text }]}>
                                         {workout.duration} min
                                     </Text>
                                 </View>
@@ -240,7 +408,10 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                     <View
                                         style={[
                                             styles.detailItem,
-                                            { borderColor: theme.colors.border },
+                                            {
+                                                backgroundColor: theme.colors.surface,
+                                                borderColor: theme.colors.border,
+                                            },
                                         ]}
                                     >
                                         <Text
@@ -252,10 +423,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                             Sets
                                         </Text>
                                         <Text
-                                            style={[
-                                                styles.detailValue,
-                                                { color: theme.colors.text },
-                                            ]}
+                                            style={[styles.detailValue, { color: theme.colors.text }]}
                                         >
                                             {workout.sets}
                                         </Text>
@@ -263,7 +431,10 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                     <View
                                         style={[
                                             styles.detailItem,
-                                            { borderColor: theme.colors.border },
+                                            {
+                                                backgroundColor: theme.colors.surface,
+                                                borderColor: theme.colors.border,
+                                            },
                                         ]}
                                     >
                                         <Text
@@ -275,17 +446,22 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                             Reps
                                         </Text>
                                         <Text
-                                            style={[
-                                                styles.detailValue,
-                                                { color: theme.colors.text },
-                                            ]}
+                                            style={[styles.detailValue, { color: theme.colors.text }]}
                                         >
                                             {workout.reps}
                                         </Text>
                                     </View>
                                 </>
                             )}
-                            <View style={[styles.detailItem, { borderColor: theme.colors.border }]}>
+                            <View
+                                style={[
+                                    styles.detailItem,
+                                    {
+                                        backgroundColor: theme.colors.surface,
+                                        borderColor: theme.colors.border,
+                                    },
+                                ]}
+                            >
                                 <Text style={[styles.detailLabel, { color: theme.colors.subtext }]}>
                                     Intensity
                                 </Text>
@@ -295,8 +471,131 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                             </View>
                         </View>
                     </View>
+
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                            My Personal Record
+                        </Text>
+                        {personalRecord && !isEditingRecord ? (
+                            <View
+                                style={[
+                                    styles.personalRecordDisplay,
+                                    {
+                                        borderColor: theme.colors.border,
+                                        backgroundColor: theme.colors.surface,
+                                    },
+                                ]}
+                            >
+                                <Text style={[styles.personalRecordValue, { color: theme.colors.text }]}>
+                                    {personalRecord.value}
+                                </Text>
+                                <View style={styles.recordActions}>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.recordButton,
+                                            {
+                                                backgroundColor: theme.colors.accent,
+                                                flex: undefined,
+                                                paddingHorizontal: 20,
+                                            },
+                                        ]}
+                                        onPress={() => setIsEditingRecord(true)}
+                                    >
+                                        <Text style={styles.recordButtonText}>Update</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.recordButton,
+                                            styles.recordButtonSecondary,
+                                            { borderColor: theme.colors.border, flex: undefined },
+                                        ]}
+                                        onPress={handleClearPersonalRecord}
+                                        disabled={recordSaving}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.recordButtonSecondaryText,
+                                                { color: theme.colors.text },
+                                            ]}
+                                        >
+                                            Clear
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        ) : (
+                            <>
+                                <TextInput
+                                    style={[
+                                        styles.personalRecordInput,
+                                        {
+                                            borderColor: theme.colors.border,
+                                            color: theme.colors.text,
+                                            backgroundColor: theme.colors.surface,
+                                        },
+                                    ]}
+                                    placeholder="e.g., 225 lb x 5 or 6:20 mile"
+                                    placeholderTextColor={theme.colors.subtext}
+                                    value={personalRecordValue}
+                                    onChangeText={setPersonalRecordValue}
+                                    editable={!recordSaving && Boolean(recordUserId)}
+                                />
+                                <Text style={[styles.personalRecordHint, { color: theme.colors.subtext }]}>
+                                    {recordLoading
+                                        ? "Loading your record..."
+                                        : "Track your best set, rep, or time so you always know what to beat."}
+                                </Text>
+                                <View style={styles.recordActions}>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.recordButton,
+                                            {
+                                                backgroundColor: theme.colors.accent,
+                                                opacity: recordSaving ? 0.7 : 1,
+                                            },
+                                        ]}
+                                        onPress={handleSavePersonalRecord}
+                                        disabled={recordSaving || !recordUserId}
+                                    >
+                                        <Text style={styles.recordButtonText}>
+                                            {recordSaving ? "Saving..." : "Save Record"}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    {personalRecord ? (
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.recordButton,
+                                                styles.recordButtonSecondary,
+                                                { borderColor: theme.colors.border },
+                                            ]}
+                                            onPress={() => {
+                                                setIsEditingRecord(false);
+                                                setPersonalRecordValue(personalRecord?.value ?? "");
+                                            }}
+                                            disabled={recordSaving}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.recordButtonSecondaryText,
+                                                    { color: theme.colors.text },
+                                                ]}
+                                            >
+                                                Cancel
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ) : null}
+                                </View>
+                            </>
+                        )}
+                        {!recordUserId && (
+                            <Text style={[styles.personalRecordHint, { color: theme.colors.subtext }]}>
+                                Sign in to save personal records.
+                            </Text>
+                        )}
+                    </View>
                 </View>
-            </ScrollView>
+                </ScrollView>
+            </KeyboardAvoidingView>
 
             {/* Menu Modal */}
             <Modal
@@ -442,6 +741,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    flex: {
+        flex: 1,
+    },
     header: {
         flexDirection: "row",
         alignItems: "center",
@@ -476,64 +778,82 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        padding: 16,
     },
-    imageContainer: {
+    heroContainer: {
         width: "100%",
-        height: 300,
+        position: "relative",
+        backgroundColor: "#111827",
         marginBottom: 16,
-        borderRadius: 16,
-        overflow: "hidden",
-        backgroundColor: "#f8f9fa",
     },
-    imageSlideWrapper: {
-        height: "100%",
-        paddingHorizontal: 8,
-    },
-    imageSlide: {
+    heroImage: {
         width: "100%",
         height: "100%",
-        borderRadius: 12,
-        overflow: "hidden",
     },
-    dualImageContainer: {
+    heroPlaceholder: {
         width: "100%",
-        height: 300,
-        marginBottom: 16,
-        borderRadius: 16,
-        overflow: "hidden",
-        backgroundColor: "#f8f9fa",
-        flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        gap: 8,
+        backgroundColor: "#1f2937",
     },
-    dualImage: {
-        flex: 1,
-        height: "100%",
+    heroPlaceholderText: {
+        color: "#9CA3AF",
+        fontSize: 14,
+        textTransform: "uppercase",
+        letterSpacing: 1,
     },
-    imageSpacer: {
+    imagePagination: {
+        position: "absolute",
+        bottom: 10,
+        left: 0,
+        right: 0,
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 6,
+        pointerEvents: "none",
+        zIndex: 1,
+    },
+    imageDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: "rgba(0, 0, 0, 0.25)",
+    },
+    imageDotActive: {
         width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: "#111827",
     },
-    image: {
-        width: "100%",
-        height: "100%",
-    },
-    card: {
-        borderRadius: 16,
-        padding: 20,
-        borderWidth: StyleSheet.hairlineWidth,
+    body: {
+        paddingHorizontal: 20,
+        paddingTop: 24,
+        paddingBottom: 16,
     },
     title: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: "700",
-        marginBottom: 8,
+        marginBottom: 12,
     },
     category: {
         fontSize: 16,
         fontWeight: "600",
         textTransform: "uppercase",
         marginBottom: 20,
+    },
+    categoryPill: {
+        alignSelf: "flex-start",
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 999,
+        backgroundColor: "rgba(34, 197, 94, 0.12)",
+        marginBottom: 10,
+    },
+    categoryPillText: {
+        fontSize: 12,
+        fontWeight: "700",
+        letterSpacing: 0.6,
+        color: "#166534",
     },
     section: {
         marginBottom: 24,
@@ -549,15 +869,18 @@ const styles = StyleSheet.create({
     },
     detailsGrid: {
         flexDirection: "row",
-        justifyContent: "space-between",
+        flexWrap: "wrap",
+        marginHorizontal: -6,
     },
     detailItem: {
-        flex: 1,
-        alignItems: "center",
-        padding: 16,
-        borderWidth: 1,
-        borderRadius: 12,
-        marginHorizontal: 4,
+        width: "50%",
+        alignItems: "flex-start",
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: 14,
+        marginBottom: 12,
+        marginHorizontal: 6,
     },
     detailLabel: {
         fontSize: 14,
@@ -565,6 +888,54 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     detailValue: {
+        fontSize: 20,
+        fontWeight: "700",
+    },
+    personalRecordInput: {
+        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        fontSize: 16,
+        marginTop: 4,
+    },
+    personalRecordHint: {
+        fontSize: 13,
+        marginTop: 6,
+    },
+    recordActions: {
+        flexDirection: "row",
+        gap: 12,
+        marginTop: 12,
+    },
+    recordButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        flex: 1,
+    },
+    recordButtonText: {
+        color: "#FFFFFF",
+        fontSize: 15,
+        fontWeight: "600",
+    },
+    recordButtonSecondary: {
+        borderWidth: StyleSheet.hairlineWidth,
+        backgroundColor: "transparent",
+    },
+    recordButtonSecondaryText: {
+        fontSize: 15,
+        fontWeight: "600",
+    },
+    personalRecordDisplay: {
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: StyleSheet.hairlineWidth,
+    },
+    personalRecordValue: {
         fontSize: 20,
         fontWeight: "700",
     },

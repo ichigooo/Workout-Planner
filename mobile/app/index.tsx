@@ -32,7 +32,12 @@ export default function Index() {
     const handleBegin = async () => {
         try {
             setIsInitializing(true);
-            
+            if (process.env.EXPO_PUBLIC_CLEAR_STORAGE_ON_START === "true") {
+                console.log("[Index] Clearing storage as per config");
+                // Clear AsyncStorage for fresh start (for testing purposes)
+                const AsyncStorage = require("@react-native-async-storage/async-storage").default;
+                await AsyncStorage.clear();
+            }
             // Check if user is logged in
             const userId = await loadStoredUserId();
             
