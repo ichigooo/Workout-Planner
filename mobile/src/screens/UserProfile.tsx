@@ -381,26 +381,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                         activeOpacity={1}
                         onPress={() => setShowLogoutConfirm(false)}
                     />
-                    <View
-                        style={[
-                            styles.logoutSheet,
-                            { backgroundColor: theme.colors.surface },
-                        ]}
-                    >
-                        <Text
-                            style={[
-                                styles.logoutTitle,
-                                { color: theme.colors.text },
-                            ]}
-                        >
+                    <View style={[styles.logoutSheet, { backgroundColor: theme.colors.surface }]}>
+                        <Text style={[styles.logoutTitle, { color: theme.colors.text }]}>
                             Log out?
                         </Text>
-                        <Text
-                            style={[
-                                styles.logoutMessage,
-                                { color: theme.colors.subtext },
-                            ]}
-                        >
+                        <Text style={[styles.logoutMessage, { color: theme.colors.subtext }]}>
                             You’ll need to sign in again to access your workouts and routine.
                         </Text>
                         <View style={styles.logoutActions}>
@@ -415,10 +400,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                                 onPress={() => setShowLogoutConfirm(false)}
                             >
                                 <Text
-                                    style={[
-                                        styles.logoutCancelText,
-                                        { color: theme.colors.text },
-                                    ]}
+                                    style={[styles.logoutCancelText, { color: theme.colors.text }]}
                                 >
                                     Cancel
                                 </Text>

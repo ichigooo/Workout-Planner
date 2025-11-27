@@ -36,7 +36,14 @@ export default function WorkoutDetailScreen() {
 
     if (loading) {
         return (
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.colors.bg }}>
+            <View
+                style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: theme.colors.bg,
+                }}
+            >
                 <ActivityIndicator size="large" color={theme.colors.accent} />
             </View>
         );
@@ -61,4 +68,3 @@ export default function WorkoutDetailScreen() {
         />
     );
 }
-

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
     View,
     Text,
@@ -74,7 +74,9 @@ const categoryIconSources: Record<string, ImageSourcePropType> = {
 };
 
 const getTypeIcon = (category: WorkoutCategory): ImageSourcePropType => {
-    return categoryIconSources[category] || require("../../assets/images/workout_types/default.png");
+    return (
+        categoryIconSources[category] || require("../../assets/images/workout_types/default.png")
+    );
 };
 
 const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
@@ -87,20 +89,18 @@ const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
     styles,
 }) => {
     const dayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const dotAnimations = useRef<Record<string, Animated.Value>>({});
-
-    // Initialize animations for each day
-    weekDates.forEach((dateISO) => {
-        if (!dotAnimations.current[dateISO]) {
-            dotAnimations.current[dateISO] = new Animated.Value(1);
-        }
-    });
+    const dotAnimations = useMemo(() => {
+        return weekDates.reduce<Record<string, Animated.Value>>((acc, dateISO) => {
+            acc[dateISO] = new Animated.Value(1);
+            return acc;
+        }, {});
+    }, [weekDates]);
 
     const handleDayPress = (dateISO: string) => {
         setSelectedDate(dateISO);
-        
+
         // Animate the dot when tapped
-        const anim = dotAnimations.current[dateISO];
+        const anim = dotAnimations[dateISO];
         if (anim) {
             Animated.sequence([
                 Animated.spring(anim, {
@@ -139,14 +139,12 @@ const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
                         const hasWorkouts = (weekWorkouts[dateISO] || []).length > 0;
                         const isToday = dateISO === todayISO;
                         const isSelected = dateISO === selectedDate;
-                        const dotScale = dotAnimations.current[dateISO] || new Animated.Value(1);
-                        
+                        const dotScale = dotAnimations[dateISO] || new Animated.Value(1);
+
                         return (
                             <TouchableOpacity
                                 key={dateISO}
-                                style={[
-                                    styles.dayCol,
-                                ]}
+                                style={styles.dayCol}
                                 onPress={() => handleDayPress(dateISO)}
                                 activeOpacity={0.7}
                             >
@@ -184,7 +182,9 @@ const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
                                             styles.dot,
                                             {
                                                 backgroundColor: hasWorkouts
-                                                    ? (isSelected ? "#FFFFFF" : theme.colors.accent)
+                                                    ? isSelected
+                                                        ? "#FFFFFF"
+                                                        : theme.colors.accent
                                                     : theme.colors.border,
                                                 transform: [
                                                     {
@@ -262,10 +262,6 @@ export const Home: React.FC<HomeProps> = ({
         }
     }, []);
 
-    useEffect(() => {
-        loadUserProfile();
-    }, [loadUserProfile]);
-
     // Refresh profile photo and cache when screen comes into focus (e.g., after updating profile or re-tapping tab)
     useFocusEffect(
         useCallback(() => {
@@ -283,7 +279,7 @@ export const Home: React.FC<HomeProps> = ({
                 }
             };
             refreshCache();
-        }, [loadUserProfile])
+        }, [loadUserProfile]),
     );
 
     // scroll to top when tab is pressed (handled by hook)
@@ -361,10 +357,7 @@ export const Home: React.FC<HomeProps> = ({
             <ScrollView
                 ref={scrollRef}
                 style={styles.container}
-                contentContainerStyle={[
-                    styles.content,
-                    { paddingBottom: 16 + insets.bottom },
-                ]}
+                contentContainerStyle={[styles.content, { paddingBottom: 16 + insets.bottom }]}
                 showsVerticalScrollIndicator={false}
                 scrollEnabled={canScroll}
                 bounces={false}
@@ -376,10 +369,7 @@ export const Home: React.FC<HomeProps> = ({
                 <View style={styles.headerRow}>
                     <TouchableOpacity onPress={onOpenProfile} style={styles.iconButton}>
                         {profilePhoto ? (
-                            <Image
-                                source={{ uri: profilePhoto }}
-                                style={styles.profileImage}
-                            />
+                            <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
                         ) : (
                             <View
                                 style={[
@@ -511,7 +501,9 @@ export const Home: React.FC<HomeProps> = ({
                         {Array.from(new Set(workouts.map((w) => w.category)))
                             .sort()
                             .map((cat) => {
-                                const workoutCount = workouts.filter((w) => w.category === cat).length;
+                                const workoutCount = workouts.filter(
+                                    (w) => w.category === cat,
+                                ).length;
                                 return (
                                     <TouchableOpacity
                                         key={String(cat)}

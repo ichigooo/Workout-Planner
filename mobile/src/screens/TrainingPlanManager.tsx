@@ -16,7 +16,7 @@ import { Calendar } from "react-native-calendars";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
 import { planItemsCache } from "../services/planItemsCache";
-import { CreateWorkoutPlanRequest, Workout, PlanItem } from "../types";
+import { Workout } from "../types";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -40,10 +40,29 @@ export const TrainingPlanManager: React.FC = () => {
     >([]);
     const scrollRef = useScrollToTopOnTabPress();
     const [refreshKey, setRefreshKey] = useState(0);
+    const accentColor = theme.colors.accent;
+
+    const loadWorkouts = async () => {
+        try {
+            const ws = await apiService.getWorkouts();
+            setAllWorkouts(ws || []);
+        } catch (e) {
+            console.warn("load workouts failed", e);
+        }
+    };
 
     useEffect(() => {
-        loadWorkouts();
-        setLoading(false);
+        let mounted = true;
+        const init = async () => {
+            await loadWorkouts();
+            if (mounted) {
+                setLoading(false);
+            }
+        };
+        init();
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     // Refresh data whenever this tab gains focus
@@ -133,46 +152,73 @@ export const TrainingPlanManager: React.FC = () => {
         buildSchedule();
     }, [refreshKey]);
 
-
-    const _handleSubmit = async (_payload: CreateWorkoutPlanRequest) => {
-        // For now, delegate to the embedded form flow which already saves plan items via callbacks
-        Alert.alert("Saved", "Routine saved successfully");
-    };
-
-    const loadWorkouts = async () => {
-        try {
-            const ws = await apiService.getWorkouts();
-            setAllWorkouts(ws || []);
-        } catch (e) {
-            // ignore
-        }
-    };
+    const prefillWorkoutDates = useCallback(
+        async (workoutId: string) => {
+            try {
+                const planId = planItemsCache.getPlanId();
+                if (!planId) return;
+                const planItems = await apiService.getPlanItemsSorted(planId);
+                const dates: { [key: string]: { selected: true; selectedColor: string } } = {};
+                planItems.forEach((item) => {
+                    const matchWorkoutId =
+                        item.workoutId === workoutId ||
+                        (item as any).workout_id === workoutId ||
+                        item.workout?.id === workoutId;
+                    if (!matchWorkoutId) return;
+                    const sd = (item as any).scheduledDate ?? (item as any).scheduled_date;
+                    if (!sd) return;
+                    const date =
+                        typeof sd === "string"
+                            ? sd.split("T")[0].split(" ")[0]
+                            : (() => {
+                                  const dt = new Date(sd as any);
+                                  return `${dt.getFullYear()}-${(dt.getMonth() + 1)
+                                      .toString()
+                                      .padStart(
+                                          2,
+                                          "0",
+                                      )}-${dt.getDate().toString().padStart(2, "0")}`;
+                              })();
+                    dates[date] = {
+                        selected: true,
+                        selectedColor: accentColor,
+                    };
+                });
+                setSelectedDates(dates);
+            } catch (error) {
+                console.error("Failed to prefill workout dates:", error);
+                setSelectedDates({});
+            }
+        },
+        [accentColor],
+    );
 
     const categories = useMemo(
         () => Array.from(new Set(allWorkouts.map((w) => w.category))).sort(),
         [allWorkouts],
     );
-    const workoutsByCategory = useMemo(
-        () => (selectedCategory ? allWorkouts.filter((w) => w.category === selectedCategory) : []),
-        [allWorkouts, selectedCategory],
-    );
 
-    // Ensure a default category is selected (first one) so the list isn't empty
-    useEffect(() => {
-        if (!selectedCategory && categories.length > 0) {
-            setSelectedCategory(categories[0]);
+    const activeCategory = useMemo(() => {
+        if (selectedCategory && categories.includes(selectedCategory)) {
+            return selectedCategory;
         }
+        return categories[0] ?? null;
     }, [categories, selectedCategory]);
+
+    const workoutsByCategory = useMemo(
+        () => (activeCategory ? allWorkouts.filter((w) => w.category === activeCategory) : []),
+        [allWorkouts, activeCategory],
+    );
 
     // Keep the active category chip in view
     const categoriesListRef = useRef<FlatList<string>>(null);
     useEffect(() => {
-        if (!selectedCategory) return;
-        const index = categories.findIndex((c) => c === selectedCategory);
+        if (!activeCategory) return;
+        const index = categories.findIndex((c) => c === activeCategory);
         if (index >= 0 && categoriesListRef.current) {
             categoriesListRef.current.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
         }
-    }, [selectedCategory, categories]);
+    }, [activeCategory, categories]);
 
     const handleQuickAdd = async () => {
         if (!selectedWorkoutId) return;
@@ -318,7 +364,6 @@ export const TrainingPlanManager: React.FC = () => {
             </TouchableOpacity>
 
             <Modal
-                name="add_workout_sheet"
                 visible={showAddSheet}
                 animationType="slide"
                 presentationStyle="pageSheet"
@@ -349,7 +394,7 @@ export const TrainingPlanManager: React.FC = () => {
                             data={categories}
                             keyExtractor={(item) => item}
                             renderItem={({ item }) => {
-                                const active = selectedCategory === item;
+                                const active = activeCategory === item;
                                 return (
                                     <TouchableOpacity
                                         style={[
@@ -364,6 +409,7 @@ export const TrainingPlanManager: React.FC = () => {
                                         onPress={() => {
                                             setSelectedCategory(item);
                                             setSelectedWorkoutId(null);
+                                            setSelectedDates({});
                                         }}
                                         activeOpacity={0.85}
                                     >
@@ -410,7 +456,10 @@ export const TrainingPlanManager: React.FC = () => {
                                                     : theme.colors.surface,
                                             },
                                         ]}
-                                        onPress={() => setSelectedWorkoutId(w.id)}
+                                        onPress={() => {
+                                            setSelectedWorkoutId(w.id);
+                                            prefillWorkoutDates(w.id);
+                                        }}
                                     >
                                         <Text
                                             style={{ color: theme.colors.text, fontWeight: "600" }}

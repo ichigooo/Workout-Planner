@@ -40,18 +40,18 @@ export default function Index() {
             }
             // Check if user is logged in
             const userId = await loadStoredUserId();
-            
+
             if (!userId) {
                 // No user logged in, navigate to sign-in
                 console.log("[Index] No user found, redirecting to sign-in");
                 router.replace("/(auth)/sign-in");
                 return;
             }
-            
+
             // User is logged in, ensure app is initialized
             console.log("[Index] User found, ensuring app is initialized");
             await initApp();
-            
+
             // Navigate to main app
             router.replace("/(tabs)");
         } catch (error) {

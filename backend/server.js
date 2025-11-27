@@ -116,6 +116,47 @@ function mapUserRow(row) {
 }
 
 /**
+ * ensureUserExistsOrRespond
+ * Verifies that a user with the given ID exists in the `users` table.
+ * If not, sends an appropriate HTTP response and returns false.
+ * Intended to be called at the top of any route that relies on a user row.
+ * @param {string} userId
+ * @param {import('express').Response} res
+ * @returns {Promise<boolean>}
+ */
+async function ensureUserExistsOrRespond(userId, res) {
+    if (!userId) {
+        res.status(400).json({ error: "userId is required" });
+        return false;
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from("users")
+            .select("id")
+            .eq("id", userId)
+            .maybeSingle();
+
+        if (error) {
+            console.error("Error verifying user existence:", error);
+            res.status(500).json({ error: "Failed to verify user" });
+            return false;
+        }
+
+        if (!data) {
+            res.status(404).json({ error: "User not found" });
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error("Unexpected error verifying user existence:", err);
+        res.status(500).json({ error: "Failed to verify user" });
+        return false;
+    }
+}
+
+/**
  * uploadAvatarToStorage
  * Uploads a base64/data-URL image to Supabase storage 'avatars' bucket for a given user
  * and returns a public URL. If the input looks like an http(s) URL, returns it unchanged.
@@ -574,6 +615,9 @@ app.get("/api/workouts/:id/personal-record", async (req, res) => {
     }
 
     try {
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
         const { data, error } = await supabase
             .from("workout_personal_records")
             .select("*")
@@ -601,6 +645,9 @@ app.put("/api/workouts/:id/personal-record", async (req, res) => {
     const normalizedValue = typeof value === "string" ? value.trim() : "";
 
     try {
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
         if (!normalizedValue) {
             const { error } = await supabase
                 .from("workout_personal_records")
@@ -640,6 +687,9 @@ app.delete("/api/workouts/:id/personal-record", async (req, res) => {
     }
 
     try {
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
         const { error } = await supabase
             .from("workout_personal_records")
             .delete()
@@ -659,6 +709,9 @@ app.delete("/api/workouts/:id/personal-record", async (req, res) => {
 app.get("/api/users/:userId/workout-plan-id", async (req, res) => {
     try {
         const userId = req.params.userId;
+
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
 
         // Try to get existing plans
         const { data: existingPlans, error: fetchError } = await supabase
@@ -734,6 +787,8 @@ app.get("/api/workout-plans/:id", async (req, res) => {
 app.post("/api/users/:id/default-plan", async (req, res) => {
     try {
         const userId = req.params.id;
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
         // Check if user already has a plan
         const { data: existingPlans, error: existingErr } = await supabase
             .from("workout_plans")
@@ -819,6 +874,10 @@ app.post("/api/workout-plans/:id/plan-items/date", async (req, res) => {
 app.post("/api/workout-plans", async (req, res) => {
     try {
         const body = req.body || {};
+        if (body.userId) {
+            const ok = await ensureUserExistsOrRespond(body.userId, res);
+            if (!ok) return;
+        }
         // Map camelCase to snake_case; routine plans have no name and no date range
         const insert = {
             name: body.isRoutine ? null : (body.name ?? null),
