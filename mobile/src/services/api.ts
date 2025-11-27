@@ -11,21 +11,39 @@ import {
 } from "../types";
 import { getLocalIp } from "../utils/getlocalIP";
 
-const USE_CLOUD = (process.env.EXPO_PUBLIC_USE_CLOUD ?? "false").toLowerCase() === "true";
-
+// Raw env values (may be undefined in some builds)
+const RAW_USE_CLOUD = process.env.EXPO_PUBLIC_USE_CLOUD;
 const CLOUD_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
-const detectedLocalIp = getLocalIp();
+const USE_CLOUD = (RAW_USE_CLOUD ?? "true").toLowerCase() === "true";
+
+// Only try local IP if we explicitly say "don’t use cloud".
+const detectedLocalIp = USE_CLOUD ? null : getLocalIp();
+console.log("[api] RAW_USE_CLOUD =", RAW_USE_CLOUD);
+console.log("[api] USE_CLOUD =", USE_CLOUD);
 console.log("[api] detectedLocalIp", detectedLocalIp);
 
 const LOCAL_BASE_URL = detectedLocalIp ? `http://${detectedLocalIp}:3001/api` : null;
 
-if (USE_CLOUD && !CLOUD_BASE_URL) {
-    throw new Error("EXPO_PUBLIC_USE_CLOUD is true but EXPO_PUBLIC_API_BASE_URL is not set");
-} // Log which API base the app is using (helps confirm local vs cloud)
-console.log("[api] API_BASE_URL=", LOCAL_BASE_URL);
+// Pick a base URL without ever throwing at module load.
+let API_BASE_URL = CLOUD_BASE_URL || LOCAL_BASE_URL || "";
 
-const API_BASE_URL = USE_CLOUD ? CLOUD_BASE_URL! : LOCAL_BASE_URL;
+// Log everything so we can see what’s going on.
+console.log("[api] CLOUD_BASE_URL =", CLOUD_BASE_URL);
+console.log("[api] LOCAL_BASE_URL =", LOCAL_BASE_URL);
+console.log("[api] FINAL API_BASE_URL =", API_BASE_URL);
+
+// As a safety net: in dev, loudly error if nothing is set.
+// In release, we’ll just log and let requests fail instead of crashing the app.
+if (!API_BASE_URL) {
+    const msg =
+        "API_BASE_URL is empty. Set EXPO_PUBLIC_API_BASE_URL or provide a local IP.";
+    if (__DEV__) {
+        throw new Error(msg);
+    } else {
+        console.error("[api]", msg);
+    }
+}
 
 class ApiService {
     private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -41,9 +59,11 @@ class ApiService {
 
         if (!response.ok) {
             const method = options?.method ?? "GET";
-            throw new Error(
+            const error: any = new Error(
                 `API request failed: ${method} ${API_BASE_URL}${endpoint} - ${response.status} ${response.statusText}`,
             );
+            error.status = response.status;
+            throw error;
         }
 
         // Handle empty responses (like 204 No Content)
@@ -253,6 +273,21 @@ class ApiService {
             method: "PUT",
             body: JSON.stringify(data),
         });
+    }
+
+    async createUserIfNeeded(payload: { id: string; email: string; name?: string | null }) {
+        try {
+            await this.request<User>("/users", {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+        } catch (err: any) {
+            if (err && typeof err === "object" && (err as any).status === 409) {
+                // User already exists, safe to ignore.
+                return;
+            }
+            throw err;
+        }
     }
 }
 

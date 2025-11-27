@@ -562,7 +562,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                 backgroundColor: theme.colors.surface,
                                             },
                                         ]}
-                                        placeholder="e.g., 225 lb x 5 or 6:20 mile"
+                                        placeholder="e.g., 25 lb"
                                         placeholderTextColor={theme.colors.subtext}
                                         value={personalRecordValue}
                                         onChangeText={setPersonalRecordValue}

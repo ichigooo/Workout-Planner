@@ -18,7 +18,8 @@
             "bundleIdentifier": "com.linnaw626.workoutplanner",
             "infoPlist": {
                 "ITSAppUsesNonExemptEncryption": false
-            }
+            },
+            "buildNumber": "5"
         },
         "android": {
             "adaptiveIcon": {

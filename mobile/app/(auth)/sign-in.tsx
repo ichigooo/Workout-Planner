@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/src/lib/supabase";
 import initApp from "@/src/services/startup";
 import { setCurrentUserId } from "@/src/state/session";
+import { apiService } from "@/src/services/api";
 
 export default function SignInScreen() {
     const router = useRouter();
@@ -51,15 +52,31 @@ export default function SignInScreen() {
 
             if (authError || !data?.user) {
                 console.warn("[SignIn] Auth failed:", authError);
-                setError("Invalid email or password. Please try again.");
+                setError(authError?.message +  "Invalid email or password. Please try again.");
+                return;
+            }
+
+            const userId = data.user.id;
+            const userEmail = data.user.email ?? emailValue;
+            const userName =
+                // Supabase standard metadata keys
+                (data.user.user_metadata &&
+                    (data.user.user_metadata.full_name || data.user.user_metadata.name)) ||
+                null;
+
+            // Ensure a corresponding profile exists in our backend users table
+            try {
+                await apiService.createUserIfNeeded({ id: userId, email: userEmail, name: userName });
+            } catch (createErr) {
+                console.error("[SignIn] Failed to sync user profile to backend:", createErr);
+                setError("Account created, but we couldn't set up your profile. Please try again.");
                 return;
             }
 
             // Store the authenticated user ID for the rest of the app.
-            // TODO: fetch/create corresponding profile row via backend `/api/users`.
-            await setCurrentUserId(data.user.id);
+            await setCurrentUserId(userId);
 
-            console.log("[SignIn] Auth success, user id:", data.user.id);
+            console.log("[SignIn] Auth success, user id:", userId);
 
             // Fully initialize the app (plan id, cache, etc.) then go to main content.
             await initApp();
