@@ -275,7 +275,12 @@ class ApiService {
         });
     }
 
-    async createUserIfNeeded(payload: { id: string; email: string; name?: string | null }) {
+    async createUserIfNeeded(payload: {
+        id: string;
+        email: string;
+        name?: string | null;
+        birthday?: string | null;
+    }) {
         try {
             await this.request<User>("/users", {
                 method: "POST",

@@ -189,11 +189,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
 
     const performLogout = async () => {
         try {
-            await supabase.auth.signOut();
-            await clearCurrentUserId();
-            setCurrentPlanId(null);
-            setShowLogoutConfirm(false);
-            router.replace("/");
+        await supabase.auth.signOut();
+        await clearCurrentUserId();
+        setCurrentPlanId(null);
+        setShowLogoutConfirm(false);
+        router.replace("/(auth)/sign-in");
         } catch (error) {
             console.error("[UserProfile] Failed to log out:", error);
             Alert.alert("Error", "Could not log out. Please try again.");

@@ -10,6 +10,7 @@ import {
     useColorScheme,
     ImageSourcePropType,
     LayoutChangeEvent,
+    RefreshControl,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
@@ -229,24 +230,49 @@ export const Home: React.FC<HomeProps> = ({
     const scrollRef = useScrollToTopOnTabPress();
     const [scrollContentHeight, setScrollContentHeight] = useState(0);
     const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
+    const [refreshing, setRefreshing] = useState(false);
     const canScroll = scrollViewportHeight > 0 && scrollContentHeight > scrollViewportHeight;
 
-    useEffect(() => {
-        const loadPreloadedData = async () => {
-            // Get workouts from planItemsCache (will use cache or fetch if needed)
-            const cachedWorkouts = await planItemsCache.getWorkouts();
+    const refreshCacheFromStore = useCallback(async () => {
+        try {
+            const [cachedWorkouts, cachedPlanItems] = await Promise.all([
+                planItemsCache.getWorkouts(),
+                planItemsCache.getCachedItems(),
+            ]);
             setWorkouts(cachedWorkouts);
-
-            // Get plan items from cache (already preloaded in startup)
-            const cachedPlanItems = await planItemsCache.getCachedItems();
             setPlanItems(cachedPlanItems);
-
             console.log("[Home] Loaded cached workouts:", cachedWorkouts.length);
             console.log("[Home] Loaded cached plan items:", cachedPlanItems.length);
-            setLoading(false);
+        } catch (error) {
+            console.error("[Home] Failed to load cached data:", error);
+        }
+    }, []);
+
+    useEffect(() => {
+        let mounted = true;
+        const loadPreloadedData = async () => {
+            try {
+                const [cachedWorkouts, cachedPlanItems] = await Promise.all([
+                    planItemsCache.getWorkouts(),
+                    planItemsCache.getCachedItems(),
+                ]);
+                setWorkouts(cachedWorkouts);
+                setPlanItems(cachedPlanItems);
+                console.log("[Home] Loaded cached workouts:", cachedWorkouts.length);
+                console.log("[Home] Loaded cached plan items:", cachedPlanItems.length);
+            } catch (error) {
+                console.error("[Home] Failed to load cached data:", error);
+            } finally {
+                if (mounted) {
+                    setLoading(false);
+                }
+            }
         };
 
         loadPreloadedData();
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     const loadUserProfile = useCallback(async () => {
@@ -270,10 +296,7 @@ export const Home: React.FC<HomeProps> = ({
             const refreshCache = async () => {
                 try {
                     planItemsCache.invalidate();
-                    await Promise.all([
-                        planItemsCache.getCachedItems(),
-                        planItemsCache.getWorkouts(),
-                    ]);
+                    await refreshCacheFromStore();
                 } catch (error) {
                     console.error("[Home] Error refreshing cache:", error);
                 }
@@ -336,10 +359,14 @@ export const Home: React.FC<HomeProps> = ({
     const todayISO = localTodayStr;
     // choose which date to display in the "Today's workouts" section:
     // prefer the selected date; if it has no workouts, fall back to the next date in the week that does
+    const todaysWorkoutList = weekWorkouts[todayISO] || [];
+    const isRestDay = selectedDate === todayISO && todaysWorkoutList.length === 0;
     const displayDate =
-        weekWorkouts[selectedDate] && weekWorkouts[selectedDate].length > 0
-            ? selectedDate
-            : weekDates.find((d) => (weekWorkouts[d] || []).length > 0) || selectedDate;
+        isRestDay
+            ? todayISO
+            : weekWorkouts[selectedDate] && weekWorkouts[selectedDate].length > 0
+                ? selectedDate
+                : weekDates.find((d) => (weekWorkouts[d] || []).length > 0) || selectedDate;
 
     const _todaysWorkout = workouts.length > 0 ? workouts[0] : undefined;
     const handleScrollLayout = useCallback((event: LayoutChangeEvent) => {
@@ -348,6 +375,18 @@ export const Home: React.FC<HomeProps> = ({
     const handleContentSizeChange = useCallback((_width: number, height: number) => {
         setScrollContentHeight(height);
     }, []);
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+            planItemsCache.invalidate();
+            await refreshCacheFromStore();
+            setRefreshKey((k) => k + 1);
+        } catch (error) {
+            console.error("[Home] Refresh failed:", error);
+        } finally {
+            setRefreshing(false);
+        }
+    }, [refreshCacheFromStore]);
 
     return (
         <SafeAreaView
@@ -359,6 +398,14 @@ export const Home: React.FC<HomeProps> = ({
                 style={styles.container}
                 contentContainerStyle={[styles.content, { paddingBottom: 16 + insets.bottom }]}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        colors={[theme.colors.accent]}
+                        progressBackgroundColor={theme.colors.surface}
+                    />
+                }
                 scrollEnabled={canScroll}
                 bounces={false}
                 alwaysBounceVertical={false}
@@ -405,20 +452,31 @@ export const Home: React.FC<HomeProps> = ({
 
                 <View style={styles.section}>
                     <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                        {displayDate === todayISO
+                        {isRestDay
                             ? "Today's workouts"
-                            : (() => {
-                                  const [yy, mm, dd] = displayDate
-                                      .split("-")
-                                      .map((s) => parseInt(s, 10));
-                                  return new Date(yy, mm - 1, dd).toLocaleDateString("en-US", {
-                                      weekday: "long",
-                                      month: "long",
-                                      day: "numeric",
-                                  });
-                              })()}
+                            : displayDate === todayISO
+                                ? "Today's workouts"
+                                : (() => {
+                                      const [yy, mm, dd] = displayDate
+                                          .split("-")
+                                          .map((s) => parseInt(s, 10));
+                                      return new Date(yy, mm - 1, dd).toLocaleDateString("en-US", {
+                                          weekday: "long",
+                                          month: "long",
+                                          day: "numeric",
+                                      });
+                                  })()}
                     </Text>
-                    {weekWorkouts[displayDate] && weekWorkouts[displayDate].length > 0 ? (
+                    {isRestDay ? (
+                        <View style={styles.restDayRow}>
+                            <Text style={[styles.restDayText, { color: theme.colors.text }]}>
+                                Rest day
+                            </Text>
+                            <Text style={[styles.restDaySubtext, { color: theme.colors.subtext }]}>
+                                Take today to recover—tonight’s stretch counts as progress too.
+                            </Text>
+                        </View>
+                    ) : weekWorkouts[displayDate] && weekWorkouts[displayDate].length > 0 ? (
                         <View style={{ gap: 12 }}>
                             {weekWorkouts[displayDate].map((item, idx) => (
                                 <TouchableOpacity
@@ -465,6 +523,28 @@ export const Home: React.FC<HomeProps> = ({
                                             {item.description}
                                         </Text>
                                     ) : null}
+                                    <View style={styles.previewStats}>
+                                        {item.sets !== undefined && item.reps !== undefined ? (
+                                            <Text
+                                                style={[
+                                                    styles.previewStatText,
+                                                    { color: theme.colors.text },
+                                                ]}
+                                            >
+                                                {item.sets} sets × {item.reps} reps
+                                            </Text>
+                                        ) : null}
+                                        {item.intensity ? (
+                                            <Text
+                                                style={[
+                                                    styles.previewStatText,
+                                                    { color: theme.colors.subtext },
+                                                ]}
+                                            >
+                                                {item.intensity}
+                                            </Text>
+                                        ) : null}
+                                    </View>
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -480,6 +560,9 @@ export const Home: React.FC<HomeProps> = ({
                         >
                             <Text style={[styles.todaysTitle, { color: theme.colors.text }]}>
                                 No workout scheduled
+                            </Text>
+                            <Text style={[styles.todaysDesc, { color: theme.colors.subtext }]}>
+                                Check back later or add a workout from the library.
                             </Text>
                         </View>
                     )}
@@ -661,6 +744,18 @@ const styles = StyleSheet.create({
     todaysDesc: {
         fontSize: 14,
     },
+    restDayRow: {
+        alignItems: "flex-start",
+        paddingVertical: 12,
+    },
+    restDayText: {
+        fontSize: 18,
+        fontWeight: "700",
+    },
+    restDaySubtext: {
+        fontSize: 14,
+        marginTop: 4,
+    },
     previewList: {
         paddingVertical: 8,
     },
@@ -698,6 +793,15 @@ const styles = StyleSheet.create({
     },
     previewDesc: {
         fontSize: 13,
+    },
+    previewStats: {
+        marginTop: 8,
+        flexDirection: "row",
+        flexWrap: "wrap",
+    },
+    previewStatText: {
+        fontSize: 12,
+        marginRight: 12,
     },
     categoryGrid: {
         flexDirection: "row",
