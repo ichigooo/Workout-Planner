@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
     View,
     Text,
@@ -54,7 +54,6 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const windowWidth = Dimensions.get("window").width;
     const heroHeight = Math.round(windowWidth * 0.75);
-    const heroScrollRef = useRef<ScrollView | null>(null);
     const heroImages = useMemo(
         () => [workout.imageUrl, workout.imageUrl2].filter(Boolean) as string[],
         [workout.imageUrl, workout.imageUrl2],
@@ -293,12 +292,43 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                     showsVerticalScrollIndicator={false}
                 >
                     {heroImages.length > 0 && (
-                        <View style={[styles.heroContainer, { height: heroHeight * 0.9 }]}>
-                            <Image
-                                source={{ uri: heroImages[0] }}
-                                style={styles.heroImage}
-                                resizeMode="cover"
-                            />
+                        <View style={[styles.heroContainer, { height: heroHeight }]}>
+                            <ScrollView
+                                horizontal
+                                pagingEnabled
+                                showsHorizontalScrollIndicator={false}
+                                onMomentumScrollEnd={(event) => {
+                                    const index = Math.round(
+                                        event.nativeEvent.contentOffset.x / windowWidth,
+                                    );
+                                    setActiveImageIndex(index);
+                                }}
+                            >
+                                {heroImages.map((uri, index) => (
+                                    <Image
+                                        key={`${uri}-${index}`}
+                                        source={{ uri }}
+                                        style={[
+                                            styles.heroImage,
+                                            { width: windowWidth, height: heroHeight },
+                                        ]}
+                                        resizeMode="cover"
+                                    />
+                                ))}
+                            </ScrollView>
+                            {heroImages.length > 1 && (
+                                <View style={styles.imagePagination}>
+                                    {heroImages.map((_, index) => (
+                                        <View
+                                            key={`dot-${index}`}
+                                            style={[
+                                                styles.imageDot,
+                                                index === activeImageIndex && styles.imageDotActive,
+                                            ]}
+                                        />
+                                    ))}
+                                </View>
+                            )}
                         </View>
                     )}
 
