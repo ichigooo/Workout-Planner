@@ -379,6 +379,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                         accessibilityRole="button"
                         accessibilityLabel="Log out"
                     >
+                        <Image
+                            source={require("../../assets/images/logout.png")}
+                            style={styles.logoutIcon}
+                            resizeMode="contain"
+                        />
                         <Text
                             style={[
                                 styles.logoutButtonText,
@@ -563,14 +568,24 @@ const styles = StyleSheet.create({
     },
     logoutButton: {
         marginTop: 16,
-        paddingVertical: 14,
-        borderRadius: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 24,
         borderWidth: 1,
         alignItems: "center",
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 8,
+        alignSelf: "center",
+        minWidth: "60%",
     },
     logoutButtonText: {
         fontSize: 15,
         fontFamily: "Inter_500Medium",
+    },
+    logoutIcon: {
+        width: 18,
+        height: 18,
     },
     logoutOverlay: {
         ...StyleSheet.absoluteFillObject,
