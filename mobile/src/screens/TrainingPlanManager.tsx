@@ -1,15 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import {
-    View,
-    Text,
-    StyleSheet,
-    Alert,
-    useColorScheme,
-    TouchableOpacity,
-    Modal,
-    ScrollView,
-    FlatList,
-} from "react-native";
+import { View, Text, StyleSheet, Alert, useColorScheme, TouchableOpacity, Modal, ScrollView, FlatList } from "react-native";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
@@ -20,6 +10,10 @@ import { Workout } from "../types";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import { orderCategoriesWithClimbingAtEnd } from "../utils/categoryOrder";
+import AddWorkoutToPlanPage from "./AddWorkoutToPlanPage";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { WORKOUT_CATEGORIES } from "../constants/workoutCategories";
 
 export const TrainingPlanManager: React.FC = () => {
     const scheme = useColorScheme();
@@ -30,7 +24,22 @@ export const TrainingPlanManager: React.FC = () => {
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
-    const [selectedDates, setSelectedDates] = useState<{ [key: string]: any }>({});
+    const now = new Date();
+    const todayISO = `${now.getFullYear()}-${(now.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${now.getDate().toString().padStart(2, "0")}`;
+    const getDefaultSelectedDates = useCallback(
+        () => ({
+            [todayISO]: {
+                selected: true,
+                selectedColor: theme.colors.accent,
+            },
+        }),
+        [todayISO, theme.colors.accent],
+    );
+    const [selectedDates, setSelectedDates] = useState<{ [key: string]: any }>(() =>
+        getDefaultSelectedDates(),
+    );
     const [scheduledByDate, setScheduledByDate] = useState<
         {
             date: string;
@@ -41,6 +50,11 @@ export const TrainingPlanManager: React.FC = () => {
     const scrollRef = useScrollToTopOnTabPress();
     const [refreshKey, setRefreshKey] = useState(0);
     const accentColor = theme.colors.accent;
+    const resetAddSelection = useCallback(() => {
+        setSelectedCategory(null);
+        setSelectedWorkoutId(null);
+        setSelectedDates(getDefaultSelectedDates());
+    }, [getDefaultSelectedDates]);
 
     const loadWorkouts = async () => {
         try {
@@ -158,45 +172,56 @@ export const TrainingPlanManager: React.FC = () => {
                 const planId = planItemsCache.getPlanId();
                 if (!planId) return;
                 const planItems = await apiService.getPlanItemsSorted(planId);
-                const dates: { [key: string]: { selected: true; selectedColor: string } } = {};
-                planItems.forEach((item) => {
-                    const matchWorkoutId =
-                        item.workoutId === workoutId ||
-                        (item as any).workout_id === workoutId ||
-                        item.workout?.id === workoutId;
-                    if (!matchWorkoutId) return;
-                    const sd = (item as any).scheduledDate ?? (item as any).scheduled_date;
-                    if (!sd) return;
-                    const date =
-                        typeof sd === "string"
-                            ? sd.split("T")[0].split(" ")[0]
-                            : (() => {
-                                  const dt = new Date(sd as any);
-                                  return `${dt.getFullYear()}-${(dt.getMonth() + 1)
-                                      .toString()
-                                      .padStart(
-                                          2,
-                                          "0",
-                                      )}-${dt.getDate().toString().padStart(2, "0")}`;
-                              })();
-                    dates[date] = {
-                        selected: true,
-                        selectedColor: accentColor,
+                setSelectedDates((prev) => {
+                    const merged: { [key: string]: { selected: true; selectedColor: string } } = {
+                        ...prev,
                     };
+                    planItems.forEach((item) => {
+                        const matchWorkoutId =
+                            item.workoutId === workoutId ||
+                            (item as any).workout_id === workoutId ||
+                            item.workout?.id === workoutId;
+                        if (!matchWorkoutId) return;
+                        const sd = (item as any).scheduledDate ?? (item as any).scheduled_date;
+                        if (!sd) return;
+                        const date =
+                            typeof sd === "string"
+                                ? sd.split("T")[0].split(" ")[0]
+                                : (() => {
+                                      const dt = new Date(sd as any);
+                                      return `${dt.getFullYear()}-${(dt.getMonth() + 1)
+                                          .toString()
+                                          .padStart(2, "0")}-${dt.getDate().toString().padStart(2, "0")}`;
+                                  })();
+                        merged[date] = {
+                            selected: true,
+                            selectedColor: accentColor,
+                        };
+                    });
+                    if (Object.keys(merged).length === 0) {
+                        merged[todayISO] = {
+                            selected: true,
+                            selectedColor: accentColor,
+                        };
+                    }
+                    return merged;
                 });
-                setSelectedDates(dates);
             } catch (error) {
                 console.error("Failed to prefill workout dates:", error);
-                setSelectedDates({});
             }
         },
-        [accentColor],
+        [accentColor, todayISO],
     );
 
-    const categories = useMemo(
-        () => Array.from(new Set(allWorkouts.map((w) => w.category))).sort(),
-        [allWorkouts],
-    );
+    const categories = useMemo(() => {
+        const uniqueWorkoutCategories = orderCategoriesWithClimbingAtEnd(
+            Array.from(new Set(allWorkouts.map((w) => w.category))),
+        );
+        if (uniqueWorkoutCategories.length > 0) {
+            return uniqueWorkoutCategories;
+        }
+        return orderCategoriesWithClimbingAtEnd(WORKOUT_CATEGORIES);
+    }, [allWorkouts]);
 
     const activeCategory = useMemo(() => {
         if (selectedCategory && categories.includes(selectedCategory)) {
@@ -209,6 +234,16 @@ export const TrainingPlanManager: React.FC = () => {
         () => (activeCategory ? allWorkouts.filter((w) => w.category === activeCategory) : []),
         [allWorkouts, activeCategory],
     );
+
+    const handleOpenAddSheet = useCallback(() => {
+        resetAddSelection();
+        setShowAddSheet(true);
+    }, [resetAddSelection]);
+
+    const handleCloseAddSheet = useCallback(() => {
+        resetAddSelection();
+        setShowAddSheet(false);
+    }, [resetAddSelection]);
 
     // Keep the active category chip in view
     const categoriesListRef = useRef<FlatList<string>>(null);
@@ -238,10 +273,7 @@ export const TrainingPlanManager: React.FC = () => {
                 intensity: undefined,
             });
 
-            setShowAddSheet(false);
-            setSelectedWorkoutId(null);
-            setSelectedCategory(null);
-            setSelectedDates({});
+            handleCloseAddSheet();
 
             // Invalidate and refetch cache to get the latest plan items
             planItemsCache.invalidate();
@@ -255,6 +287,43 @@ export const TrainingPlanManager: React.FC = () => {
             Alert.alert("Error", "Failed to add workout");
         }
     };
+
+    const toggleDate = useCallback(
+        (dateString: string) => {
+            setSelectedDates((prev) => {
+                const newDates = { ...prev };
+                if (newDates[dateString]) {
+                    delete newDates[dateString];
+                } else {
+                    newDates[dateString] = {
+                        selected: true,
+                        selectedColor: theme.colors.accent,
+                    };
+                }
+                return newDates;
+            });
+        },
+        [theme.colors.accent],
+    );
+
+    const handleSelectCategory = useCallback(
+        (category: string) => {
+            setSelectedCategory(category);
+            setSelectedWorkoutId(null);
+            setSelectedDates({});
+        },
+        [],
+    );
+
+    const handleSelectWorkout = useCallback(
+        (id: string | null) => {
+            setSelectedWorkoutId(id);
+            if (id) {
+                prefillWorkoutDates(id);
+            }
+        },
+        [prefillWorkoutDates],
+    );
 
     if (loading) {
         return (
@@ -272,14 +341,22 @@ export const TrainingPlanManager: React.FC = () => {
     return (
         <SafeAreaView
             edges={["top"]}
-            style={[styles.container, { backgroundColor: theme.colors.bg }]}
+            style={[styles.container, { backgroundColor: theme.colors.cream }]}
         >
             <View style={[styles.headerRow, { borderBottomColor: theme.colors.border }]}>
                 <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
                     Current Training Plan
                 </Text>
                 <TouchableOpacity
-                    onPress={() => setShowAddSheet(true)}
+                    onPress={() => {
+                        setSelectedDates({
+                            [todayISO]: {
+                                selected: true,
+                                selectedColor: theme.colors.accent,
+                            },
+                        });
+                        setShowAddSheet(true);
+                    }}
                     style={[styles.browseButton, { borderColor: theme.colors.border }]}
                 >
                     <Text style={[styles.browseText, { color: theme.colors.accent }]}>
@@ -358,185 +435,29 @@ export const TrainingPlanManager: React.FC = () => {
             </ScrollView>
             <TouchableOpacity
                 style={[styles.fab, { backgroundColor: theme.colors.accent }]}
-                onPress={() => setShowAddSheet(true)}
+                onPress={handleOpenAddSheet}
             >
                 <Ionicons name="add" color="#fff" size={28} />
             </TouchableOpacity>
 
-            <Modal
-                visible={showAddSheet}
-                animationType="slide"
-                presentationStyle="pageSheet"
-                onRequestClose={() => setShowAddSheet(false)}
-            >
-                <SafeAreaView
-                    edges={["top"]}
-                    style={[styles.sheetContainer, { backgroundColor: theme.colors.bg }]}
-                >
-                    <View style={[styles.sheetHeader, { borderBottomColor: theme.colors.border }]}>
-                        <Text style={[styles.sheetTitle, { color: theme.colors.text }]}>
-                            Add Workout
-                        </Text>
-                        <TouchableOpacity onPress={() => setShowAddSheet(false)}>
-                            <Text style={{ color: theme.colors.accent, fontWeight: "600" }}>
-                                Close
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 40 }}>
-                        <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
-                            Category
-                        </Text>
-                        <FlatList
-                            ref={categoriesListRef}
-                            horizontal
-                            data={categories}
-                            keyExtractor={(item) => item}
-                            renderItem={({ item }) => {
-                                const active = activeCategory === item;
-                                return (
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.chip,
-                                            {
-                                                borderColor: theme.colors.border,
-                                                backgroundColor: active
-                                                    ? theme.colors.accent
-                                                    : theme.colors.surface,
-                                            },
-                                        ]}
-                                        onPress={() => {
-                                            setSelectedCategory(item);
-                                            setSelectedWorkoutId(null);
-                                            setSelectedDates({});
-                                        }}
-                                        activeOpacity={0.85}
-                                    >
-                                        <Text
-                                            style={{
-                                                color: active ? "#fff" : theme.colors.text,
-                                                fontWeight: "600",
-                                            }}
-                                        >
-                                            {item}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            }}
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.chipsRow}
-                            onScrollToIndexFailed={(info) => {
-                                // As a fallback, approximate offset
-                                const approx = Math.max(0, (info.index - 1) * 100);
-                                categoriesListRef.current?.scrollToOffset({
-                                    offset: approx,
-                                    animated: true,
-                                });
-                            }}
-                        />
-
-                        <Text
-                            style={[styles.fieldLabel, { color: theme.colors.text, marginTop: 16 }]}
-                        >
-                            Workout
-                        </Text>
-                        <View style={{ gap: 8 }}>
-                            {workoutsByCategory.map((w) => {
-                                const active = selectedWorkoutId === w.id;
-                                return (
-                                    <TouchableOpacity
-                                        key={w.id}
-                                        style={[
-                                            styles.workoutRow,
-                                            {
-                                                borderColor: theme.colors.border,
-                                                backgroundColor: active
-                                                    ? theme.colors.accent + "15"
-                                                    : theme.colors.surface,
-                                            },
-                                        ]}
-                                        onPress={() => {
-                                            setSelectedWorkoutId(w.id);
-                                            prefillWorkoutDates(w.id);
-                                        }}
-                                    >
-                                        <Text
-                                            style={{ color: theme.colors.text, fontWeight: "600" }}
-                                        >
-                                            {w.title}
-                                        </Text>
-                                        <Text style={{ color: theme.colors.subtext, marginTop: 2 }}>
-                                            {w.category}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-
-                        <Text
-                            style={[styles.fieldLabel, { color: theme.colors.text, marginTop: 16 }]}
-                        >
-                            Select Dates
-                        </Text>
-                        <Calendar
-                            onDayPress={(day) => {
-                                const dateString = day.dateString;
-                                setSelectedDates((prev) => {
-                                    const newDates = { ...prev };
-                                    if (newDates[dateString]) {
-                                        delete newDates[dateString];
-                                    } else {
-                                        newDates[dateString] = {
-                                            selected: true,
-                                            selectedColor: theme.colors.accent,
-                                        };
-                                    }
-                                    return newDates;
-                                });
-                            }}
-                            markedDates={selectedDates}
-                            theme={{
-                                backgroundColor: theme.colors.surface,
-                                calendarBackground: theme.colors.surface,
-                                textSectionTitleColor: theme.colors.text,
-                                selectedDayBackgroundColor: theme.colors.accent,
-                                selectedDayTextColor: "#fff",
-                                todayTextColor: theme.colors.accent,
-                                dayTextColor: theme.colors.text,
-                                textDisabledColor: theme.colors.subtext,
-                                dotColor: theme.colors.accent,
-                                selectedDotColor: "#fff",
-                                arrowColor: theme.colors.accent,
-                                monthTextColor: theme.colors.text,
-                                indicatorColor: theme.colors.accent,
-                                textDayFontWeight: "500",
-                                textMonthFontWeight: "600",
-                                textDayHeaderFontWeight: "600",
-                                textDayFontSize: 16,
-                                textMonthFontSize: 18,
-                                textDayHeaderFontSize: 14,
-                            }}
-                            style={styles.calendar}
-                        />
-
-                        <TouchableOpacity
-                            disabled={!selectedWorkoutId || Object.keys(selectedDates).length === 0}
-                            onPress={handleQuickAdd}
-                            style={[
-                                styles.addBtn,
-                                {
-                                    backgroundColor:
-                                        selectedWorkoutId && Object.keys(selectedDates).length > 0
-                                            ? theme.colors.accent
-                                            : theme.colors.subtext,
-                                },
-                            ]}
-                        >
-                            <Text style={{ color: "#fff", fontWeight: "700" }}>ADD</Text>
-                        </TouchableOpacity>
-                    </ScrollView>
-                </SafeAreaView>
+            <Modal visible={showAddSheet} animationType="slide" onRequestClose={handleCloseAddSheet}>
+                <SafeAreaProvider>
+                    <AddWorkoutToPlanPage
+                        theme={theme}
+                        categories={categories}
+                        activeCategory={activeCategory}
+                        onSelectCategory={handleSelectCategory}
+                        workoutsByCategory={workoutsByCategory}
+                        selectedWorkoutId={selectedWorkoutId}
+                        onSelectWorkout={handleSelectWorkout}
+                        selectedDates={selectedDates}
+                        onToggleDate={toggleDate}
+                        canAdd={Boolean(selectedWorkoutId && Object.keys(selectedDates).length > 0)}
+                        onAdd={handleQuickAdd}
+                        onClose={handleCloseAddSheet}
+                        categoriesListRef={categoriesListRef}
+                    />
+                </SafeAreaProvider>
             </Modal>
         </SafeAreaView>
     );
@@ -571,29 +492,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowOffset: { width: 0, height: 4 },
         shadowRadius: 8,
-    },
-    sheetContainer: { flex: 1 },
-    sheetHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingTop: 24,
-        paddingBottom: 12,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-    },
-    sheetTitle: { fontSize: 18, fontWeight: "700" },
-    fieldLabel: { fontSize: 16, fontWeight: "600", marginBottom: 8 },
-    chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-    workoutRow: { borderWidth: 1, borderRadius: 12, padding: 12 },
-    calendar: { marginVertical: 8, borderRadius: 12, overflow: "hidden" },
-    addBtn: {
-        marginTop: 20,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 14,
-        borderRadius: 12,
     },
     scheduledCard: { borderRadius: 12, borderWidth: 1, padding: 12, marginBottom: 8 },
     calendarShortcut: { padding: 8, borderRadius: 8 },

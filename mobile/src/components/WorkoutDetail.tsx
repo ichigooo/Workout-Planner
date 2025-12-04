@@ -257,28 +257,20 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     };
 
     return (
-        <View
-            style={[
-                styles.container,
-                { backgroundColor: scheme === "dark" ? theme.colors.bg : "#F7F7F7" },
-            ]}
-        >
+        <View style={[styles.container, { backgroundColor: theme.colors.cream }]}>
             <View
                 style={[
                     styles.header,
                     {
-                        backgroundColor: theme.colors.surface,
-                        borderBottomColor: theme.colors.border,
-                        paddingTop: insets.top,
+                        backgroundColor: "transparent",
+                        paddingTop: insets.top + 4,
                     },
                 ]}
             >
                 <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
                     <Text style={[styles.closeButtonText, { color: theme.colors.accent }]}>✕</Text>
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-                    Workout Details
-                </Text>
+                <Text style={[styles.headerTitle, { color: theme.colors.subtext }]}>Workout</Text>
                 {isCurrentUserAdmin ? (
                     <TouchableOpacity onPress={() => setShowMenu(true)} style={styles.menuButton}>
                         <Text style={[styles.menuButtonText, { color: theme.colors.text }]}>⋯</Text>
@@ -301,60 +293,18 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                     showsVerticalScrollIndicator={false}
                 >
                     {heroImages.length > 0 && (
-                        <View style={[styles.heroContainer, { height: heroHeight }]}>
-                            <ScrollView
-                                ref={heroScrollRef}
-                                horizontal
-                                pagingEnabled={heroImages.length > 1}
-                                showsHorizontalScrollIndicator={false}
-                                scrollEnabled={heroImages.length > 1}
-                                onMomentumScrollEnd={(event) => {
-                                    const offsetX = event.nativeEvent.contentOffset.x;
-                                    const nextIndex = Math.round(offsetX / windowWidth);
-                                    setActiveImageIndex(nextIndex);
-                                }}
-                            >
-                                {heroImages.map((uri, idx) => (
-                                    <View
-                                        key={`${uri}-${idx}`}
-                                        style={{ width: windowWidth, height: heroHeight }}
-                                    >
-                                        <Image
-                                            source={{ uri }}
-                                            style={styles.heroImage}
-                                            resizeMode="cover"
-                                        />
-                                    </View>
-                                ))}
-                            </ScrollView>
-                            {heroImages.length > 1 && (
-                                <View style={styles.imagePagination}>
-                                    {heroImages.map((_, idx) => (
-                                        <View
-                                            key={idx}
-                                            style={[
-                                                styles.imageDot,
-                                                idx === activeImageIndex && styles.imageDotActive,
-                                            ]}
-                                        />
-                                    ))}
-                                </View>
-                            )}
+                        <View style={[styles.heroContainer, { height: heroHeight * 0.9 }]}>
+                            <Image
+                                source={{ uri: heroImages[0] }}
+                                style={styles.heroImage}
+                                resizeMode="cover"
+                            />
                         </View>
                     )}
 
-                    <View
-                        style={[
-                            styles.body,
-                            {
-                                backgroundColor: scheme === "dark" ? theme.colors.bg : "#F7F7F7",
-                            },
-                        ]}
-                    >
+                    <View style={styles.body}>
                         <View style={styles.categoryPill}>
-                            <Text style={styles.categoryPillText}>
-                                {workout.category?.toUpperCase()}
-                            </Text>
+                            <Text style={styles.categoryPillText}>{workout.category}</Text>
                         </View>
 
                         <Text style={[styles.title, { color: theme.colors.text }]}>
@@ -363,9 +313,6 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
 
                         {workout.description && (
                             <View style={styles.section}>
-                                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                                    Description
-                                </Text>
                                 <Text style={[styles.description, { color: theme.colors.subtext }]}>
                                     {workout.description}
                                 </Text>
@@ -373,48 +320,12 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                         )}
 
                         <View style={styles.section}>
-                            <Text
-                                style={[
-                                    styles.sectionTitle,
-                                    { color: theme.colors.subtext, textTransform: "uppercase" },
-                                ]}
-                            >
-                                Workout details
-                            </Text>
-
-                            <View style={styles.detailsGrid}>
+                            <View style={styles.detailPillRow}>
                                 {workout.workoutType === "cardio" ? (
-                                    <View
-                                        style={[
-                                            styles.detailItem,
-                                            {
-                                                backgroundColor: theme.colors.surface,
-                                                borderColor: theme.colors.border,
-                                            },
-                                        ]}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.detailLabel,
-                                                { color: theme.colors.subtext },
-                                            ]}
-                                        >
-                                            Duration
-                                        </Text>
-                                        <Text
-                                            style={[
-                                                styles.detailValue,
-                                                { color: theme.colors.text },
-                                            ]}
-                                        >
-                                            {workout.duration} min
-                                        </Text>
-                                    </View>
-                                ) : (
                                     <>
                                         <View
                                             style={[
-                                                styles.detailItem,
+                                                styles.detailPill,
                                                 {
                                                     backgroundColor: theme.colors.surface,
                                                     borderColor: theme.colors.border,
@@ -423,7 +334,63 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                         >
                                             <Text
                                                 style={[
-                                                    styles.detailLabel,
+                                                    styles.detailPillLabel,
+                                                    { color: theme.colors.subtext },
+                                                ]}
+                                            >
+                                                Duration
+                                            </Text>
+                                            <Text
+                                                style={[
+                                                    styles.detailPillValue,
+                                                    { color: theme.colors.text },
+                                                ]}
+                                            >
+                                                {workout.duration} min
+                                            </Text>
+                                        </View>
+                                        <View
+                                            style={[
+                                                styles.detailPill,
+                                                {
+                                                    backgroundColor: theme.colors.surface,
+                                                    borderColor: theme.colors.border,
+                                                },
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.detailPillLabel,
+                                                    { color: theme.colors.subtext },
+                                                ]}
+                                            >
+                                                Intensity
+                                            </Text>
+                                            <Text
+                                                style={[
+                                                    styles.detailPillValue,
+                                                    { color: theme.colors.text },
+                                                ]}
+                                                numberOfLines={1}
+                                            >
+                                                {workout.intensity}
+                                            </Text>
+                                        </View>
+                                    </>
+                                ) : (
+                                    <>
+                                        <View
+                                            style={[
+                                                styles.detailPill,
+                                                {
+                                                    backgroundColor: theme.colors.surface,
+                                                    borderColor: theme.colors.border,
+                                                },
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.detailPillLabel,
                                                     { color: theme.colors.subtext },
                                                 ]}
                                             >
@@ -431,7 +398,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                             </Text>
                                             <Text
                                                 style={[
-                                                    styles.detailValue,
+                                                    styles.detailPillValue,
                                                     { color: theme.colors.text },
                                                 ]}
                                             >
@@ -440,7 +407,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                         </View>
                                         <View
                                             style={[
-                                                styles.detailItem,
+                                                styles.detailPill,
                                                 {
                                                     backgroundColor: theme.colors.surface,
                                                     borderColor: theme.colors.border,
@@ -449,7 +416,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                         >
                                             <Text
                                                 style={[
-                                                    styles.detailLabel,
+                                                    styles.detailPillLabel,
                                                     { color: theme.colors.subtext },
                                                 ]}
                                             >
@@ -457,55 +424,51 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                             </Text>
                                             <Text
                                                 style={[
-                                                    styles.detailValue,
+                                                    styles.detailPillValue,
                                                     { color: theme.colors.text },
                                                 ]}
                                             >
                                                 {workout.reps}
                                             </Text>
                                         </View>
+                                        <View
+                                            style={[
+                                                styles.detailPill,
+                                                {
+                                                    backgroundColor: theme.colors.surface,
+                                                    borderColor: theme.colors.border,
+                                                },
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.detailPillLabel,
+                                                    { color: theme.colors.subtext },
+                                                ]}
+                                            >
+                                                Intensity
+                                            </Text>
+                                            <Text
+                                                style={[
+                                                    styles.detailPillValue,
+                                                    { color: theme.colors.text },
+                                                ]}
+                                                numberOfLines={1}
+                                            >
+                                                {workout.intensity}
+                                            </Text>
+                                        </View>
                                     </>
                                 )}
-                                <View
-                                    style={[
-                                        styles.detailItem,
-                                        {
-                                            backgroundColor: theme.colors.surface,
-                                            borderColor: theme.colors.border,
-                                        },
-                                    ]}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.detailLabel,
-                                            { color: theme.colors.subtext },
-                                        ]}
-                                    >
-                                        Intensity
-                                    </Text>
-                                    <Text
-                                        style={[styles.detailValue, { color: theme.colors.text }]}
-                                    >
-                                        {workout.intensity}
-                                    </Text>
-                                </View>
                             </View>
                         </View>
 
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                                My Personal Record
+                                My personal record
                             </Text>
                             {personalRecord && !isEditingRecord ? (
-                                <View
-                                    style={[
-                                        styles.personalRecordDisplay,
-                                        {
-                                            borderColor: theme.colors.border,
-                                            backgroundColor: theme.colors.surface,
-                                        },
-                                    ]}
-                                >
+                                <>
                                     <Text
                                         style={[
                                             styles.personalRecordValue,
@@ -518,24 +481,25 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                         <TouchableOpacity
                                             style={[
                                                 styles.recordButton,
-                                                {
-                                                    backgroundColor: theme.colors.accent,
-                                                    flex: undefined,
-                                                    paddingHorizontal: 20,
-                                                },
+                                                styles.recordButtonSecondary,
+                                                { borderColor: theme.colors.border, flex: undefined },
                                             ]}
                                             onPress={() => setIsEditingRecord(true)}
                                         >
-                                            <Text style={styles.recordButtonText}>Update</Text>
+                                            <Text
+                                                style={[
+                                                    styles.recordButtonSecondaryText,
+                                                    { color: theme.colors.text },
+                                                ]}
+                                            >
+                                                Update
+                                            </Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[
                                                 styles.recordButton,
                                                 styles.recordButtonSecondary,
-                                                {
-                                                    borderColor: theme.colors.border,
-                                                    flex: undefined,
-                                                },
+                                                { borderColor: theme.colors.border, flex: undefined },
                                             ]}
                                             onPress={handleClearPersonalRecord}
                                             disabled={recordSaving}
@@ -550,7 +514,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                             </Text>
                                         </TouchableOpacity>
                                     </View>
-                                </View>
+                                </>
                             ) : (
                                 <>
                                     <TextInput
@@ -582,16 +546,19 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                         <TouchableOpacity
                                             style={[
                                                 styles.recordButton,
-                                                {
-                                                    backgroundColor: theme.colors.accent,
-                                                    opacity: recordSaving ? 0.7 : 1,
-                                                },
+                                                styles.recordButtonSecondary,
+                                                { borderColor: theme.colors.border },
                                             ]}
                                             onPress={handleSavePersonalRecord}
                                             disabled={recordSaving || !recordUserId}
                                         >
-                                            <Text style={styles.recordButtonText}>
-                                                {recordSaving ? "Saving..." : "Save Record"}
+                                            <Text
+                                                style={[
+                                                    styles.recordButtonSecondaryText,
+                                                    { color: theme.colors.text },
+                                                ]}
+                                            >
+                                                {recordSaving ? "Saving..." : "Save record"}
                                             </Text>
                                         </TouchableOpacity>
                                         {personalRecord ? (
@@ -789,8 +756,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
+        paddingVertical: 10,
     },
     closeButton: {
         width: 32,
@@ -803,8 +769,8 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: "600",
+        fontSize: 16,
+        fontWeight: "500",
     },
     menuButton: {
         width: 32,
@@ -883,17 +849,19 @@ const styles = StyleSheet.create({
     },
     categoryPill: {
         alignSelf: "flex-start",
-        paddingHorizontal: 12,
-        paddingVertical: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 3,
         borderRadius: 999,
-        backgroundColor: "rgba(34, 197, 94, 0.12)",
+        borderWidth: StyleSheet.hairlineWidth,
+        backgroundColor: "transparent",
+        borderColor: "#D1D5DB",
         marginBottom: 10,
     },
     categoryPillText: {
         fontSize: 12,
-        fontWeight: "700",
-        letterSpacing: 0.6,
-        color: "#166534",
+        fontWeight: "500",
+        letterSpacing: 0.3,
+        color: "#4B5563",
     },
     section: {
         marginBottom: 24,
@@ -912,24 +880,28 @@ const styles = StyleSheet.create({
         flexWrap: "wrap",
         marginHorizontal: -6,
     },
-    detailItem: {
-        width: "50%",
-        alignItems: "flex-start",
-        paddingVertical: 12,
+    detailPillRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        marginHorizontal: -6,
+        gap: 8,
+    },
+    detailPill: {
+        paddingVertical: 10,
         paddingHorizontal: 14,
+        borderRadius: 12,
         borderWidth: StyleSheet.hairlineWidth,
-        borderRadius: 14,
-        marginBottom: 12,
         marginHorizontal: 6,
+        marginBottom: 8,
     },
-    detailLabel: {
-        fontSize: 14,
+    detailPillLabel: {
+        fontSize: 12,
         fontWeight: "500",
-        marginBottom: 4,
+        marginBottom: 2,
     },
-    detailValue: {
-        fontSize: 20,
-        fontWeight: "700",
+    detailPillValue: {
+        fontSize: 14,
+        fontWeight: "600",
     },
     personalRecordInput: {
         borderWidth: StyleSheet.hairlineWidth,

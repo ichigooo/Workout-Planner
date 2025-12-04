@@ -95,7 +95,7 @@ export default function SignInScreen() {
 
     return (
         <KeyboardAvoidingView
-            style={[styles.container, { backgroundColor: theme.colors.bg }]}
+            style={[styles.container, { backgroundColor: theme.colors.cream }]}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
             <ScrollView

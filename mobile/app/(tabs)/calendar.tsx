@@ -104,14 +104,14 @@ export default function CalendarScreen() {
     const selectedDayWorkouts = scheduledFromMonth.filter((w) => w.date === selectedDate);
 
     return (
-        <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+        <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: theme.colors.cream }}>
             <View
                 style={{
                     flexDirection: "row",
                     alignItems: "center",
                     paddingHorizontal: 16,
                     paddingVertical: 12,
-                    backgroundColor: theme.colors.bg,
+                    backgroundColor: theme.colors.cream,
                 }}
             >
                 <TouchableOpacity onPress={() => router.back()} style={{ width: 60 }}>
@@ -135,31 +135,32 @@ export default function CalendarScreen() {
             <ScrollView contentContainerStyle={{ padding: 16 }}>
                 <View
                     style={{
-                        backgroundColor: scheme === "dark" ? "#1E1E1E" : "#FFFFFF",
+                        backgroundColor: theme.colors.surface,
+                        borderColor: theme.colors.border,
+                        borderWidth: 1,
                         borderRadius: 16,
                         padding: 8,
                         marginBottom: 16,
                     }}
                 >
-                    <Calendar
-                        onDayPress={(day) => setSelectedDate(day.dateString)}
-                        markedDates={getMarkedDates()}
-                        markingType="custom"
-                        style={{
-                            backgroundColor: scheme === "dark" ? "#1E1E1E" : "#FFFFFF",
-                        }}
-                        theme={{
-                            backgroundColor: scheme === "dark" ? "#1E1E1E" : "#FFFFFF",
-                            calendarBackground: scheme === "dark" ? "#1E1E1E" : "#FFFFFF",
-                            textSectionTitleColor: scheme === "dark" ? "#FFFFFF" : "#000000",
-                            textSectionTitleDisabledColor:
-                                scheme === "dark" ? "#888888" : "#999999",
-                            selectedDayBackgroundColor: theme.colors.accent,
-                            selectedDayTextColor: "#FFFFFF",
-                            todayTextColor: theme.colors.accent,
-                            dayTextColor: scheme === "dark" ? "#FFFFFF" : "#000000",
-                            textDisabledColor: scheme === "dark" ? "#555555" : "#BBBBBB",
-                            monthTextColor: scheme === "dark" ? "#FFFFFF" : "#000000",
+                        <Calendar
+                            onDayPress={(day) => setSelectedDate(day.dateString)}
+                            markedDates={getMarkedDates()}
+                            markingType="custom"
+                            style={{
+                                backgroundColor: theme.colors.surface,
+                            }}
+                            theme={{
+                                backgroundColor: theme.colors.surface,
+                                calendarBackground: theme.colors.surface,
+                                textSectionTitleColor: theme.colors.text,
+                                textSectionTitleDisabledColor: theme.colors.subtext,
+                                selectedDayBackgroundColor: theme.colors.accent,
+                                selectedDayTextColor: "#FFFFFF",
+                                todayTextColor: theme.colors.accent,
+                                dayTextColor: theme.colors.text,
+                                textDisabledColor: theme.colors.subtext,
+                                monthTextColor: theme.colors.text,
                             textDayFontSize: 16,
                             textDayFontWeight: "700",
                             textMonthFontSize: 20,
@@ -167,7 +168,7 @@ export default function CalendarScreen() {
                             textDayHeaderFontSize: 14,
                             textDayHeaderFontWeight: "700",
                             arrowColor: theme.colors.accent,
-                            disabledArrowColor: scheme === "dark" ? "#555555" : "#BBBBBB",
+                            disabledArrowColor: theme.colors.border,
                             dotColor: theme.colors.accent,
                             selectedDotColor: "#FFFFFF",
                             indicatorColor: theme.colors.accent,

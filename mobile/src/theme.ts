@@ -18,19 +18,22 @@ export const radii = {
 
 export const palettes = {
     light: {
-        // High-end, sophisticated color palette
-        bg: "#F7F7F7", // Clean cream background
-        surface: "#FFFFFF", // Pure white surfaces
-        border: "#E8E8E8", // Subtle grey border
-        text: "#2C2C2C", // Rich dark grey text
-        subtext: "#6B6B6B", // Muted grey subtext
-        accent: "#5C6F4F", // Sophisticated sage green
-        mutedAccent: "#8FA8C0", // Muted blue-grey
+        // High-end, sophisticated color palette (light mode)
+        iconBg: "#fa5f0e",
+        bg: "#F4EEDC", // Warm cream background (main canvas)
+        // Use a slightly deeper cream for cards so they don't
+        // feel stark white against the main background.
+        surface: "#decea0", // Soft warm card background
+        border: "#E0D6C4", // Soft warm border with a bit more definition
+        text: "#1A1A1A", // Strong, high-contrast text
+        subtext: "#353e52", // Muted grey subtext
+        accent: "#4C6B3C", // Rich olive for highlights (today, icons)
+        mutedAccent: "#6B7F5F", // Softer olive for secondary accents
         divider: "#F0F0F0", // Very light divider
         danger: "#C85A5A", // Muted red
         // Additional sophisticated colors
-        sage: "#5C6F4F", // Sage green
-        cream: "#F5E8D7", // Warm cream
+        sage: "#4C6B3C", // Primary olive
+        cream: "#db6f3d", // Warm cream (matches bg)
         mutedPink: "#F0C2C2", // Soft muted pink
         lightBlue: "#8FA8C0", // Muted blue
         warmGrey: "#8B8B8B", // Warm grey
@@ -108,9 +111,9 @@ export const shadows = {
 
 export type ThemeMode = "light" | "dark";
 
-export const getTheme = (mode: ThemeMode) => ({
+export const getTheme = (_mode: ThemeMode) => ({
     spacing,
     radii,
-    colors: palettes[mode],
-    shadows: shadows[mode],
+    colors: palettes.light,
+    shadows: shadows.light,
 });

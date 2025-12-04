@@ -1,20 +1,16 @@
 import React, { useState } from "react";
-import {
-    View,
-    Text,
-    StyleSheet,
-    ImageBackground,
-    TouchableOpacity,
-    ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "react-native";
+import { getTheme } from "../theme";
+import LottieView from "lottie-react-native";
 
 interface LandingScreenProps {
     onBegin: () => void;
     isLoading?: boolean;
 }
 
+const theme = getTheme("light");
 const QUOTES = [
     "The body achieves what the mind believes.",
     "Your only limit is you.",
@@ -81,7 +77,8 @@ const renderQuoteWithEmphasis = (quote: string) => {
 };
 
 export const LandingScreen: React.FC<LandingScreenProps> = ({ onBegin, isLoading = false }) => {
-    useColorScheme();
+    const scheme = useColorScheme();
+    getTheme(scheme === "dark" ? "dark" : "light");
 
     // Select a random quote once when component mounts
     const [quote] = useState(() => {
@@ -91,12 +88,21 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ onBegin, isLoading
 
     return (
         <ImageBackground
-            source={require("../../assets/images/landing.jpeg")}
+            // source={require("../../assets/images/landing.jpeg")}
             style={styles.background}
             resizeMode="cover"
         >
             <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
                 <View style={styles.content}>
+                    <View style={styles.animationContainer}>
+                        <LottieView
+                            source={require("../../assets/images/landing.json")}
+                            autoPlay
+                            loop
+                            style={styles.animation}
+                        />
+                    </View>
+
                     {/* Quote - improved styling with emphasis */}
                     <View style={styles.quoteContainer}>
                         <Text style={styles.quote}>{renderQuoteWithEmphasis(quote)}</Text>
@@ -105,22 +111,21 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ onBegin, isLoading
                     {/* Modern button */}
                     <View style={styles.buttonContainer}>
                         <TouchableOpacity
-                            style={[
-                                styles.button,
-                                {
-                                    opacity: isLoading ? 0.7 : 1,
-                                },
-                            ]}
+                            style={styles.compositeButton}
                             onPress={onBegin}
                             disabled={isLoading}
                             activeOpacity={0.85}
-                        >
-                            {isLoading ? (
-                                <ActivityIndicator color="#FFFFFF" size="small" />
-                            ) : (
-                                <Text style={styles.buttonText}>Begin workout</Text>
-                            )}
-                        </TouchableOpacity>
+                            >
+                            <View style={styles.buttonLeft}>
+                                <Text style={styles.buttonText}>
+                                {isLoading ? "Loading..." : "Get Started"}
+                                </Text>
+                            </View>
+
+                            <View style={styles.buttonRight}>
+                                <Text style={styles.arrow}>↗</Text>
+                            </View>
+                        </TouchableOpacity>             
                     </View>
                 </View>
             </SafeAreaView>
@@ -133,6 +138,7 @@ const styles = StyleSheet.create({
         flex: 1,
         width: "100%",
         height: "100%",
+        backgroundColor: "#f16109",
     },
     container: {
         flex: 1,
@@ -142,20 +148,29 @@ const styles = StyleSheet.create({
         justifyContent: "flex-end",
         alignItems: "center",
         paddingHorizontal: 32,
-        paddingBottom: 80,
+        paddingBottom: 30,
         paddingTop: 48,
+    },
+    animationContainer: {
+        marginBottom: 120,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    animation: {
+        width: 260,
+        height: 260,
     },
     quoteContainer: {
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 32,
-        marginBottom: 56,
+        marginBottom: 100,
         maxWidth: 320,
     },
     quote: {
         fontSize: 19,
+        fontFamily: "Roboto",
         fontWeight: "300",
-        textAlign: "center",
         lineHeight: 32,
         letterSpacing: 0.2,
         color: "rgba(255, 255, 255, 0.95)",
@@ -171,27 +186,41 @@ const styles = StyleSheet.create({
         alignItems: "center",
         width: "100%",
     },
-    button: {
-        paddingHorizontal: 48,
-        paddingVertical: 16,
-        borderRadius: 32,
-        minWidth: 220,
+    compositeButton: {
+        flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#6B8E7F",
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-        elevation: 3,
+        backgroundColor: theme.colors.accent,
+        borderRadius: 20,                 // <-- more square than 32
+        overflow: "hidden",
+        minWidth: 300,                    // wider
+        height: 60,                       // stable height
     },
+
+    buttonLeft: {
+        flex: 1,
+        paddingHorizontal: 24,
+        justifyContent: "center",
+        height: "100%",
+    },
+
+    buttonRight: {
+        width: 80,
+        height: "100%",
+        backgroundColor: "#E7A9C8",      // pink circle
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 20,                // keeps the right side perfectly round
+    },
+
     buttonText: {
-        fontSize: 16,
-        fontWeight: "500",
-        letterSpacing: 0.5,
+        fontSize: 18,
+        fontWeight: "600",
         color: "#FFFFFF",
+    },
+
+    arrow: {
+        fontSize: 20,
+        fontWeight: "600",
+        color: "#000000",
     },
 });
