@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, StyleSheet, Image, ImageBackground, TouchableOpacity } from "react-native";
 import { useColorScheme } from "react-native";
 import { getTheme } from "../theme";
-import LottieView from "lottie-react-native";
 
 interface LandingScreenProps {
     onBegin: () => void;
@@ -87,48 +85,45 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ onBegin, isLoading
     });
 
     return (
-        <ImageBackground
-            // source={require("../../assets/images/landing.jpeg")}
-            style={styles.background}
-            resizeMode="cover"
-        >
-            <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-                <View style={styles.content}>
-                    <View style={styles.animationContainer}>
-                        <LottieView
-                            source={require("../../assets/images/landing.json")}
-                            autoPlay
-                            loop
-                            style={styles.animation}
-                        />
-                    </View>
-
-                    {/* Quote - improved styling with emphasis */}
-                    <View style={styles.quoteContainer}>
-                        <Text style={styles.quote}>{renderQuoteWithEmphasis(quote)}</Text>
-                    </View>
-
-                    {/* Modern button */}
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity
-                            style={styles.compositeButton}
-                            onPress={onBegin}
-                            disabled={isLoading}
-                            activeOpacity={0.85}
-                            >
-                            <View style={styles.buttonLeft}>
-                                <Text style={styles.buttonText}>
-                                {isLoading ? "Loading..." : "Get Started"}
-                                </Text>
-                            </View>
-
-                            <View style={styles.buttonRight}>
-                                <Text style={styles.arrow}>↗</Text>
-                            </View>
-                        </TouchableOpacity>             
-                    </View>
+        <ImageBackground style={styles.background} resizeMode="cover">
+            <View style={styles.container}>
+                <View style={styles.heroContainer}>
+                    <Image
+                        source={require("../../assets/images/landing1.png")}
+                        style={styles.heroImage}
+                        resizeMode="cover"
+                    />
                 </View>
-            </SafeAreaView>
+
+                <ImageBackground
+                    source={require("../../assets/images/landing2.png")}
+                    style={styles.bottomBackground}
+                    imageStyle={styles.bottomBackgroundImage}
+                >
+                    <View style={styles.bottomOverlay}>
+                        <View style={styles.quoteContainer}>
+                            <Text style={styles.quote}>{renderQuoteWithEmphasis(quote)}</Text>
+                        </View>
+
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity
+                                style={styles.compositeButton}
+                                onPress={onBegin}
+                                disabled={isLoading}
+                                activeOpacity={0.85}
+                            >
+                                <View style={styles.buttonLeft}>
+                                    <Text style={styles.buttonText}>{isLoading ? "Loading..." : "Get Started"}</Text>
+                                </View>
+
+                                <View style={styles.buttonRight}>
+                                    <Text style={styles.arrow}>↗</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </ImageBackground>
+            </View>
         </ImageBackground>
     );
 };
@@ -142,29 +137,38 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
+        width: "100%",
     },
-    content: {
+    heroContainer: {
+        flex: 1.2,
+        width: "100%",
+    },
+    heroImage: {
+        width: "100%",
+        height: "100%",
+    },
+    bottomBackground: {
         flex: 1,
+        width: "100%",
         justifyContent: "flex-end",
-        alignItems: "center",
-        paddingHorizontal: 32,
-        paddingBottom: 30,
-        paddingTop: 48,
     },
-    animationContainer: {
-        marginBottom: 120,
+    bottomBackgroundImage: {
+        width: "100%",
+        height: "100%",
+    },
+    bottomOverlay: {
+        flex: 1,
         alignItems: "center",
         justifyContent: "center",
-    },
-    animation: {
-        width: 260,
-        height: 260,
+        paddingHorizontal: 32,
+        paddingBottom: 30,
+        paddingTop: 24,
+        backgroundColor: "rgba(0, 0, 0, 0.35)",
     },
     quoteContainer: {
         alignItems: "center",
         justifyContent: "center",
-        paddingHorizontal: 32,
-        marginBottom: 100,
+        marginBottom: 80,
         maxWidth: 320,
     },
     quote: {

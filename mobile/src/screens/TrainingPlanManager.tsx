@@ -348,15 +348,7 @@ export const TrainingPlanManager: React.FC = () => {
                     Current Training Plan
                 </Text>
                 <TouchableOpacity
-                    onPress={() => {
-                        setSelectedDates({
-                            [todayISO]: {
-                                selected: true,
-                                selectedColor: theme.colors.accent,
-                            },
-                        });
-                        setShowAddSheet(true);
-                    }}
+                    onPress={() => router.push("/workout")}
                     style={[styles.browseButton, { borderColor: theme.colors.border }]}
                 >
                     <Text style={[styles.browseText, { color: theme.colors.accent }]}>

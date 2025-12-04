@@ -20,6 +20,7 @@ export const palettes = {
     light: {
         // High-end, sophisticated color palette (light mode)
         iconBg: "#fa5f0e",
+        greeting: "#F0F0F0",
         bg: "#F4EEDC", // Warm cream background (main canvas)
         // Use a slightly deeper cream for cards so they don't
         // feel stark white against the main background.

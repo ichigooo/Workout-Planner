@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     ScrollView,
     Image,
+    ImageBackground,
     Animated,
     useColorScheme,
     ImageSourcePropType,
@@ -369,7 +370,7 @@ export const Home: React.FC<HomeProps> = ({
 
     return (
         <SafeAreaView
-            edges={["top", "bottom"]}
+            edges={["top"]}
             style={[styles.safeArea, { backgroundColor: theme.colors.cream }]}
         >
             <ScrollView
@@ -388,55 +389,71 @@ export const Home: React.FC<HomeProps> = ({
                 overScrollMode="never"
                 keyboardShouldPersistTaps="handled"
             >
-                {/* HEADER */}
-                <View style={styles.headerRow}>
-                    <TouchableOpacity
-                        onPress={onOpenProfile}
-                        style={[
-                            styles.iconButton,
-                            {
-                                backgroundColor: theme.colors.surface,
-                                borderColor: theme.colors.border,
-                                borderWidth: StyleSheet.hairlineWidth,
-                            },
-                        ]}
-                    >
-                        {profilePhoto ? (
-                            <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
-                        ) : (
-                            <View
-                                style={[
-                                    styles.profileImage,
-                                    styles.profileImagePlaceholder,
-                                    { backgroundColor: theme.colors.surface },
-                                ]}
-                            >
-                                <Ionicons name="person" size={20} color={theme.colors.subtext} />
-                            </View>
-                        )}
-                    </TouchableOpacity>
+                {/* HERO IMAGE WITH GREETING */}
+                <ImageBackground
+                    source={require("../../assets/images/homebg.png")}
+                    style={styles.heroBanner}
+                    imageStyle={styles.heroBannerImage}
+                >
+                    <View style={[styles.headerRow, styles.heroHeader]}>
+                        <TouchableOpacity
+                            onPress={onOpenProfile}
+                            style={[
+                                styles.iconButton,
+                                {
+                                    backgroundColor: "rgba(0,0,0,0.4)",
+                                    borderColor: "rgba(255,255,255,0.4)",
+                                    borderWidth: StyleSheet.hairlineWidth,
+                                },
+                            ]}
+                        >
+                            {profilePhoto ? (
+                                <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
+                            ) : (
+                                <View
+                                    style={[
+                                        styles.profileImage,
+                                        styles.profileImagePlaceholder,
+                                        { backgroundColor: "rgba(255,255,255,0.2)" },
+                                    ]}
+                                >
+                                    <Ionicons name="person" size={20} color="#fff" />
+                                </View>
+                            )}
+                        </TouchableOpacity>
 
-                    <TouchableOpacity
-                        onPress={onOpenCalendar}
-                        style={[
-                            styles.iconButton,
-                            {
-                                backgroundColor: theme.colors.surface,
-                                borderColor: theme.colors.border,
-                                borderWidth: StyleSheet.hairlineWidth,
-                            },
-                        ]}
-                    >
-                        <Ionicons name="calendar-outline" size={26} color={theme.colors.text} />
-                    </TouchableOpacity>
-                </View>
+                        <TouchableOpacity
+                            onPress={onOpenCalendar}
+                            style={[
+                                styles.iconButton,
+                                {
+                                    backgroundColor: "rgba(0,0,0,0.4)",
+                                    borderColor: "rgba(255,255,255,0.4)",
+                                    borderWidth: StyleSheet.hairlineWidth,
+                                },
+                            ]}
+                        >
+                            <Ionicons name="calendar-outline" size={26} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
 
-                {/* GREETING */}
-                <Text style={[styles.heroTitle, { color: theme.colors.text }]}>
-                    {getTimeBasedGreeting()}
-                    {userName ? `, ${userName}` : ""} {getTimeBasedEmoji()}
-                </Text>
-
+                    <View style={styles.heroBannerOverlay}>
+                        <Text style={styles.heroBannerTitle}>
+                            {getTimeBasedGreeting()}
+                            {userName ? `, ${userName}` : ""} {getTimeBasedEmoji()}
+                        </Text>
+                        <Text style={styles.heroBannerSubtitle}>
+                            Curated workouts and plans tailored for your climb to the top.
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.heroBannerButton}
+                            onPress={() => router.push("/workout")}
+                            activeOpacity={0.85}
+                        >
+                            <Text style={styles.heroBannerButtonText}>Browse Workouts</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ImageBackground>
                 {/* WEEK SNAPSHOT */}
                 <WeekSnapshot
                     weekDates={weekDates}
@@ -582,72 +599,25 @@ export const Home: React.FC<HomeProps> = ({
                     )}
                 </View>
 
-                {/* WORKOUT CATEGORIES */}
-                <View style={styles.section}>
-                    <View style={styles.rowBetween}>
-                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                            Workout
-                        </Text>
-                        <TouchableOpacity onPress={() => onOpenLibrary && onOpenLibrary()}>
-                            <Text style={[styles.linkText, { color: theme.colors.accent }]}>
-                                See all
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.categoryGrid}>
-                        {orderCategoriesWithClimbingAtEnd(
-                            Array.from(new Set(workouts.map((w) => w.category))),
-                        ).map((cat) => {
-                            const workoutCount = workouts.filter(
-                                (w) => w.category === cat,
-                            ).length;
-                            return (
-                                <TouchableOpacity
-                                    key={String(cat)}
-                                    style={[
-                                        styles.categoryTile,
-                                        {
-                                            backgroundColor: theme.colors.surface,
-                                            borderColor: theme.colors.border,
-                                        },
-                                    ]}
-                                    onPress={() => onOpenLibrary && onOpenLibrary(String(cat))}
-                                    activeOpacity={0.85}
-                                >
-                                    <View style={styles.categoryTileContent}>
-                                        <Text
-                                            style={[
-                                                styles.categoryTileText,
-                                                { color: theme.colors.text },
-                                            ]}
-                                            numberOfLines={2}
-                                            ellipsizeMode="tail"
-                                        >
-                                            {cat}
-                                        </Text>
-                                        <Text
-                                            style={[
-                                                styles.categoryTileCount,
-                                                { color: theme.colors.subtext },
-                                            ]}
-                                        >
-                                            {workoutCount}{" "}
-                                            {workoutCount === 1 ? "workout" : "workouts"}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.categoryTileIconWrapper}>
-                                        <Image
-                                            source={getTypeIcon(cat)}
-                                            style={styles.categoryTileIcon}
-                                            resizeMode="contain"
-                                        />
-                                    </View>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                </View>
+                {!isRestDay && weekWorkouts[displayDate] && weekWorkouts[displayDate].length > 0 ? (
+                    <TouchableOpacity activeOpacity={0.85} style={styles.warmupCard}>
+                        <ImageBackground
+                            source={require("../../assets/images/warmup.png")}
+                            style={styles.warmupBackground}
+                            imageStyle={styles.warmupImage}
+                        >
+                            <View style={styles.warmupOverlay}>
+                                <Text style={styles.warmupTitle}>Start With A Warm Up</Text>
+                                <Text style={styles.warmupSubtitle}>
+                                    Ease into today’s session with pulses and mobility.
+                                </Text>
+                                <View style={styles.warmupPill}>
+                                    <Text style={styles.warmupPillText}>Let’s warm up</Text>
+                                </View>
+                            </View>
+                        </ImageBackground>
+                    </TouchableOpacity>
+                ) : null}
             </ScrollView>
         </SafeAreaView>
     );
@@ -693,6 +663,97 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         letterSpacing: 0.2,
         marginBottom: 4,
+    },
+    heroBanner: {
+        width: "100%",
+        height: 420,
+        borderRadius: 32,
+        overflow: "hidden",
+        marginBottom: 28,
+    },
+    heroBannerImage: {
+        borderRadius: 32,
+    },
+    heroHeader: {
+        position: "absolute",
+        top: 16,
+        left: 20,
+        right: 20,
+        zIndex: 2,
+    },
+    heroBannerOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.35)",
+        paddingHorizontal: 24,
+        paddingVertical: 32,
+        justifyContent: "flex-end",
+    },
+    heroBannerTitle: {
+        fontSize: 22,
+        fontWeight: "700",
+        color: "#fff",
+        marginBottom: 6,
+    },
+    heroBannerSubtitle: {
+        fontSize: 14,
+        color: "rgba(255,255,255,0.92)",
+        marginBottom: 14,
+    },
+    heroBannerButton: {
+        alignSelf: "flex-start",
+        backgroundColor: "rgba(255,255,255,0.94)",
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 999,
+    },
+    heroBannerButtonText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#1f1f1f",
+    },
+    warmupCard: {
+        width: "100%",
+        height: 200,
+        borderRadius: 24,
+        overflow: "hidden",
+        marginBottom: 24,
+    },
+    warmupBackground: {
+        flex: 1,
+        width: "100%",
+        height: "100%",
+    },
+    warmupImage: {
+        borderRadius: 24,
+    },
+    warmupOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.35)",
+        padding: 20,
+        justifyContent: "flex-end",
+    },
+    warmupTitle: {
+        fontSize: 20,
+        fontWeight: "700",
+        color: "#fff",
+    },
+    warmupSubtitle: {
+        fontSize: 13,
+        color: "rgba(255,255,255,0.9)",
+        marginTop: 4,
+        marginBottom: 12,
+    },
+    warmupPill: {
+        alignSelf: "flex-start",
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: "rgba(255,255,255,0.92)",
+    },
+    warmupPillText: {
+        fontSize: 13,
+        fontWeight: "600",
+        color: "#262626",
     },
     heroSubtitle: {
         fontSize: 14,
@@ -830,17 +891,17 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         flexWrap: "wrap",
         justifyContent: "space-between",
-        rowGap: 12,
+        rowGap: 8,
     },
     categoryTile: {
         width: "48%",
-        aspectRatio: 1.25,
+        aspectRatio: 1.05,
         borderRadius: 18,
         borderWidth: StyleSheet.hairlineWidth,
         position: "relative",
         alignItems: "stretch",
         justifyContent: "flex-start",
-        padding: 14,
+        padding: 12,
     },
     categoryTileContent: {
         paddingLeft: 8,
