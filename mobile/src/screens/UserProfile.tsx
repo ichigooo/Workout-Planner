@@ -213,9 +213,34 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
     return (
         <SafeAreaView
             edges={["top"]}
-            style={[styles.container, { backgroundColor: theme.colors.bg }]}
+            style={[styles.container, { backgroundColor: theme.colors.cream }]}
         >
-            {/* admin button removed */}
+            <View style={styles.headerRow}>
+                <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Profile</Text>
+                <TouchableOpacity
+                    style={[
+                        styles.headerSaveButton,
+                        {
+                            backgroundColor: saving
+                                ? theme.colors.mutedAccent
+                                : theme.colors.accent,
+                        },
+                    ]}
+                    onPress={handleSave}
+                    disabled={saving}
+                    activeOpacity={0.8}
+                >
+                    <Text
+                        style={[
+                            styles.headerSaveButtonText,
+                            { color: "#FFFFFF" },
+                        ]}
+                    >
+                        {saving ? "Saving..." : "Save"}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
             <KeyboardAvoidingView
                 style={styles.container}
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -230,7 +255,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                     bounces={false}
                 >
                     {/* Profile Photo Section */}
-                    <View style={[styles.photoSection, { backgroundColor: theme.colors.surface }]}>
+                    <View style={styles.photoSection}>
                         <TouchableOpacity style={styles.photoContainer} onPress={handleImagePicker}>
                             {profilePhoto ? (
                                 <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
@@ -264,10 +289,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                     </View>
 
                     {/* Form Section */}
-                    <View style={[styles.formSection, { backgroundColor: theme.colors.surface }]}>
-                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                            Profile Information
-                        </Text>
+                    <View style={styles.formSection}>
 
                         {/* Name Field */}
                         <View style={styles.fieldContainer}>
@@ -345,31 +367,26 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                         )}
                     </View>
 
-                    {/* Save Button */}
                     <TouchableOpacity
                         style={[
-                            styles.saveButton,
+                            styles.logoutButton,
                             {
-                                backgroundColor: theme.colors.accent,
-                                opacity: saving ? 0.7 : 1,
-                                ...theme.shadows.button,
+                                borderColor: theme.colors.border,
+                                backgroundColor: theme.colors.surface,
                             },
                         ]}
-                        onPress={handleSave}
-                        disabled={saving}
-                    >
-                        <Text style={styles.saveButtonText}>
-                            {saving ? "Saving..." : "Save Profile"}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.logoutButton}
                         onPress={() => setShowLogoutConfirm(true)}
                         accessibilityRole="button"
                         accessibilityLabel="Log out"
                     >
-                        <Text style={styles.logoutButtonText}>Log Out</Text>
+                        <Text
+                            style={[
+                                styles.logoutButtonText,
+                                { color: theme.colors.text },
+                            ]}
+                        >
+                            Log Out
+                        </Text>
                     </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -440,8 +457,31 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 16,
+        paddingHorizontal: 16,
         paddingBottom: 100, // Extra padding for keyboard
+    },
+    headerRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 16,
+        paddingTop: 8,
+        paddingBottom: 4,
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontFamily: "Inter_600SemiBold",
+        letterSpacing: -0.3,
+    },
+    headerSaveButton: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 999,
+    },
+    headerSaveButtonText: {
+        fontSize: 14,
+        fontFamily: "Inter_500Medium",
+        letterSpacing: -0.2,
     },
     loadingText: {
         textAlign: "center",
@@ -452,13 +492,7 @@ const styles = StyleSheet.create({
     photoSection: {
         alignItems: "center",
         padding: 24,
-        borderRadius: 16,
         marginBottom: 16,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
     },
     photoContainer: {
         marginBottom: 16,
@@ -491,9 +525,7 @@ const styles = StyleSheet.create({
     },
     formSection: {
         padding: 24,
-        borderRadius: 12,
         marginBottom: 16,
-        borderWidth: 1,
     },
     sectionTitle: {
         fontSize: 20,
@@ -529,31 +561,16 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: "Inter_400Regular",
     },
-    saveButton: {
-        paddingVertical: 16,
-        paddingHorizontal: 32,
-        borderRadius: 8,
-        alignItems: "center",
-        marginTop: 20,
-    },
-    saveButtonText: {
-        color: "white",
-        fontSize: 16,
-        fontFamily: "Inter_600SemiBold",
-        letterSpacing: -0.2,
-    },
     logoutButton: {
         marginTop: 16,
         paddingVertical: 14,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#EF4444",
         alignItems: "center",
     },
     logoutButtonText: {
         fontSize: 15,
         fontFamily: "Inter_500Medium",
-        color: "#EF4444",
     },
     logoutOverlay: {
         ...StyleSheet.absoluteFillObject,

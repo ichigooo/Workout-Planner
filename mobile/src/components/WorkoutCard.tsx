@@ -1,5 +1,13 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from "react-native";
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    useColorScheme,
+    Image,
+    ImageSourcePropType,
+} from "react-native";
 import { getTheme } from "../theme";
 import { Workout } from "../types";
 
@@ -19,6 +27,22 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
 
+    const equipmentIconSources: Record<string, ImageSourcePropType> = {
+        dumbbell: require("../../assets/images/equipment/dumbbell.png"),
+        barbell: require("../../assets/images/equipment/barbell.png"),
+        kettlebell: require("../../assets/images/equipment/kettlebell.png"),
+    };
+
+    const getEquipmentIconForTitle = (title: string): ImageSourcePropType | null => {
+        const lower = title.toLowerCase();
+        if (lower.includes("dumbbell")) return equipmentIconSources.dumbbell;
+        if (lower.includes("barbell")) return equipmentIconSources.barbell;
+        if (lower.includes("kettlebell")) return equipmentIconSources.kettlebell;
+        return null;
+    };
+
+    const equipmentIcon = getEquipmentIconForTitle(workout.title);
+
     return (
         <TouchableOpacity
             style={[
@@ -37,6 +61,13 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
                         {workout.category}
                     </Text>
                 </View>
+                {equipmentIcon && (
+                    <Image
+                        source={equipmentIcon}
+                        style={styles.equipmentIcon}
+                        resizeMode="contain"
+                    />
+                )}
             </View>
             <View style={styles.content}>
                 <Text style={[styles.title, { color: theme.colors.text }]}>{workout.title}</Text>
@@ -85,6 +116,9 @@ const styles = StyleSheet.create({
         paddingTop: 16,
         paddingHorizontal: 16,
         paddingBottom: 8,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
     },
     categoryBadge: {
         alignSelf: "flex-start",
@@ -98,6 +132,11 @@ const styles = StyleSheet.create({
         fontFamily: "Inter_600SemiBold",
         textTransform: "uppercase",
         letterSpacing: 0.5,
+    },
+    equipmentIcon: {
+        width: 24,
+        height: 24,
+        marginLeft: 8,
     },
     content: {
         paddingHorizontal: 16,

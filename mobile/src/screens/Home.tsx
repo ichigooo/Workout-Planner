@@ -9,16 +9,16 @@ import {
     Animated,
     useColorScheme,
     ImageSourcePropType,
-    LayoutChangeEvent,
     RefreshControl,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
 import { getCurrentUserId } from "../state/session";
 import { planItemsCache } from "../services/planItemsCache";
 import { Workout, PlanItem, WorkoutCategory } from "../types";
+import { orderCategoriesWithClimbingAtEnd } from "../utils/categoryOrder";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -40,44 +40,46 @@ interface WeekSnapshotProps {
     styles: any;
 }
 
-// Helper function to get greeting based on time of day
 const getTimeBasedGreeting = (): string => {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) {
-        return "Good morning";
-    } else if (hour >= 12 && hour < 17) {
-        return "Good afternoon";
-    } else if (hour >= 17 && hour < 21) {
-        return "Good evening";
-    } else {
-        return "Good night";
-    }
+    if (hour >= 5 && hour < 12) return "Good morning";
+    if (hour >= 12 && hour < 17) return "Good afternoon";
+    if (hour >= 17 && hour < 21) return "Good evening";
+    return "Good night";
 };
 
-// Helper function to get time-appropriate emoji
 const getTimeBasedEmoji = (): string => {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 17) {
-        return "☀️"; // Sunrise for morning
-    } else {
-        return "🌙"; // Moon for night
-    }
+    return hour >= 5 && hour < 17 ? "☀️" : "🌙";
 };
+
 const categoryIconSources: Record<string, ImageSourcePropType> = {
     "Upper Body - Pull": require("../../assets/images/workout_types/upper_body_pull.png"),
     "Upper Body - Push": require("../../assets/images/workout_types/upper_body_push.png"),
-    "Legs": require("../../assets/images/workout_types/legs.png"),
-    "Core": require("../../assets/images/workout_types/core.png"),
+    Legs: require("../../assets/images/workout_types/legs.png"),
+    Core: require("../../assets/images/workout_types/core.png"),
     "Climbing - Power": require("../../assets/images/workout_types/climbing.png"),
     "Climbing - Endurance": require("../../assets/images/workout_types/climbing.png"),
     "Climbing - Warm Up": require("../../assets/images/workout_types/climbing.png"),
-    "Cardio": require("../../assets/images/workout_types/warmup.png"),
+    Cardio: require("../../assets/images/workout_types/warmup.png"),
 };
 
-const getTypeIcon = (category: WorkoutCategory): ImageSourcePropType => {
-    return (
-        categoryIconSources[category] || require("../../assets/images/workout_types/default.png")
-    );
+const getTypeIcon = (category: WorkoutCategory): ImageSourcePropType =>
+    categoryIconSources[category] ||
+    require("../../assets/images/workout_types/default.png");
+
+const equipmentIconSources: Record<string, ImageSourcePropType> = {
+    dumbbell: require("../../assets/images/equipment/dumbbell.png"),
+    barbell: require("../../assets/images/equipment/barbell.png"),
+    kettlebell: require("../../assets/images/equipment/kettlebell.png"),
+};
+
+const getEquipmentIconForTitle = (title: string): ImageSourcePropType | null => {
+    const lower = title.toLowerCase();
+    if (lower.includes("dumbbell")) return equipmentIconSources.dumbbell;
+    if (lower.includes("barbell")) return equipmentIconSources.barbell;
+    if (lower.includes("kettlebell")) return equipmentIconSources.kettlebell;
+    return null;
 };
 
 const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
@@ -90,34 +92,34 @@ const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
     styles,
 }) => {
     const dayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const dotAnimations = useMemo(() => {
-        return weekDates.reduce<Record<string, Animated.Value>>((acc, dateISO) => {
-            acc[dateISO] = new Animated.Value(1);
-            return acc;
-        }, {});
-    }, [weekDates]);
+    const dotAnimations = useMemo(
+        () =>
+            weekDates.reduce<Record<string, Animated.Value>>((acc, dateISO) => {
+                acc[dateISO] = new Animated.Value(1);
+                return acc;
+            }, {}),
+        [weekDates],
+    );
 
     const handleDayPress = (dateISO: string) => {
         setSelectedDate(dateISO);
-
-        // Animate the dot when tapped
         const anim = dotAnimations[dateISO];
-        if (anim) {
-            Animated.sequence([
-                Animated.spring(anim, {
-                    toValue: 1.3,
-                    useNativeDriver: true,
-                    tension: 300,
-                    friction: 7,
-                }),
-                Animated.spring(anim, {
-                    toValue: 1,
-                    useNativeDriver: true,
-                    tension: 300,
-                    friction: 7,
-                }),
-            ]).start();
-        }
+        if (!anim) return;
+
+        Animated.sequence([
+            Animated.spring(anim, {
+                toValue: 1.3,
+                useNativeDriver: true,
+                tension: 300,
+                friction: 7,
+            }),
+            Animated.spring(anim, {
+                toValue: 1,
+                useNativeDriver: true,
+                tension: 300,
+                friction: 7,
+            }),
+        ]).start();
     };
 
     return (
@@ -166,13 +168,13 @@ const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
                                                 color: isSelected
                                                     ? "#FFFFFF"
                                                     : isToday
-                                                      ? theme.colors.accent
-                                                      : theme.colors.subtext,
+                                                    ? theme.colors.accent
+                                                    : theme.colors.subtext,
                                                 fontWeight: isSelected
                                                     ? "700"
                                                     : isToday
-                                                      ? "600"
-                                                      : "500",
+                                                    ? "600"
+                                                    : "500",
                                             },
                                         ]}
                                     >
@@ -187,14 +189,7 @@ const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
                                                         ? "#FFFFFF"
                                                         : theme.colors.accent
                                                     : theme.colors.border,
-                                                transform: [
-                                                    {
-                                                        scale: dotScale,
-                                                    },
-                                                ],
-                                                width: 6,
-                                                height: 6,
-                                                borderRadius: 3,
+                                                transform: [{ scale: dotScale }],
                                             },
                                         ]}
                                     />
@@ -217,55 +212,38 @@ export const Home: React.FC<HomeProps> = ({
     const router = useRouter();
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
-    const insets = useSafeAreaInsets();
+    const scrollRef = useScrollToTopOnTabPress();
 
     const [workouts, setWorkouts] = useState<Workout[]>([]);
     const [planItems, setPlanItems] = useState<PlanItem[]>([]);
     const [_loading, setLoading] = useState(true);
     const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
-    const nowLocal = new Date();
-    const localTodayStr = `${nowLocal.getFullYear()}-${(nowLocal.getMonth() + 1).toString().padStart(2, "0")}-${nowLocal.getDate().toString().padStart(2, "0")}`;
-    const [selectedDate, setSelectedDate] = useState<string>(localTodayStr);
-    const scrollRef = useScrollToTopOnTabPress();
-    const [scrollContentHeight, setScrollContentHeight] = useState(0);
-    const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
-    const canScroll = scrollViewportHeight > 0 && scrollContentHeight > scrollViewportHeight;
 
-    const refreshCacheFromStore = useCallback(async () => {
-        try {
-            const [cachedWorkouts, cachedPlanItems] = await Promise.all([
-                planItemsCache.getWorkouts(),
-                planItemsCache.getCachedItems(),
-            ]);
-            setWorkouts(cachedWorkouts);
-            setPlanItems(cachedPlanItems);
-            console.log("[Home] Loaded cached workouts:", cachedWorkouts.length);
-            console.log("[Home] Loaded cached plan items:", cachedPlanItems.length);
-        } catch (error) {
-            console.error("[Home] Failed to load cached data:", error);
-        }
-    }, []);
+    const nowLocal = new Date();
+    const localTodayStr = `${nowLocal.getFullYear()}-${(nowLocal.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${nowLocal.getDate().toString().padStart(2, "0")}`;
+    const [selectedDate, setSelectedDate] = useState<string>(localTodayStr);
 
+    // Load cached data on mount
     useEffect(() => {
         let mounted = true;
+
         const loadPreloadedData = async () => {
             try {
                 const [cachedWorkouts, cachedPlanItems] = await Promise.all([
                     planItemsCache.getWorkouts(),
                     planItemsCache.getCachedItems(),
                 ]);
+                if (!mounted) return;
                 setWorkouts(cachedWorkouts);
                 setPlanItems(cachedPlanItems);
-                console.log("[Home] Loaded cached workouts:", cachedWorkouts.length);
-                console.log("[Home] Loaded cached plan items:", cachedPlanItems.length);
             } catch (error) {
                 console.error("[Home] Failed to load cached data:", error);
             } finally {
-                if (mounted) {
-                    setLoading(false);
-                }
+                if (mounted) setLoading(false);
             }
         };
 
@@ -288,11 +266,22 @@ export const Home: React.FC<HomeProps> = ({
         }
     }, []);
 
-    // Refresh profile photo and cache when screen comes into focus (e.g., after updating profile or re-tapping tab)
+    const refreshCacheFromStore = useCallback(async () => {
+        try {
+            const [cachedWorkouts, cachedPlanItems] = await Promise.all([
+                planItemsCache.getWorkouts(),
+                planItemsCache.getCachedItems(),
+            ]);
+            setWorkouts(cachedWorkouts);
+            setPlanItems(cachedPlanItems);
+        } catch (error) {
+            console.error("[Home] Failed to refresh cached data:", error);
+        }
+    }, []);
+
     useFocusEffect(
         useCallback(() => {
             loadUserProfile();
-            // Refresh cache when Home tab is tapped
             const refreshCache = async () => {
                 try {
                     planItemsCache.invalidate();
@@ -302,22 +291,15 @@ export const Home: React.FC<HomeProps> = ({
                 }
             };
             refreshCache();
-        }, [loadUserProfile]),
+        }, [loadUserProfile, refreshCacheFromStore]),
     );
 
-    // scroll to top when tab is pressed (handled by hook)
-    useEffect(() => {}, []);
-
-    // Helpers to compute scheduled workouts similar to CalendarView
-    // Legacy frequency-based scheduling is deprecated. We'll only consider explicit dated plan items.
-
     const getWeekDates = (baseISO: string) => {
-        // Parse baseISO (YYYY-MM-DD) into local components to avoid timezone shifts
         const parts = baseISO.split("-").map((s) => parseInt(s, 10));
         const base = new Date(parts[0], parts[1] - 1, parts[2]);
         const startOfWeek = new Date(base);
-        // Sunday as 0; align to Sunday start
-        startOfWeek.setDate(base.getDate() - base.getDay());
+        startOfWeek.setDate(base.getDate() - base.getDay()); // Sunday start
+
         const dates: string[] = [];
         for (let i = 0; i < 7; i++) {
             const d = new Date(startOfWeek);
@@ -335,52 +317,49 @@ export const Home: React.FC<HomeProps> = ({
         const result: Record<string, Workout[]> = {};
         weekDates.forEach((d) => (result[d] = []));
 
-        // Process plan items directly (no need for workout plan wrapper)
         weekDates.forEach((dateISO) => {
             planItems.forEach((item) => {
                 if (!item || !item.workout) return;
                 const sd = (item as any).scheduledDate ?? (item as any).scheduled_date;
-                if (!sd) return; // we only handle explicit dated items here
+                if (!sd) return;
                 const sdStr =
                     typeof sd === "string"
                         ? sd.split("T")[0].split(" ")[0]
                         : (() => {
                               const dt = new Date(sd as any);
-                              return `${dt.getFullYear()}-${(dt.getMonth() + 1).toString().padStart(2, "0")}-${dt.getDate().toString().padStart(2, "0")}`;
+                              return `${dt.getFullYear()}-${(dt.getMonth() + 1)
+                                  .toString()
+                                  .padStart(2, "0")}-${dt.getDate()
+                                  .toString()
+                                  .padStart(2, "0")}`;
                           })();
-                if (sdStr === dateISO) result[dateISO].push(item.workout);
+                if (sdStr === dateISO) {
+                    result[dateISO].push(item.workout);
+                }
             });
         });
+
         return result;
     };
 
     const weekDates = getWeekDates(selectedDate);
     const weekWorkouts = getScheduledWorkoutsByDate();
     const todayISO = localTodayStr;
-    // choose which date to display in the "Today's workouts" section:
-    // prefer the selected date; if it has no workouts, fall back to the next date in the week that does
     const todaysWorkoutList = weekWorkouts[todayISO] || [];
     const isRestDay = selectedDate === todayISO && todaysWorkoutList.length === 0;
+
     const displayDate =
         isRestDay
             ? todayISO
             : weekWorkouts[selectedDate] && weekWorkouts[selectedDate].length > 0
-                ? selectedDate
-                : weekDates.find((d) => (weekWorkouts[d] || []).length > 0) || selectedDate;
+            ? selectedDate
+            : weekDates.find((d) => (weekWorkouts[d] || []).length > 0) || selectedDate;
 
-    const _todaysWorkout = workouts.length > 0 ? workouts[0] : undefined;
-    const handleScrollLayout = useCallback((event: LayoutChangeEvent) => {
-        setScrollViewportHeight(event.nativeEvent.layout.height);
-    }, []);
-    const handleContentSizeChange = useCallback((_width: number, height: number) => {
-        setScrollContentHeight(height);
-    }, []);
     const handleRefresh = useCallback(async () => {
         setRefreshing(true);
         try {
             planItemsCache.invalidate();
             await refreshCacheFromStore();
-            setRefreshKey((k) => k + 1);
         } catch (error) {
             console.error("[Home] Refresh failed:", error);
         } finally {
@@ -390,13 +369,13 @@ export const Home: React.FC<HomeProps> = ({
 
     return (
         <SafeAreaView
-            edges={["top"]}
-            style={[styles.safeArea, { backgroundColor: theme.colors.bg }]}
+            edges={["top", "bottom"]}
+            style={[styles.safeArea, { backgroundColor: theme.colors.cream }]}
         >
             <ScrollView
                 ref={scrollRef}
                 style={styles.container}
-                contentContainerStyle={[styles.content, { paddingBottom: 16 + insets.bottom }]}
+                contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
@@ -406,15 +385,22 @@ export const Home: React.FC<HomeProps> = ({
                         progressBackgroundColor={theme.colors.surface}
                     />
                 }
-                scrollEnabled={canScroll}
-                bounces={false}
-                alwaysBounceVertical={false}
                 overScrollMode="never"
-                onLayout={handleScrollLayout}
-                onContentSizeChange={handleContentSizeChange}
+                keyboardShouldPersistTaps="handled"
             >
+                {/* HEADER */}
                 <View style={styles.headerRow}>
-                    <TouchableOpacity onPress={onOpenProfile} style={styles.iconButton}>
+                    <TouchableOpacity
+                        onPress={onOpenProfile}
+                        style={[
+                            styles.iconButton,
+                            {
+                                backgroundColor: theme.colors.surface,
+                                borderColor: theme.colors.border,
+                                borderWidth: StyleSheet.hairlineWidth,
+                            },
+                        ]}
+                    >
                         {profilePhoto ? (
                             <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
                         ) : (
@@ -430,53 +416,73 @@ export const Home: React.FC<HomeProps> = ({
                         )}
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={onOpenCalendar} style={styles.iconButton}>
+                    <TouchableOpacity
+                        onPress={onOpenCalendar}
+                        style={[
+                            styles.iconButton,
+                            {
+                                backgroundColor: theme.colors.surface,
+                                borderColor: theme.colors.border,
+                                borderWidth: StyleSheet.hairlineWidth,
+                            },
+                        ]}
+                    >
                         <Ionicons name="calendar-outline" size={26} color={theme.colors.text} />
                     </TouchableOpacity>
                 </View>
 
+                {/* GREETING */}
                 <Text style={[styles.heroTitle, { color: theme.colors.text }]}>
                     {getTimeBasedGreeting()}
                     {userName ? `, ${userName}` : ""} {getTimeBasedEmoji()}
                 </Text>
 
+                {/* WEEK SNAPSHOT */}
                 <WeekSnapshot
                     weekDates={weekDates}
                     weekWorkouts={weekWorkouts}
-                    todayISO={localTodayStr}
+                    todayISO={todayISO}
                     selectedDate={selectedDate}
                     setSelectedDate={setSelectedDate}
                     theme={theme}
                     styles={styles}
                 />
 
+                {/* TODAY / SELECTED DAY WORKOUTS */}
                 <View style={styles.section}>
                     <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
                         {isRestDay
                             ? "Today's workouts"
                             : displayDate === todayISO
-                                ? "Today's workouts"
-                                : (() => {
-                                      const [yy, mm, dd] = displayDate
-                                          .split("-")
-                                          .map((s) => parseInt(s, 10));
-                                      return new Date(yy, mm - 1, dd).toLocaleDateString("en-US", {
-                                          weekday: "long",
-                                          month: "long",
-                                          day: "numeric",
-                                      });
-                                  })()}
+                            ? "Today's workouts"
+                            : (() => {
+                                  const [yy, mm, dd] = displayDate
+                                      .split("-")
+                                      .map((s) => parseInt(s, 10));
+                                  return new Date(yy, mm - 1, dd).toLocaleDateString("en-US", {
+                                      weekday: "long",
+                                      month: "long",
+                                      day: "numeric",
+                                  });
+                              })()}
                     </Text>
+
                     {isRestDay ? (
                         <View style={styles.restDayRow}>
                             <Text style={[styles.restDayText, { color: theme.colors.text }]}>
                                 Rest day
                             </Text>
-                            <Text style={[styles.restDaySubtext, { color: theme.colors.subtext }]}>
+                            <Text
+                                style={[
+                                    styles.restDaySubtext,
+                                    { color: theme.colors.subtext },
+                                ]}
+                            >
                                 Take today to recover—tonight’s stretch counts as progress too.
                             </Text>
                         </View>
-                    ) : weekWorkouts[displayDate] && weekWorkouts[displayDate].length > 0 ? (
+                    ) : weekWorkouts[displayDate] &&
+                      weekWorkouts[displayDate].length > 0 ? (
                         <View style={{ gap: 12 }}>
                             {weekWorkouts[displayDate].map((item, idx) => (
                                 <TouchableOpacity
@@ -488,6 +494,7 @@ export const Home: React.FC<HomeProps> = ({
                                             borderColor: theme.colors.border,
                                         },
                                     ]}
+                                    activeOpacity={0.85}
                                     onPress={() =>
                                         router.push(
                                             `/workout-detail?id=${encodeURIComponent(item.id)}`,
@@ -505,6 +512,13 @@ export const Home: React.FC<HomeProps> = ({
                                                 {item.category.toUpperCase()}
                                             </Text>
                                         </View>
+                                        {getEquipmentIconForTitle(item.title) && (
+                                            <Image
+                                                source={getEquipmentIconForTitle(item.title)}
+                                                style={styles.previewEquipmentIcon}
+                                                resizeMode="contain"
+                                            />
+                                        )}
                                     </View>
                                     <Text
                                         style={[styles.previewTitle, { color: theme.colors.text }]}
@@ -568,7 +582,7 @@ export const Home: React.FC<HomeProps> = ({
                     )}
                 </View>
 
-                {/* Workout categories snapshot below today's workouts */}
+                {/* WORKOUT CATEGORIES */}
                 <View style={styles.section}>
                     <View style={styles.rowBetween}>
                         <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
@@ -580,62 +594,58 @@ export const Home: React.FC<HomeProps> = ({
                             </Text>
                         </TouchableOpacity>
                     </View>
+
                     <View style={styles.categoryGrid}>
-                        {Array.from(new Set(workouts.map((w) => w.category)))
-                            .sort()
-                            .map((cat) => {
-                                const workoutCount = workouts.filter(
-                                    (w) => w.category === cat,
-                                ).length;
-                                return (
-                                    <TouchableOpacity
-                                        key={String(cat)}
-                                        style={[
-                                            styles.categoryTile,
-                                            {
-                                                backgroundColor: theme.colors.surface,
-                                                borderColor: theme.colors.border,
-                                                shadowColor: "#000",
-                                                shadowOpacity: 0.08,
-                                                shadowOffset: { width: 0, height: 4 },
-                                                shadowRadius: 8,
-                                                elevation: 3,
-                                            },
-                                        ]}
-                                        onPress={() => onOpenLibrary && onOpenLibrary(String(cat))}
-                                        activeOpacity={0.85}
-                                    >
-                                        <View style={styles.categoryTileContent}>
-                                            <Text
-                                                style={[
-                                                    styles.categoryTileText,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                                numberOfLines={2}
-                                                ellipsizeMode="tail"
-                                            >
-                                                {cat}
-                                            </Text>
-                                            <Text
-                                                style={[
-                                                    styles.categoryTileCount,
-                                                    { color: theme.colors.subtext },
-                                                ]}
-                                            >
-                                                {workoutCount}{" "}
-                                                {workoutCount === 1 ? "workout" : "workouts"}
-                                            </Text>
-                                        </View>
-                                        <View style={styles.categoryTileIconWrapper}>
-                                            <Image
-                                                source={getTypeIcon(cat)}
-                                                style={styles.categoryTileIcon}
-                                                resizeMode="contain"
-                                            />
-                                        </View>
-                                    </TouchableOpacity>
-                                );
-                            })}
+                        {orderCategoriesWithClimbingAtEnd(
+                            Array.from(new Set(workouts.map((w) => w.category))),
+                        ).map((cat) => {
+                            const workoutCount = workouts.filter(
+                                (w) => w.category === cat,
+                            ).length;
+                            return (
+                                <TouchableOpacity
+                                    key={String(cat)}
+                                    style={[
+                                        styles.categoryTile,
+                                        {
+                                            backgroundColor: theme.colors.surface,
+                                            borderColor: theme.colors.border,
+                                        },
+                                    ]}
+                                    onPress={() => onOpenLibrary && onOpenLibrary(String(cat))}
+                                    activeOpacity={0.85}
+                                >
+                                    <View style={styles.categoryTileContent}>
+                                        <Text
+                                            style={[
+                                                styles.categoryTileText,
+                                                { color: theme.colors.text },
+                                            ]}
+                                            numberOfLines={2}
+                                            ellipsizeMode="tail"
+                                        >
+                                            {cat}
+                                        </Text>
+                                        <Text
+                                            style={[
+                                                styles.categoryTileCount,
+                                                { color: theme.colors.subtext },
+                                            ]}
+                                        >
+                                            {workoutCount}{" "}
+                                            {workoutCount === 1 ? "workout" : "workouts"}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.categoryTileIconWrapper}>
+                                        <Image
+                                            source={getTypeIcon(cat)}
+                                            style={styles.categoryTileIcon}
+                                            resizeMode="contain"
+                                        />
+                                    </View>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
                 </View>
             </ScrollView>
@@ -650,9 +660,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    // This controls the *only* padding; no flexGrow tricks
     content: {
-        paddingHorizontal: 16,
-        paddingTop: 16,
+        paddingHorizontal: 20,
+        paddingTop: 24,
+        paddingBottom: 16,
     },
     headerRow: {
         flexDirection: "row",
@@ -677,16 +689,23 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     heroTitle: {
-        fontSize: 28,
+        fontSize: 30,
         fontWeight: "700",
-        marginBottom: 12,
+        letterSpacing: 0.2,
+        marginBottom: 4,
+    },
+    heroSubtitle: {
+        fontSize: 14,
+        fontWeight: "400",
+        marginBottom: 16,
     },
     weekContainer: {
         marginBottom: 16,
     },
     weekCard: {
-        padding: 16,
-        borderRadius: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 18,
         borderWidth: StyleSheet.hairlineWidth,
         overflow: "hidden",
     },
@@ -699,9 +718,9 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     dayCircle: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -767,14 +786,18 @@ const styles = StyleSheet.create({
         borderWidth: StyleSheet.hairlineWidth,
     },
     previewCardFull: {
-        borderRadius: 12,
-        padding: 12,
+        borderRadius: 18,
+        padding: 14,
         borderWidth: StyleSheet.hairlineWidth,
     },
     previewHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         marginBottom: 8,
+    },
+    previewEquipmentIcon: {
+        width: 24,
+        height: 24,
     },
     categoryBadge: {
         paddingHorizontal: 10,
@@ -811,13 +834,13 @@ const styles = StyleSheet.create({
     },
     categoryTile: {
         width: "48%",
-        aspectRatio: 1.2,
-        borderRadius: 16,
+        aspectRatio: 1.25,
+        borderRadius: 18,
         borderWidth: StyleSheet.hairlineWidth,
         position: "relative",
         alignItems: "stretch",
         justifyContent: "flex-start",
-        padding: 12,
+        padding: 14,
     },
     categoryTileContent: {
         paddingLeft: 8,

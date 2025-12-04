@@ -19,6 +19,7 @@ import { WorkoutForm } from "@/src/components/WorkoutForm";
 import { getCurrentUser, getCurrentUserId } from "@/src/state/session";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { orderCategoriesWithClimbingAtEnd } from "@/src/utils/categoryOrder";
 
 export default function WorkoutScreen() {
     const router = useRouter();
@@ -104,7 +105,9 @@ export default function WorkoutScreen() {
         }
     }, [params?.id, router]);
 
-    const categories = Array.from(new Set(workouts.map((w) => w.category))).sort();
+    const categories = orderCategoriesWithClimbingAtEnd(
+        Array.from(new Set(workouts.map((w) => w.category))),
+    );
     const categoriesWithAll = ["All", ...categories];
     const filteredByCategory = category
         ? workouts.filter((w) => w.category === category)
@@ -134,7 +137,7 @@ export default function WorkoutScreen() {
     }, [category, categories.length]);
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
+        <View style={[styles.container, { backgroundColor: theme.colors.cream }]}>
             <View
                 style={[
                     styles.header,
