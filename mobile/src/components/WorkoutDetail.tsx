@@ -13,6 +13,7 @@ import {
     TextInput,
     KeyboardAvoidingView,
     Platform,
+    ImageBackground,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
@@ -256,7 +257,12 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.cream }]}>
+        <ImageBackground
+            source={require("../../assets/images/bg6.png")}
+            style={styles.screenBackground}
+            imageStyle={styles.screenBackgroundImage}
+        >
+        <View style={[styles.container, { backgroundColor: 'transparent' }]}>
             <View
                 style={[
                     styles.header,
@@ -771,12 +777,19 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                 </View>
             </Modal>
         </View>
+        </ImageBackground>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    screenBackground: {
+        flex: 1,
+    },
+    screenBackgroundImage: {
+        resizeMode: "cover",
     },
     flex: {
         flex: 1,

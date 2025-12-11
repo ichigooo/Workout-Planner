@@ -369,26 +369,31 @@ export const Home: React.FC<HomeProps> = ({
     }, [refreshCacheFromStore]);
 
     return (
-        <SafeAreaView
-            edges={["top"]}
-            style={[styles.safeArea, { backgroundColor: theme.colors.cream }]}
+        <ImageBackground
+            source={require("../../assets/images/bg6.png")}
+            style={styles.screenBackground}
+            imageStyle={styles.screenBackgroundImage}
         >
-            <ScrollView
-                ref={scrollRef}
-                style={styles.container}
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={handleRefresh}
-                        colors={[theme.colors.accent]}
-                        progressBackgroundColor={theme.colors.surface}
-                    />
-                }
-                overScrollMode="never"
-                keyboardShouldPersistTaps="handled"
+            <SafeAreaView
+                edges={["top"]}
+                style={[styles.safeArea, { backgroundColor: "transparent" }]}
             >
+                <ScrollView
+                    ref={scrollRef}
+                    style={[styles.container, { backgroundColor: "transparent" }]}
+                    contentContainerStyle={styles.content}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={handleRefresh}
+                            colors={[theme.colors.accent]}
+                            progressBackgroundColor={theme.colors.surface}
+                        />
+                    }
+                    overScrollMode="never"
+                    keyboardShouldPersistTaps="handled"
+                >
                 {/* HERO IMAGE WITH GREETING */}
                 <ImageBackground
                     source={require("../../assets/images/homebg.png")}
@@ -445,13 +450,22 @@ export const Home: React.FC<HomeProps> = ({
                         <Text style={styles.heroBannerSubtitle}>
                             Curated workouts and plans tailored for your climb to the top.
                         </Text>
-                        <TouchableOpacity
-                            style={styles.heroBannerButton}
-                            onPress={() => router.push("/workout")}
-                            activeOpacity={0.85}
-                        >
-                            <Text style={styles.heroBannerButtonText}>Browse Workouts</Text>
-                        </TouchableOpacity>
+                        <View style={styles.heroBannerActions}>
+                            <TouchableOpacity
+                                style={styles.heroBannerPrimaryButton}
+                                onPress={() => router.push("/workout")}
+                                activeOpacity={0.85}
+                            >
+                                <Text style={styles.heroBannerButtonText}>Browse Workouts</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.heroBannerSecondaryButton}
+                                onPress={() => router.push("/plan")}
+                                activeOpacity={0.85}
+                            >
+                                <Text style={styles.heroBannerSecondaryButtonText}>Browse Plans</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </ImageBackground>
                 {/* WEEK SNAPSHOT */}
@@ -619,7 +633,8 @@ export const Home: React.FC<HomeProps> = ({
                     </TouchableOpacity>
                 ) : null}
             </ScrollView>
-        </SafeAreaView>
+            </SafeAreaView>
+        </ImageBackground>
     );
 };
 
@@ -629,6 +644,12 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
+    },
+    screenBackground: {
+        flex: 1,
+    },
+    screenBackgroundImage: {
+        resizeMode: "cover",
     },
     // This controls the *only* padding; no flexGrow tricks
     content: {
@@ -699,17 +720,38 @@ const styles = StyleSheet.create({
         color: "rgba(255,255,255,0.92)",
         marginBottom: 14,
     },
-    heroBannerButton: {
-        alignSelf: "flex-start",
+    heroBannerActions: {
+        flexDirection: "row",
+        gap: 12,
+        marginTop: 4,
+    },
+    heroBannerPrimaryButton: {
+        flex: 1,
+        alignItems: "center",
         backgroundColor: "rgba(255,255,255,0.94)",
         paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingVertical: 10,
         borderRadius: 999,
+    },
+    heroBannerSecondaryButton: {
+        flex: 1,
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.8)",
+        backgroundColor: "rgba(0,0,0,0.35)",
     },
     heroBannerButtonText: {
         fontSize: 14,
         fontWeight: "600",
         color: "#1f1f1f",
+    },
+    heroBannerSecondaryButtonText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#fff",
     },
     warmupCard: {
         width: "100%",

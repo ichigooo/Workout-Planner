@@ -87,6 +87,24 @@ export interface WorkoutPersonalRecord {
     updatedAt: string;
 }
 
+export interface WorkoutDayTemplate {
+    name: string;
+    workoutIds: string[];
+}
+
+export interface WorkoutPlanTemplate {
+    id: string;
+    name: string;
+    description?: string | null;
+    numWeeks: number;
+    daysPerWeek: number;
+    workoutStructure: WorkoutDayTemplate[][];
+    level?: string | null;
+    createdBy?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface CreateWorkoutRequest {
     title: string;
     category: WorkoutCategory;

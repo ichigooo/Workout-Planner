@@ -35,7 +35,7 @@ export default function TabLayout() {
                 name="library"
                 options={{
                     title: "Routine",
-                    tabBarIcon: ({ color }) => <TabBarIcon name="barbell-outline" color={color} />,
+                    tabBarIcon: ({ color }) => <TabBarIcon name="calendar-outline" color={color} />,
                 }}
             />
             <Tabs.Screen
@@ -46,12 +46,13 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="profile"
+                name="plan"
                 options={{
-                    title: "Profile",
-                    tabBarIcon: ({ color }) => <TabBarIcon name="person-outline" color={color} />,
+                    title: "Plan",
+                    tabBarIcon: ({ color }) => <TabBarIcon name="barbell-outline" color={color} />,
                 }}
             />
+
         </Tabs>
     );
 }

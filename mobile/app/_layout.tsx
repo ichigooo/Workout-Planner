@@ -5,7 +5,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
-import { useColorScheme } from "react-native";
+import { useColorScheme, ImageBackground, View } from "react-native";
 import { AuthProvider } from "@/src/state/AuthContext";
 
 export {
@@ -81,6 +81,19 @@ function RootLayoutNav() {
                     name="workout-detail"
                     options={{ headerShown: false, gestureEnabled: true }}
                 />
+                <Stack.Screen
+                    name="profile"
+                    options={{ headerShown: false, gestureEnabled: true }}
+                />
+                <Stack.Screen
+                    name="import-workout"
+                    options={{ headerShown: false, gestureEnabled: true }}
+                />
+                <Stack.Screen
+                    name="plan/[id]"
+                    options={{ headerShown: false, gestureEnabled: true }}
+                />
+
                 <Stack.Screen
                     name="modal"
                     options={{ presentation: "modal", gestureEnabled: true }}

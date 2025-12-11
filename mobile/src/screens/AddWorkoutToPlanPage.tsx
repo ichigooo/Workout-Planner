@@ -40,7 +40,7 @@ export const AddWorkoutToPlanPage: React.FC<AddWorkoutToPlanPageProps> = ({
     return (
         <SafeAreaView
             edges={["top", "bottom"]}
-            style={[styles.container, { backgroundColor: theme.colors.cream }]}
+            style={[styles.container, { backgroundColor: 'transparent' }]}
         >
             <View
                 style={[

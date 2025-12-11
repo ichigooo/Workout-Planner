@@ -1,5 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { View, Text, StyleSheet, Alert, useColorScheme, TouchableOpacity, Modal, ScrollView, FlatList } from "react-native";
+import {
+    View,
+    Text,
+    StyleSheet,
+    Alert,
+    useColorScheme,
+    TouchableOpacity,
+    Modal,
+    ScrollView,
+    FlatList,
+    ImageBackground,
+} from "react-native";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
@@ -327,25 +338,36 @@ export const TrainingPlanManager: React.FC = () => {
 
     if (loading) {
         return (
-            <SafeAreaView
-                edges={["top"]}
-                style={[styles.container, { backgroundColor: theme.colors.bg }]}
+            <ImageBackground
+                source={require("../../assets/images/bg6.png")}
+                style={styles.screenBackground}
+                imageStyle={styles.screenBackgroundImage}
             >
-                <Text style={{ color: theme.colors.text, textAlign: "center", marginTop: 24 }}>
-                    Loading routine...
-                </Text>
-            </SafeAreaView>
+                <SafeAreaView
+                    edges={["top"]}
+                    style={[styles.container, { backgroundColor: "transparent" }]}
+                >
+                    <Text style={{ color: theme.colors.text, textAlign: "center", marginTop: 24 }}>
+                        Loading routine...
+                    </Text>
+                </SafeAreaView>
+            </ImageBackground>
         );
     }
 
     return (
-        <SafeAreaView
-            edges={["top"]}
-            style={[styles.container, { backgroundColor: theme.colors.cream }]}
+        <ImageBackground
+            source={require("../../assets/images/bg6.png")}
+            style={styles.screenBackground}
+            imageStyle={styles.screenBackgroundImage}
         >
+            <SafeAreaView
+                edges={["top"]}
+                style={[styles.container, { backgroundColor: "transparent" }]}
+            >
             <View style={[styles.headerRow, { borderBottomColor: theme.colors.border }]}>
                 <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-                    Current Training Plan
+                    My Schedule
                 </Text>
                 <TouchableOpacity
                     onPress={() => router.push("/workout")}
@@ -451,13 +473,20 @@ export const TrainingPlanManager: React.FC = () => {
                     />
                 </SafeAreaProvider>
             </Modal>
-        </SafeAreaView>
+            </SafeAreaView>
+        </ImageBackground>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    screenBackground: {
+        flex: 1,
+    },
+    screenBackgroundImage: {
+        resizeMode: "cover",
     },
     headerRow: {
         paddingHorizontal: 16,

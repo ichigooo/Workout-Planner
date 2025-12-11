@@ -8,9 +8,9 @@ import {
     useColorScheme,
     Modal,
     Alert,
-    TextInput,
+    ImageBackground,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { getTheme } from "@/src/theme";
 import { apiService } from "@/src/services/api";
 import { Workout, CreateWorkoutRequest } from "@/src/types";
@@ -136,22 +136,48 @@ export default function WorkoutScreen() {
         }
     }, [category, categories.length]);
 
+    const renderImportPrompt = () => (
+        <TouchableOpacity
+            style={[
+                styles.importPrompt,
+                {
+                    borderColor: "transparent",
+                    backgroundColor: "rgba(255,255,255,0.15)",
+                },
+            ]}
+            onPress={() => router.push("/import-workout")}
+        >
+            <View style={{ flex: 1 }}>
+                <Text style={[styles.importPromptTitle, { color: theme.colors.text }]}>
+                    Don’t find your workout?
+                </Text>
+                <View style={styles.importIconsRow}>
+                    <Ionicons name="logo-instagram" size={18} color={theme.colors.text} />
+                    <Ionicons name="logo-youtube" size={18} color={theme.colors.text} />
+                    <Ionicons name="logo-tiktok" size={18} color={theme.colors.text} />
+                    <Text style={[styles.importPromptSubtitle, { color: theme.colors.accent }]}>
+                        Import…
+                    </Text>
+                </View>
+            </View>
+            <Ionicons name="arrow-forward" size={20} color={theme.colors.accent} />
+        </TouchableOpacity>
+    );
+
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.cream }]}>
-            <View
-                style={[
-                    styles.header,
-                    {
-                        backgroundColor: theme.colors.surface,
-                        borderBottomColor: theme.colors.border,
-                        paddingTop: insets.top,
-                    },
-                ]}
-            >
+        <ImageBackground
+            source={require("../assets/images/bg6.png")}
+            style={styles.screenBackground}
+            imageStyle={styles.screenBackgroundImage}
+        >
+        <SafeAreaView
+            edges={["top"]}
+            style={[styles.container, { backgroundColor: "transparent" }]}
+        >
+            <View style={[styles.headerRow, { borderBottomColor: theme.colors.border }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Text style={[styles.backText, { color: theme.colors.accent }]}>‹ Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.title, { color: theme.colors.text }]}>Workout</Text>
                 {isAdmin ? (
                     <TouchableOpacity
                         onPress={() => setShowForm(true)}
@@ -170,8 +196,7 @@ export default function WorkoutScreen() {
                 style={[
                     styles.filterBar,
                     {
-                        backgroundColor: theme.colors.surface,
-                        borderBottomColor: theme.colors.border,
+                        borderBottomColor: "transparent",
                     },
                 ]}
             >
@@ -210,7 +235,7 @@ export default function WorkoutScreen() {
                                         item === "All" ? category === null : category === item
                                     )
                                         ? theme.colors.accent
-                                        : theme.colors.bg,
+                                        : "transparent",
                                 },
                             ]}
                         >
@@ -258,6 +283,8 @@ export default function WorkoutScreen() {
                 />
             </View>
 
+            <View style={{ paddingHorizontal: 16 }}>{renderImportPrompt()}</View>
+
             {loading ? (
                 <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
                     <Text style={{ color: theme.colors.subtext }}>Loading workouts...</Text>
@@ -274,7 +301,7 @@ export default function WorkoutScreen() {
                             }}
                         />
                     )}
-                    contentContainerStyle={{ paddingVertical: 8 }}
+                    contentContainerStyle={{ paddingVertical: 8, paddingBottom: insets.bottom + 16 }}
                     showsVerticalScrollIndicator={false}
                 />
             )}
@@ -297,23 +324,29 @@ export default function WorkoutScreen() {
                     />
                 </View>
             </Modal>
-        </View>
+        </SafeAreaView>
+        </ImageBackground>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    header: {
+    screenBackground: {
+        flex: 1,
+    },
+    screenBackgroundImage: {
+        resizeMode: "cover",
+    },
+    headerRow: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
     },
     backButton: { width: 60 },
     backText: { fontSize: 16, fontWeight: "600" },
-    title: { fontSize: 18, fontWeight: "700" },
     addBtn: {
         paddingHorizontal: 12,
         paddingVertical: 6,
@@ -333,4 +366,35 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     filterText: { fontSize: 14, fontWeight: "600" },
+    importPrompt: {
+        marginTop: 16,
+        borderWidth: 1,
+        borderRadius: 24,
+        padding: 16,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+    },
+    importPromptTitle: {
+        fontSize: 16,
+        fontWeight: "700",
+    },
+    importPromptSubtitle: {
+        fontSize: 16,
+        fontWeight: "700",
+    },
+    importIconsRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        marginTop: 4,
+    },
+    importIconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: "rgba(0,0,0,0.1)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
 });

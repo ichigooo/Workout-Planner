@@ -87,16 +87,17 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ onBegin, isLoading
     return (
         <ImageBackground style={styles.background} resizeMode="cover">
             <View style={styles.container}>
-                <View style={styles.heroContainer}>
-                    <Image
-                        source={require("../../assets/images/landing1.png")}
-                        style={styles.heroImage}
-                        resizeMode="cover"
-                    />
-                </View>
+                <ImageBackground
+                    source={require("../../assets/images/landing1.png")}
+                    style={styles.heroContainer}
+                    imageStyle={styles.heroImage}
+                    resizeMode="cover"
+                >
+                    <View style={styles.heroOverlay} />
+                </ImageBackground>
 
                 <ImageBackground
-                    source={require("../../assets/images/landing2.png")}
+                    source={require("../../assets/images/landing1.png")}
                     style={styles.bottomBackground}
                     imageStyle={styles.bottomBackgroundImage}
                 >
@@ -140,17 +141,21 @@ const styles = StyleSheet.create({
         width: "100%",
     },
     heroContainer: {
-        flex: 1.2,
+        flex: 1,
         width: "100%",
     },
     heroImage: {
         width: "100%",
         height: "100%",
     },
-    bottomBackground: {
+    heroOverlay: {
         flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.2)",
+    },
+    bottomBackground: {
+        flex: 1.2,
         width: "100%",
-        justifyContent: "flex-end",
+        justifyContent: "flex-start",
     },
     bottomBackgroundImage: {
         width: "100%",

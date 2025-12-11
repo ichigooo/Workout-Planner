@@ -11,6 +11,7 @@ import {
     Platform,
     useColorScheme,
     KeyboardAvoidingView,
+    ImageBackground,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -202,248 +203,265 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
 
     if (loading) {
         return (
-            <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
-                <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-                    Loading profile...
-                </Text>
-            </View>
+            <ImageBackground
+                source={require("../../assets/images/bg6.png")}
+                style={styles.screenBackground}
+                imageStyle={styles.screenBackgroundImage}
+            >
+                <SafeAreaView
+                    edges={["top"]}
+                    style={[styles.container, { backgroundColor: "transparent" }]}
+                >
+                    <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+                        Loading profile...
+                    </Text>
+                </SafeAreaView>
+            </ImageBackground>
         );
     }
 
     return (
-        <SafeAreaView
-            edges={["top"]}
-            style={[styles.container, { backgroundColor: theme.colors.cream }]}
+        <ImageBackground
+            source={require("../../assets/images/bg6.png")}
+            style={styles.screenBackground}
+            imageStyle={styles.screenBackgroundImage}
         >
-            <View style={styles.headerRow}>
-                <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Profile</Text>
-                <TouchableOpacity
-                    style={[
-                        styles.headerSaveButton,
-                        {
-                            backgroundColor: saving
-                                ? theme.colors.mutedAccent
-                                : theme.colors.accent,
-                        },
-                    ]}
-                    onPress={handleSave}
-                    disabled={saving}
-                    activeOpacity={0.8}
-                >
-                    <Text
-                        style={[
-                            styles.headerSaveButtonText,
-                            { color: "#FFFFFF" },
-                        ]}
-                    >
-                        {saving ? "Saving..." : "Save"}
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+            <SafeAreaView
+                edges={["top"]}
+                style={[styles.container, { backgroundColor: "transparent" }]}
             >
-                <ScrollView
-                    ref={scrollRef}
-                    style={styles.scrollView}
-                    contentContainerStyle={styles.scrollContent}
-                    keyboardShouldPersistTaps="handled"
-                    showsVerticalScrollIndicator={false}
-                    bounces={false}
+                <KeyboardAvoidingView
+                    style={styles.container}
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
                 >
-                    {/* Profile Photo Section */}
-                    <View style={styles.photoSection}>
-                        <TouchableOpacity style={styles.photoContainer} onPress={handleImagePicker}>
-                            {profilePhoto ? (
-                                <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
-                            ) : (
-                                <View
-                                    style={[
-                                        styles.placeholderImage,
-                                        { backgroundColor: theme.colors.border },
-                                    ]}
-                                >
-                                    <Text
+                    <ScrollView
+                        ref={scrollRef}
+                        style={styles.scrollView}
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
+                        bounces={false}
+                    >
+                        {/* Profile Photo Section */}
+                        <View style={styles.photoSection}>
+                            <TouchableOpacity
+                                style={styles.photoContainer}
+                                onPress={handleImagePicker}
+                            >
+                                {profilePhoto ? (
+                                    <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
+                                ) : (
+                                    <View
                                         style={[
-                                            styles.placeholderText,
-                                            { color: theme.colors.subtext },
+                                            styles.placeholderImage,
+                                            { backgroundColor: theme.colors.border },
                                         ]}
                                     >
-                                        Add Photo
+                                        <Text
+                                            style={[
+                                                styles.placeholderText,
+                                                { color: theme.colors.subtext },
+                                            ]}
+                                        >
+                                            Add Photo
+                                        </Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.changePhotoButton,
+                                    { backgroundColor: theme.colors.accent },
+                                ]}
+                                onPress={handleImagePicker}
+                            >
+                                <Text style={styles.changePhotoText}>Change Photo</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Form Section */}
+                        <View style={styles.formSection}>
+                            {/* Name Field */}
+                            <View style={styles.fieldContainer}>
+                                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
+                                    Name
+                                </Text>
+                                <TextInput
+                                    style={[
+                                        styles.textInput,
+                                        {
+                                            backgroundColor: theme.colors.bg,
+                                            borderColor: theme.colors.border,
+                                            color: theme.colors.text,
+                                        },
+                                    ]}
+                                    value={name}
+                                    onChangeText={setName}
+                                    placeholder="Enter your name"
+                                    placeholderTextColor={theme.colors.subtext}
+                                />
+                            </View>
+
+                            {/* Email Field */}
+                            <View style={styles.fieldContainer}>
+                                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
+                                    Email
+                                </Text>
+                                <TextInput
+                                    style={[
+                                        styles.textInput,
+                                        {
+                                            backgroundColor: theme.colors.bg,
+                                            borderColor: theme.colors.border,
+                                            color: theme.colors.text,
+                                        },
+                                    ]}
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    placeholder="Enter your email"
+                                    placeholderTextColor={theme.colors.subtext}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                />
+                            </View>
+
+                            {/* Birthday Field */}
+                            <View style={styles.fieldContainer}>
+                                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
+                                    Birthday
+                                </Text>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.dateButton,
+                                        {
+                                            backgroundColor: theme.colors.bg,
+                                            borderColor: theme.colors.border,
+                                        },
+                                    ]}
+                                    onPress={() => setShowDatePicker(true)}
+                                >
+                                    <Text
+                                        style={[styles.dateButtonText, { color: theme.colors.text }]}
+                                    >
+                                        {formatDate(birthday)}
                                     </Text>
-                                </View>
+                                </TouchableOpacity>
+                            </View>
+
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    value={birthday || new Date()}
+                                    mode="date"
+                                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                                    onChange={handleDateChange}
+                                    maximumDate={new Date()}
+                                />
                             )}
-                        </TouchableOpacity>
+                        </View>
+
                         <TouchableOpacity
                             style={[
-                                styles.changePhotoButton,
-                                { backgroundColor: theme.colors.accent },
+                                styles.saveButton,
+                                {
+                                    backgroundColor: saving
+                                        ? theme.colors.mutedAccent
+                                        : theme.colors.accent,
+                                },
                             ]}
-                            onPress={handleImagePicker}
+                            onPress={handleSave}
+                            disabled={saving}
+                            activeOpacity={0.85}
                         >
-                            <Text style={styles.changePhotoText}>Change Photo</Text>
+                            <Text style={styles.saveButtonText}>
+                                {saving ? "Saving..." : "Save Changes"}
+                            </Text>
                         </TouchableOpacity>
-                    </View>
 
-                    {/* Form Section */}
-                    <View style={styles.formSection}>
-
-                        {/* Name Field */}
-                        <View style={styles.fieldContainer}>
-                            <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
-                                Name
-                            </Text>
-                            <TextInput
-                                style={[
-                                    styles.textInput,
-                                    {
-                                        backgroundColor: theme.colors.bg,
-                                        borderColor: theme.colors.border,
-                                        color: theme.colors.text,
-                                    },
-                                ]}
-                                value={name}
-                                onChangeText={setName}
-                                placeholder="Enter your name"
-                                placeholderTextColor={theme.colors.subtext}
-                            />
-                        </View>
-
-                        {/* Email Field */}
-                        <View style={styles.fieldContainer}>
-                            <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
-                                Email
-                            </Text>
-                            <TextInput
-                                style={[
-                                    styles.textInput,
-                                    {
-                                        backgroundColor: theme.colors.bg,
-                                        borderColor: theme.colors.border,
-                                        color: theme.colors.text,
-                                    },
-                                ]}
-                                value={email}
-                                onChangeText={setEmail}
-                                placeholder="Enter your email"
-                                placeholderTextColor={theme.colors.subtext}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                            />
-                        </View>
-
-                        {/* Birthday Field */}
-                        <View style={styles.fieldContainer}>
-                            <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
-                                Birthday
-                            </Text>
-                            <TouchableOpacity
-                                style={[
-                                    styles.dateButton,
-                                    {
-                                        backgroundColor: theme.colors.bg,
-                                        borderColor: theme.colors.border,
-                                    },
-                                ]}
-                                onPress={() => setShowDatePicker(true)}
-                            >
-                                <Text style={[styles.dateButtonText, { color: theme.colors.text }]}>
-                                    {formatDate(birthday)}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {showDatePicker && (
-                            <DateTimePicker
-                                value={birthday || new Date()}
-                                mode="date"
-                                display={Platform.OS === "ios" ? "spinner" : "default"}
-                                onChange={handleDateChange}
-                                maximumDate={new Date()}
-                            />
-                        )}
-                    </View>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.logoutButton,
-                            {
-                                borderColor: theme.colors.border,
-                                backgroundColor: theme.colors.surface,
-                            },
-                        ]}
-                        onPress={() => setShowLogoutConfirm(true)}
-                        accessibilityRole="button"
-                        accessibilityLabel="Log out"
-                    >
-                        <Image
-                            source={require("../../assets/images/logout.png")}
-                            style={styles.logoutIcon}
-                            resizeMode="contain"
-                        />
-                        <Text
+                        <TouchableOpacity
                             style={[
-                                styles.logoutButtonText,
-                                { color: theme.colors.text },
+                                styles.logoutButton,
+                                {
+                                    borderColor: theme.colors.border,
+                                    backgroundColor: theme.colors.surface,
+                                },
                             ]}
+                            onPress={() => setShowLogoutConfirm(true)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Log out"
                         >
-                            Log Out
-                        </Text>
-                    </TouchableOpacity>
-                </ScrollView>
-            </KeyboardAvoidingView>
-
-            {showLogoutConfirm && (
-                <View style={styles.logoutOverlay}>
-                    <TouchableOpacity
-                        style={styles.logoutOverlayBackdrop}
-                        activeOpacity={1}
-                        onPress={() => setShowLogoutConfirm(false)}
-                    />
-                    <View style={[styles.logoutSheet, { backgroundColor: theme.colors.surface }]}>
-                        <Text style={[styles.logoutTitle, { color: theme.colors.text }]}>
-                            Log out?
-                        </Text>
-                        <Text style={[styles.logoutMessage, { color: theme.colors.subtext }]}>
-                            You’ll need to sign in again to access your workouts and routine.
-                        </Text>
-                        <View style={styles.logoutActions}>
-                            <TouchableOpacity
+                            <Image
+                                source={require("../../assets/images/logout.png")}
+                                style={styles.logoutIcon}
+                                resizeMode="contain"
+                            />
+                            <Text
                                 style={[
-                                    styles.logoutCancelButton,
-                                    {
-                                        borderColor: theme.colors.border,
-                                        backgroundColor: theme.colors.bg,
-                                    },
+                                    styles.logoutButtonText,
+                                    { color: theme.colors.text },
                                 ]}
-                                onPress={() => setShowLogoutConfirm(false)}
                             >
-                                <Text
-                                    style={[styles.logoutCancelText, { color: theme.colors.text }]}
+                                Log Out
+                            </Text>
+                        </TouchableOpacity>
+                    </ScrollView>
+                </KeyboardAvoidingView>
+
+                {showLogoutConfirm && (
+                    <View style={styles.logoutOverlay}>
+                        <TouchableOpacity
+                            style={styles.logoutOverlayBackdrop}
+                            activeOpacity={1}
+                            onPress={() => setShowLogoutConfirm(false)}
+                        />
+                        <View style={[styles.logoutSheet, { backgroundColor: theme.colors.surface }]}>
+                            <Text style={[styles.logoutTitle, { color: theme.colors.text }]}>
+                                Log out?
+                            </Text>
+                            <Text style={[styles.logoutMessage, { color: theme.colors.subtext }]}>
+                                You’ll need to sign in again to access your workouts and routine.
+                            </Text>
+                            <View style={styles.logoutActions}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.logoutCancelButton,
+                                        {
+                                            borderColor: theme.colors.border,
+                                            backgroundColor: theme.colors.bg,
+                                        },
+                                    ]}
+                                    onPress={() => setShowLogoutConfirm(false)}
                                 >
-                                    Cancel
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.logoutConfirmButton}
-                                onPress={performLogout}
-                            >
-                                <Text style={styles.logoutConfirmText}>Log Out</Text>
-                            </TouchableOpacity>
+                                    <Text
+                                        style={[styles.logoutCancelText, { color: theme.colors.text }]}
+                                    >
+                                        Cancel
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.logoutConfirmButton}
+                                    onPress={performLogout}
+                                >
+                                    <Text style={styles.logoutConfirmText}>Log Out</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
-                </View>
-            )}
-        </SafeAreaView>
+                )}
+            </SafeAreaView>
+        </ImageBackground>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    screenBackground: {
+        flex: 1,
+    },
+    screenBackgroundImage: {
+        resizeMode: "cover",
     },
     adminButton: {
         position: "absolute",
@@ -464,29 +482,6 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: 16,
         paddingBottom: 100, // Extra padding for keyboard
-    },
-    headerRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingHorizontal: 16,
-        paddingTop: 8,
-        paddingBottom: 4,
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontFamily: "Inter_600SemiBold",
-        letterSpacing: -0.3,
-    },
-    headerSaveButton: {
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 999,
-    },
-    headerSaveButtonText: {
-        fontSize: 14,
-        fontFamily: "Inter_500Medium",
-        letterSpacing: -0.2,
     },
     loadingText: {
         textAlign: "center",
@@ -582,6 +577,18 @@ const styles = StyleSheet.create({
     logoutButtonText: {
         fontSize: 15,
         fontFamily: "Inter_500Medium",
+    },
+    saveButton: {
+        marginHorizontal: 16,
+        paddingVertical: 14,
+        borderRadius: 999,
+        alignItems: "center",
+        marginBottom: 12,
+    },
+    saveButtonText: {
+        fontSize: 15,
+        fontFamily: "Inter_600SemiBold",
+        color: "#FFFFFF",
     },
     logoutIcon: {
         width: 18,

@@ -144,14 +144,68 @@ async function ensureUserExistsOrRespond(userId, res) {
         }
 
         if (!data) {
-            res.status(404).json({ error: "User not found" });
-            return false;
+            const autoProvisioned = await autoProvisionUserFromAuth(userId);
+            if (!autoProvisioned) {
+                res.status(404).json({ error: "User not found" });
+                return false;
+            }
+            return true;
         }
 
         return true;
     } catch (err) {
         console.error("Unexpected error verifying user existence:", err);
         res.status(500).json({ error: "Failed to verify user" });
+        return false;
+    }
+}
+
+/**
+ * Attempts to create a user row in `users` by pulling metadata from Supabase Auth.
+ * This is a safety net for cases where the mobile client has not explicitly created
+ * the profile yet (e.g., race conditions during sign-up).
+ * @param {string} userId
+ * @returns {Promise<boolean>}
+ */
+async function autoProvisionUserFromAuth(userId) {
+    if (!userId) return false;
+    try {
+        const { data, error } = await supabase.auth.admin.getUserById(userId);
+        if (error) {
+            console.warn(`[autoProvisionUser] Auth lookup failed for ${userId}:`, error);
+            return false;
+        }
+        const authUser = data?.user;
+        if (!authUser || !authUser.email) {
+            console.warn(
+                `[autoProvisionUser] Cannot provision user ${userId} without auth record/email.`,
+            );
+            return false;
+        }
+
+        const metadata = authUser.user_metadata || {};
+        const insert = {
+            id: authUser.id,
+            email: authUser.email,
+            name: metadata.full_name || metadata.name || null,
+            profilePhoto: metadata.avatar_url || metadata.picture || null,
+            birthday: null,
+            isAdmin: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+
+        const { error: upsertError } = await supabase.from("users").upsert([insert], {
+            onConflict: "id",
+        });
+        if (upsertError) {
+            console.error(`[autoProvisionUser] Failed to insert user ${userId}:`, upsertError);
+            return false;
+        }
+        console.log(`[autoProvisionUser] Provisioned user record for ${userId}`);
+        return true;
+    } catch (err) {
+        console.error(`[autoProvisionUser] Unexpected error provisioning ${userId}:`, err);
         return false;
     }
 }
@@ -415,6 +469,108 @@ function mapPlanRow(row) {
         isRoutine: row.is_routine === true || row.isRoutine === true,
         planItems: Array.isArray(row.plan_items) ? row.plan_items.map(mapPlanItemRow) : [],
     };
+}
+
+/**
+ * mapPlanTemplateRow
+ * Normalizes workout_plan_templates rows into camelCase objects for the API.
+ * @param {Object} row
+ * @returns {Object}
+ */
+function mapPlanTemplateRow(row) {
+    if (!row) return row;
+    let structure = row.workoutStructure ?? row.workout_structure ?? [];
+    try {
+        structure = normalizeWorkoutStructureInput(structure);
+    } catch {
+        structure = [];
+    }
+    console.log("Normalized workout structure:", structure);
+    return {
+        id: row.id,
+        name: row.name,
+        description: row.description ?? null,
+        numWeeks: row.numWeeks ?? row.num_weeks,
+        daysPerWeek: row.daysPerWeek ?? row.days_per_week,
+        workoutStructure: structure,
+        level: row.level ?? null,
+        createdBy: row.createdBy ?? row.created_by ?? null,
+        createdAt: row.createdAt ?? row.created_at,
+        updatedAt: row.updatedAt ?? row.updated_at,
+    };
+}
+
+/**
+ * normalizeWorkoutStructureInput
+ * Ensures the incoming workoutStructure matches the expected string[][] shape.
+ * Empty strings/null entries are converted to null to keep JSON clean.
+ * @param {any} structure
+ * @returns {Array<Array<string|null>>}
+ */
+function normalizeWorkoutStructureInput(structure) {
+    if (!Array.isArray(structure)) {
+        throw new Error("workoutStructure must be an array of week arrays.");
+    }
+    return structure.map((week, weekIdx) => {
+        if (!Array.isArray(week)) {
+            throw new Error(`workoutStructure[${weekIdx}] must be an array of days.`);
+        }
+        return week.map((day, dayIdx) => {
+            const fallbackName = `Day ${dayIdx + 1}`;
+
+            // If already in new object format
+            if (day && typeof day === "object" && !Array.isArray(day)) {
+                const name =
+                    typeof day.name === "string" && day.name.trim().length > 0
+                        ? day.name.trim()
+                        : fallbackName;
+                const idsSource = Array.isArray(day.workoutIds) ? day.workoutIds : [];
+                const workoutIds = idsSource
+                    .map((workoutId, workoutIdx) => {
+                        if (workoutId == null) return null;
+                        if (typeof workoutId !== "string") {
+                            throw new Error(
+                                `workoutStructure[${weekIdx}][${dayIdx}].workoutIds[${workoutIdx}] must be a string`,
+                            );
+                        }
+                        const trimmed = workoutId.trim();
+                        return trimmed.length > 0 ? trimmed : null;
+                    })
+                    .filter(Boolean);
+                return { name, workoutIds };
+            }
+
+            // Legacy array format
+            if (Array.isArray(day)) {
+                const workoutIds = day
+                    .map((workoutId, workoutIdx) => {
+                        if (workoutId == null) return null;
+                        if (typeof workoutId !== "string") {
+                            throw new Error(
+                                `workoutStructure[${weekIdx}][${dayIdx}][${workoutIdx}] must be a string`,
+                            );
+                        }
+                        const trimmed = workoutId.trim();
+                        return trimmed.length > 0 ? trimmed : null;
+                    })
+                    .filter(Boolean);
+                return { name: fallbackName, workoutIds };
+            }
+
+            if (typeof day === "string") {
+                const trimmed = day.trim();
+                return { name: fallbackName, workoutIds: trimmed ? [trimmed] : [] };
+            }
+
+            if (day == null) {
+                return { name: fallbackName, workoutIds: [] };
+            }
+
+            throw new Error(
+                `workoutStructure[${weekIdx}][${dayIdx}] must be an object or array of workout IDs`,
+            );
+        });
+    });
 }
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -1092,6 +1248,105 @@ app.delete("/api/plan-items/:id", async (req, res) => {
     }
 });
 
+// Workout Plan Template routes
+app.get("/api/workout-plan-templates", async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from("workout_plan_templates")
+            .select("*")
+            .order("created_at", { ascending: false });
+        if (error) throw error;
+        const mapped = Array.isArray(data) ? data.map(mapPlanTemplateRow) : [];
+        res.json(mapped);
+    } catch (error) {
+        console.error("Error fetching workout plan templates:", error);
+        res.status(500).json({ error: "Failed to fetch workout plan templates" });
+    }
+});
+
+app.get("/api/workout-plan-templates/:id", async (req, res) => {
+    try {
+        const templateId = req.params.id;
+        const { data, error } = await supabase
+            .from("workout_plan_templates")
+            .select("*")
+            .eq("id", templateId)
+            .maybeSingle();
+        if (error) throw error;
+        if (!data) {
+            return res.status(404).json({ error: "Workout plan template not found" });
+        }
+        res.json(mapPlanTemplateRow(data));
+    } catch (error) {
+        console.error("Error fetching workout plan template:", error);
+        res.status(500).json({ error: "Failed to fetch workout plan template" });
+    }
+});
+
+app.put("/api/workout-plan-templates/:id", async (req, res) => {
+    try {
+        const templateId = req.params.id;
+        if (!templateId) {
+            return res.status(400).json({ error: "Template id is required" });
+        }
+
+        const body = req.body || {};
+        const { name, description, numWeeks, daysPerWeek, workoutStructure, level, createdBy } =
+            body;
+
+        if (!name || typeof name !== "string" || !name.trim()) {
+            return res.status(400).json({ error: "name is required" });
+        }
+        const weeksInt = parseInt(numWeeks, 10);
+        const daysInt = parseInt(daysPerWeek, 10);
+        if (!Number.isFinite(weeksInt) || weeksInt <= 0) {
+            return res.status(400).json({ error: "numWeeks must be a positive integer" });
+        }
+        if (!Number.isFinite(daysInt) || daysInt <= 0) {
+            return res.status(400).json({ error: "daysPerWeek must be a positive integer" });
+        }
+        if (workoutStructure === undefined) {
+            return res.status(400).json({ error: "workoutStructure is required" });
+        }
+
+        let normalizedStructure;
+        try {
+            normalizedStructure = normalizeWorkoutStructureInput(workoutStructure);
+        } catch (err) {
+            return res.status(400).json({ error: err.message });
+        }
+
+        if (createdBy) {
+            const ok = await ensureUserExistsOrRespond(createdBy, res);
+            if (!ok) return;
+        }
+
+        const payload = {
+            id: templateId,
+            name: name.trim(),
+            description: description ?? null,
+            num_weeks: weeksInt,
+            days_per_week: daysInt,
+            workout_structure: normalizedStructure,
+            level: level ?? null,
+            created_by: createdBy ?? null,
+            updated_at: new Date().toISOString(),
+        };
+
+        const { data, error } = await supabase
+            .from("workout_plan_templates")
+            .upsert([payload], { onConflict: "id" })
+            .select()
+            .single();
+        if (error) throw error;
+
+        res.json(mapPlanTemplateRow(data));
+    } catch (error) {
+        console.error("Error upserting workout plan template:", error);
+        res.status(500).json({ error: "Failed to save workout plan template" });
+    }
+});
+
 // User Profile Endpoints
 
 // Get user profile
@@ -1101,9 +1356,13 @@ app.get("/api/users/:id", async (req, res) => {
             .from("users")
             .select("*")
             .eq("id", req.params.id)
-            .single();
+            .maybeSingle();
 
         if (error) throw error;
+        if (!data) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
         res.json(mapUserRow(data));
     } catch (error) {
         console.error("Error fetching user profile:", error);
