@@ -262,354 +262,303 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
             style={styles.screenBackground}
             imageStyle={styles.screenBackgroundImage}
         >
-        <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-            <View
-                style={[
-                    styles.header,
-                    {
-                        backgroundColor: "transparent",
-                        paddingTop: insets.top + 4,
-                    },
-                ]}
-            >
-                <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
-                    <Text style={[styles.closeButtonText, { color: theme.colors.accent }]}>✕</Text>
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.colors.subtext }]}>Workout</Text>
-                {isCurrentUserAdmin ? (
-                    <TouchableOpacity onPress={() => setShowMenu(true)} style={styles.menuButton}>
-                        <Text style={[styles.menuButtonText, { color: theme.colors.text }]}>⋯</Text>
-                    </TouchableOpacity>
-                ) : (
-                    <View style={styles.menuButton} />
-                )}
-            </View>
-
-            <KeyboardAvoidingView
-                style={styles.flex}
-                behavior={Platform.OS === "ios" ? "padding" : undefined}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
-            >
-                <ScrollView
-                    style={styles.content}
-                    contentContainerStyle={{
-                        paddingBottom: insets.bottom + 32,
-                    }}
-                    showsVerticalScrollIndicator={false}
+            <View style={[styles.container, { backgroundColor: "transparent" }]}>
+                <View
+                    style={[
+                        styles.header,
+                        {
+                            backgroundColor: "transparent",
+                            paddingTop: insets.top + 4,
+                        },
+                    ]}
                 >
-                    {heroImages.length > 0 && (
-                        <View style={[styles.heroContainer, { height: heroHeight }]}>
-                            <ScrollView
-                                horizontal
-                                pagingEnabled
-                                showsHorizontalScrollIndicator={false}
-                                onMomentumScrollEnd={(event) => {
-                                    const index = Math.round(
-                                        event.nativeEvent.contentOffset.x / windowWidth,
-                                    );
-                                    setActiveImageIndex(index);
-                                }}
-                            >
-                                {heroImages.map((uri, index) => (
-                                    <Image
-                                        key={`${uri}-${index}`}
-                                        source={{ uri }}
-                                        style={[
-                                            styles.heroImage,
-                                            { width: windowWidth, height: heroHeight },
-                                        ]}
-                                        resizeMode="cover"
-                                    />
-                                ))}
-                            </ScrollView>
-                            {heroImages.length > 1 && (
-                                <View style={styles.imagePagination}>
-                                    {heroImages.map((_, index) => (
-                                        <View
-                                            key={`dot-${index}`}
+                    <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
+                        <Text style={[styles.closeButtonText, { color: theme.colors.accent }]}>
+                            ✕
+                        </Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.headerTitle, { color: theme.colors.subtext }]}>
+                        Workout
+                    </Text>
+                    {isCurrentUserAdmin ? (
+                        <TouchableOpacity
+                            onPress={() => setShowMenu(true)}
+                            style={styles.menuButton}
+                        >
+                            <Text style={[styles.menuButtonText, { color: theme.colors.text }]}>
+                                ⋯
+                            </Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={styles.menuButton} />
+                    )}
+                </View>
+
+                <KeyboardAvoidingView
+                    style={styles.flex}
+                    behavior={Platform.OS === "ios" ? "padding" : undefined}
+                    keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+                >
+                    <ScrollView
+                        style={styles.content}
+                        contentContainerStyle={{
+                            paddingBottom: insets.bottom + 32,
+                        }}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {heroImages.length > 0 && (
+                            <View style={[styles.heroContainer, { height: heroHeight }]}>
+                                <ScrollView
+                                    horizontal
+                                    pagingEnabled
+                                    showsHorizontalScrollIndicator={false}
+                                    onMomentumScrollEnd={(event) => {
+                                        const index = Math.round(
+                                            event.nativeEvent.contentOffset.x / windowWidth,
+                                        );
+                                        setActiveImageIndex(index);
+                                    }}
+                                >
+                                    {heroImages.map((uri, index) => (
+                                        <Image
+                                            key={`${uri}-${index}`}
+                                            source={{ uri }}
                                             style={[
-                                                styles.imageDot,
-                                                index === activeImageIndex && styles.imageDotActive,
+                                                styles.heroImage,
+                                                { width: windowWidth, height: heroHeight },
                                             ]}
+                                            resizeMode="cover"
                                         />
                                     ))}
-                                </View>
-                            )}
-                        </View>
-                    )}
-
-                    <View style={styles.body}>
-                        <View style={styles.categoryPill}>
-                            <Text style={styles.categoryPillText}>{workout.category}</Text>
-                        </View>
-
-                        <Text style={[styles.title, { color: theme.colors.text }]}>
-                            {workout.title}
-                        </Text>
-
-                        {workout.description && (
-                            <View style={styles.section}>
-                                <Text style={[styles.description, { color: theme.colors.subtext }]}>
-                                    {workout.description}
-                                </Text>
+                                </ScrollView>
+                                {heroImages.length > 1 && (
+                                    <View style={styles.imagePagination}>
+                                        {heroImages.map((_, index) => (
+                                            <View
+                                                key={`dot-${index}`}
+                                                style={[
+                                                    styles.imageDot,
+                                                    index === activeImageIndex &&
+                                                        styles.imageDotActive,
+                                                ]}
+                                            />
+                                        ))}
+                                    </View>
+                                )}
                             </View>
                         )}
 
-                        <View style={styles.section}>
-                            <View style={styles.detailPillRow}>
-                                {workout.workoutType === "cardio" ? (
-                                    <>
-                                        <View
-                                            style={[
-                                                styles.detailPill,
-                                                {
-                                                    backgroundColor: theme.colors.surface,
-                                                    borderColor: theme.colors.border,
-                                                },
-                                            ]}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.detailPillLabel,
-                                                    { color: theme.colors.subtext },
-                                                ]}
-                                            >
-                                                Duration
-                                            </Text>
-                                            <Text
-                                                style={[
-                                                    styles.detailPillValue,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                            >
-                                                {workout.duration} min
-                                            </Text>
-                                        </View>
-                                        <View
-                                            style={[
-                                                styles.detailPill,
-                                                {
-                                                    backgroundColor: theme.colors.surface,
-                                                    borderColor: theme.colors.border,
-                                                },
-                                            ]}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.detailPillLabel,
-                                                    { color: theme.colors.subtext },
-                                                ]}
-                                            >
-                                                Intensity
-                                            </Text>
-                                            <Text
-                                                style={[
-                                                    styles.detailPillValue,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                                numberOfLines={1}
-                                            >
-                                                {workout.intensity}
-                                            </Text>
-                                        </View>
-                                    </>
-                                ) : (
-                                    <>
-                                        <View
-                                            style={[
-                                                styles.detailPill,
-                                                {
-                                                    backgroundColor: theme.colors.surface,
-                                                    borderColor: theme.colors.border,
-                                                },
-                                            ]}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.detailPillLabel,
-                                                    { color: theme.colors.subtext },
-                                                ]}
-                                            >
-                                                Sets
-                                            </Text>
-                                            <Text
-                                                style={[
-                                                    styles.detailPillValue,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                            >
-                                                {workout.sets}
-                                            </Text>
-                                        </View>
-                                        <View
-                                            style={[
-                                                styles.detailPill,
-                                                {
-                                                    backgroundColor: theme.colors.surface,
-                                                    borderColor: theme.colors.border,
-                                                },
-                                            ]}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.detailPillLabel,
-                                                    { color: theme.colors.subtext },
-                                                ]}
-                                            >
-                                                Reps
-                                            </Text>
-                                            <Text
-                                                style={[
-                                                    styles.detailPillValue,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                            >
-                                                {workout.reps}
-                                            </Text>
-                                        </View>
-                                        <View
-                                            style={[
-                                                styles.detailPill,
-                                                {
-                                                    backgroundColor: theme.colors.surface,
-                                                    borderColor: theme.colors.border,
-                                                },
-                                            ]}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.detailPillLabel,
-                                                    { color: theme.colors.subtext },
-                                                ]}
-                                            >
-                                                Intensity
-                                            </Text>
-                                            <Text
-                                                style={[
-                                                    styles.detailPillValue,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                                numberOfLines={1}
-                                            >
-                                                {workout.intensity}
-                                            </Text>
-                                        </View>
-                                    </>
-                                )}
+                        <View style={styles.body}>
+                            <View style={styles.categoryPill}>
+                                <Text style={styles.categoryPillText}>{workout.category}</Text>
                             </View>
-                        </View>
 
-                        <View style={styles.section}>
-                            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                                My personal record
+                            <Text style={[styles.title, { color: theme.colors.text }]}>
+                                {workout.title}
                             </Text>
-                            {personalRecord && !isEditingRecord ? (
-                                <>
+
+                            {workout.description && (
+                                <View style={styles.section}>
                                     <Text
                                         style={[
-                                            styles.personalRecordValue,
-                                            { color: theme.colors.text },
-                                        ]}
-                                    >
-                                        {personalRecord.value}
-                                    </Text>
-                                    <View style={styles.recordActions}>
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.recordButton,
-                                                styles.recordButtonSecondary,
-                                                { borderColor: theme.colors.border, flex: undefined },
-                                            ]}
-                                            onPress={() => setIsEditingRecord(true)}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.recordButtonSecondaryText,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                            >
-                                                Update
-                                            </Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.recordButton,
-                                                styles.recordButtonSecondary,
-                                                { borderColor: theme.colors.border, flex: undefined },
-                                            ]}
-                                            onPress={handleClearPersonalRecord}
-                                            disabled={recordSaving}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.recordButtonSecondaryText,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                            >
-                                                Clear
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </>
-                            ) : (
-                                <>
-                                    <TextInput
-                                        style={[
-                                            styles.personalRecordInput,
-                                            {
-                                                borderColor: theme.colors.border,
-                                                color: theme.colors.text,
-                                                backgroundColor: theme.colors.surface,
-                                            },
-                                        ]}
-                                        placeholder="e.g., 25 lb"
-                                        placeholderTextColor={theme.colors.subtext}
-                                        value={personalRecordValue}
-                                        onChangeText={setPersonalRecordValue}
-                                        editable={!recordSaving && Boolean(recordUserId)}
-                                    />
-                                    <Text
-                                        style={[
-                                            styles.personalRecordHint,
+                                            styles.description,
                                             { color: theme.colors.subtext },
                                         ]}
                                     >
-                                        {recordLoading
-                                            ? "Loading your record..."
-                                            : "Track your best set, rep, or time so you always know what to beat."}
+                                        {workout.description}
                                     </Text>
-                                    <View style={styles.recordActions}>
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.recordButton,
-                                                styles.recordButtonSecondary,
-                                                { borderColor: theme.colors.border },
-                                            ]}
-                                            onPress={handleSavePersonalRecord}
-                                            disabled={recordSaving || !recordUserId}
-                                        >
-                                            <Text
+                                </View>
+                            )}
+
+                            <View style={styles.section}>
+                                <View style={styles.detailPillRow}>
+                                    {workout.workoutType === "cardio" ? (
+                                        <>
+                                            <View
                                                 style={[
-                                                    styles.recordButtonSecondaryText,
-                                                    { color: theme.colors.text },
+                                                    styles.detailPill,
+                                                    {
+                                                        backgroundColor: theme.colors.surface,
+                                                        borderColor: theme.colors.border,
+                                                    },
                                                 ]}
                                             >
-                                                {recordSaving ? "Saving..." : "Save record"}
-                                            </Text>
-                                        </TouchableOpacity>
-                                        {personalRecord ? (
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillLabel,
+                                                        { color: theme.colors.subtext },
+                                                    ]}
+                                                >
+                                                    Duration
+                                                </Text>
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillValue,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                >
+                                                    {workout.duration} min
+                                                </Text>
+                                            </View>
+                                            <View
+                                                style={[
+                                                    styles.detailPill,
+                                                    {
+                                                        backgroundColor: theme.colors.surface,
+                                                        borderColor: theme.colors.border,
+                                                    },
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillLabel,
+                                                        { color: theme.colors.subtext },
+                                                    ]}
+                                                >
+                                                    Intensity
+                                                </Text>
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillValue,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                    numberOfLines={1}
+                                                >
+                                                    {workout.intensity}
+                                                </Text>
+                                            </View>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <View
+                                                style={[
+                                                    styles.detailPill,
+                                                    {
+                                                        backgroundColor: theme.colors.surface,
+                                                        borderColor: theme.colors.border,
+                                                    },
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillLabel,
+                                                        { color: theme.colors.subtext },
+                                                    ]}
+                                                >
+                                                    Sets
+                                                </Text>
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillValue,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                >
+                                                    {workout.sets}
+                                                </Text>
+                                            </View>
+                                            <View
+                                                style={[
+                                                    styles.detailPill,
+                                                    {
+                                                        backgroundColor: theme.colors.surface,
+                                                        borderColor: theme.colors.border,
+                                                    },
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillLabel,
+                                                        { color: theme.colors.subtext },
+                                                    ]}
+                                                >
+                                                    Reps
+                                                </Text>
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillValue,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                >
+                                                    {workout.reps}
+                                                </Text>
+                                            </View>
+                                            <View
+                                                style={[
+                                                    styles.detailPill,
+                                                    {
+                                                        backgroundColor: theme.colors.surface,
+                                                        borderColor: theme.colors.border,
+                                                    },
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillLabel,
+                                                        { color: theme.colors.subtext },
+                                                    ]}
+                                                >
+                                                    Intensity
+                                                </Text>
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillValue,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                    numberOfLines={1}
+                                                >
+                                                    {workout.intensity}
+                                                </Text>
+                                            </View>
+                                        </>
+                                    )}
+                                </View>
+                            </View>
+
+                            <View style={styles.section}>
+                                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                                    My personal record
+                                </Text>
+                                {personalRecord && !isEditingRecord ? (
+                                    <>
+                                        <Text
+                                            style={[
+                                                styles.personalRecordValue,
+                                                { color: theme.colors.text },
+                                            ]}
+                                        >
+                                            {personalRecord.value}
+                                        </Text>
+                                        <View style={styles.recordActions}>
                                             <TouchableOpacity
                                                 style={[
                                                     styles.recordButton,
                                                     styles.recordButtonSecondary,
-                                                    { borderColor: theme.colors.border },
+                                                    {
+                                                        borderColor: theme.colors.border,
+                                                        flex: undefined,
+                                                    },
                                                 ]}
-                                                onPress={() => {
-                                                    setIsEditingRecord(false);
-                                                    setPersonalRecordValue(
-                                                        personalRecord?.value ?? "",
-                                                    );
-                                                }}
+                                                onPress={() => setIsEditingRecord(true)}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.recordButtonSecondaryText,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                >
+                                                    Update
+                                                </Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={[
+                                                    styles.recordButton,
+                                                    styles.recordButtonSecondary,
+                                                    {
+                                                        borderColor: theme.colors.border,
+                                                        flex: undefined,
+                                                    },
+                                                ]}
+                                                onPress={handleClearPersonalRecord}
                                                 disabled={recordSaving}
                                             >
                                                 <Text
@@ -618,165 +567,240 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                         { color: theme.colors.text },
                                                     ]}
                                                 >
-                                                    Cancel
+                                                    Clear
                                                 </Text>
                                             </TouchableOpacity>
-                                        ) : null}
-                                    </View>
-                                </>
-                            )}
-                            {!recordUserId && (
-                                <Text
-                                    style={[
-                                        styles.personalRecordHint,
-                                        { color: theme.colors.subtext },
-                                    ]}
-                                >
-                                    Sign in to save personal records.
-                                </Text>
-                            )}
+                                        </View>
+                                    </>
+                                ) : (
+                                    <>
+                                        <TextInput
+                                            style={[
+                                                styles.personalRecordInput,
+                                                {
+                                                    borderColor: theme.colors.border,
+                                                    color: theme.colors.text,
+                                                    backgroundColor: theme.colors.surface,
+                                                },
+                                            ]}
+                                            placeholder="e.g., 25 lb"
+                                            placeholderTextColor={theme.colors.subtext}
+                                            value={personalRecordValue}
+                                            onChangeText={setPersonalRecordValue}
+                                            editable={!recordSaving && Boolean(recordUserId)}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.personalRecordHint,
+                                                { color: theme.colors.subtext },
+                                            ]}
+                                        >
+                                            {recordLoading
+                                                ? "Loading your record..."
+                                                : "Track your best set, rep, or time so you always know what to beat."}
+                                        </Text>
+                                        <View style={styles.recordActions}>
+                                            <TouchableOpacity
+                                                style={[
+                                                    styles.recordButton,
+                                                    styles.recordButtonSecondary,
+                                                    { borderColor: theme.colors.border },
+                                                ]}
+                                                onPress={handleSavePersonalRecord}
+                                                disabled={recordSaving || !recordUserId}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.recordButtonSecondaryText,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                >
+                                                    {recordSaving ? "Saving..." : "Save record"}
+                                                </Text>
+                                            </TouchableOpacity>
+                                            {personalRecord ? (
+                                                <TouchableOpacity
+                                                    style={[
+                                                        styles.recordButton,
+                                                        styles.recordButtonSecondary,
+                                                        { borderColor: theme.colors.border },
+                                                    ]}
+                                                    onPress={() => {
+                                                        setIsEditingRecord(false);
+                                                        setPersonalRecordValue(
+                                                            personalRecord?.value ?? "",
+                                                        );
+                                                    }}
+                                                    disabled={recordSaving}
+                                                >
+                                                    <Text
+                                                        style={[
+                                                            styles.recordButtonSecondaryText,
+                                                            { color: theme.colors.text },
+                                                        ]}
+                                                    >
+                                                        Cancel
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ) : null}
+                                        </View>
+                                    </>
+                                )}
+                                {!recordUserId && (
+                                    <Text
+                                        style={[
+                                            styles.personalRecordHint,
+                                            { color: theme.colors.subtext },
+                                        ]}
+                                    >
+                                        Sign in to save personal records.
+                                    </Text>
+                                )}
+                            </View>
                         </View>
-                    </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
+                    </ScrollView>
+                </KeyboardAvoidingView>
 
-            {/* Menu Modal */}
-            <Modal
-                visible={showMenu}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setShowMenu(false)}
-            >
-                <TouchableOpacity
-                    style={styles.menuOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowMenu(false)}
+                {/* Menu Modal */}
+                <Modal
+                    visible={showMenu}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setShowMenu(false)}
                 >
-                    <View
-                        style={[
-                            styles.menuContainer,
-                            {
-                                backgroundColor: theme.colors.surface,
-                                borderColor: theme.colors.border,
-                            },
-                        ]}
+                    <TouchableOpacity
+                        style={styles.menuOverlay}
+                        activeOpacity={1}
+                        onPress={() => setShowMenu(false)}
                     >
-                        <TouchableOpacity
-                            style={[styles.menuItem, { borderBottomColor: theme.colors.border }]}
-                            onPress={handleEditPress}
-                        >
-                            <Text style={[styles.menuItemText, { color: theme.colors.text }]}>
-                                Edit Workout
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.menuItem} onPress={handleDeletePress}>
-                            <Text style={[styles.menuItemText, { color: theme.colors.danger }]}>
-                                Delete Workout
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </TouchableOpacity>
-            </Modal>
-            {/* Edit workout modal */}
-            <Modal
-                visible={showEditModal}
-                animationType="slide"
-                presentationStyle="pageSheet"
-                onRequestClose={() => setShowEditModal(false)}
-            >
-                <View style={{ flex: 1 }}>
-                    <WorkoutForm
-                        workout={workout}
-                        onCancel={() => setShowEditModal(false)}
-                        onSubmit={async (payload: CreateWorkoutRequest) => {
-                            try {
-                                // call API to update workout
-                                await apiService.updateWorkout(workout.id, payload);
-                                // refresh workout details by fetching again
-                                const refreshed = await apiService.getWorkout(workout.id);
-                                // notify parent with updated workout so it can refresh UI state
-                                onEdit(refreshed);
-                                setShowEditModal(false);
-                                // Optionally update UI immediately (not wired here)
-                                Alert.alert("Updated", "Workout updated successfully");
-                            } catch (e) {
-                                console.error("Failed to update workout", e);
-                                Alert.alert("Error", "Failed to update workout");
-                            }
-                        }}
-                    />
-                </View>
-            </Modal>
-            <Modal
-                visible={showAddSheet}
-                animationType="slide"
-                presentationStyle="pageSheet"
-                onRequestClose={() => setShowAddSheet(false)}
-            >
-                <View style={[styles.modalContainer, { backgroundColor: theme.colors.bg }]}>
-                    <View
-                        style={[
-                            styles.modalHeader,
-                            {
-                                borderBottomColor: theme.colors.border,
-                                backgroundColor: theme.colors.surface,
-                            },
-                        ]}
-                    >
-                        <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-                            Add to Plan
-                        </Text>
-                        <TouchableOpacity onPress={() => setShowAddSheet(false)}>
-                            <Text style={{ color: theme.colors.accent }}>Close</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <ScrollView contentContainerStyle={styles.modalContent}>
-                        <Text style={[styles.label, { color: theme.colors.text }]}>
-                            Select Dates
-                        </Text>
-                        <Calendar
-                            onDayPress={(day) => {
-                                const dateString = day.dateString;
-                                setSelectedDates((prev) => {
-                                    const newDates = { ...prev };
-                                    if (newDates[dateString]) delete newDates[dateString];
-                                    else
-                                        newDates[dateString] = {
-                                            selected: true,
-                                            selectedColor: theme.colors.accent,
-                                        };
-                                    return newDates;
-                                });
-                            }}
-                            markedDates={selectedDates}
-                            theme={{
-                                backgroundColor: theme.colors.surface,
-                                calendarBackground: theme.colors.surface,
-                                textSectionTitleColor: theme.colors.text,
-                                selectedDayBackgroundColor: theme.colors.accent,
-                                selectedDayTextColor: "#fff",
-                                todayTextColor: theme.colors.accent,
-                                dayTextColor: theme.colors.text,
-                            }}
-                            style={{ marginVertical: 8 }}
-                        />
-
-                        <TouchableOpacity
-                            onPress={handleAddToPlan}
-                            disabled={adding}
+                        <View
                             style={[
-                                styles.addButton,
-                                { backgroundColor: theme.colors.accent, marginTop: 12 },
+                                styles.menuContainer,
+                                {
+                                    backgroundColor: theme.colors.surface,
+                                    borderColor: theme.colors.border,
+                                },
                             ]}
                         >
-                            <Text style={styles.addButtonText}>
-                                {adding ? "Adding..." : "Add to Plan"}
+                            <TouchableOpacity
+                                style={[
+                                    styles.menuItem,
+                                    { borderBottomColor: theme.colors.border },
+                                ]}
+                                onPress={handleEditPress}
+                            >
+                                <Text style={[styles.menuItemText, { color: theme.colors.text }]}>
+                                    Edit Workout
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.menuItem} onPress={handleDeletePress}>
+                                <Text style={[styles.menuItemText, { color: theme.colors.danger }]}>
+                                    Delete Workout
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
+                {/* Edit workout modal */}
+                <Modal
+                    visible={showEditModal}
+                    animationType="slide"
+                    presentationStyle="pageSheet"
+                    onRequestClose={() => setShowEditModal(false)}
+                >
+                    <View style={{ flex: 1 }}>
+                        <WorkoutForm
+                            workout={workout}
+                            onCancel={() => setShowEditModal(false)}
+                            onSubmit={async (payload: CreateWorkoutRequest) => {
+                                try {
+                                    // call API to update workout
+                                    await apiService.updateWorkout(workout.id, payload);
+                                    // refresh workout details by fetching again
+                                    const refreshed = await apiService.getWorkout(workout.id);
+                                    // notify parent with updated workout so it can refresh UI state
+                                    onEdit(refreshed);
+                                    setShowEditModal(false);
+                                    // Optionally update UI immediately (not wired here)
+                                    Alert.alert("Updated", "Workout updated successfully");
+                                } catch (e) {
+                                    console.error("Failed to update workout", e);
+                                    Alert.alert("Error", "Failed to update workout");
+                                }
+                            }}
+                        />
+                    </View>
+                </Modal>
+                <Modal
+                    visible={showAddSheet}
+                    animationType="slide"
+                    presentationStyle="pageSheet"
+                    onRequestClose={() => setShowAddSheet(false)}
+                >
+                    <View style={[styles.modalContainer, { backgroundColor: theme.colors.bg }]}>
+                        <View
+                            style={[
+                                styles.modalHeader,
+                                {
+                                    borderBottomColor: theme.colors.border,
+                                    backgroundColor: theme.colors.surface,
+                                },
+                            ]}
+                        >
+                            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+                                Add to Plan
                             </Text>
-                        </TouchableOpacity>
-                    </ScrollView>
-                </View>
-            </Modal>
-        </View>
+                            <TouchableOpacity onPress={() => setShowAddSheet(false)}>
+                                <Text style={{ color: theme.colors.accent }}>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView contentContainerStyle={styles.modalContent}>
+                            <Text style={[styles.label, { color: theme.colors.text }]}>
+                                Select Dates
+                            </Text>
+                            <Calendar
+                                onDayPress={(day) => {
+                                    const dateString = day.dateString;
+                                    setSelectedDates((prev) => {
+                                        const newDates = { ...prev };
+                                        if (newDates[dateString]) delete newDates[dateString];
+                                        else
+                                            newDates[dateString] = {
+                                                selected: true,
+                                                selectedColor: theme.colors.accent,
+                                            };
+                                        return newDates;
+                                    });
+                                }}
+                                markedDates={selectedDates}
+                                theme={{
+                                    backgroundColor: theme.colors.surface,
+                                    calendarBackground: theme.colors.surface,
+                                    textSectionTitleColor: theme.colors.text,
+                                    selectedDayBackgroundColor: theme.colors.accent,
+                                    selectedDayTextColor: "#fff",
+                                    todayTextColor: theme.colors.accent,
+                                    dayTextColor: theme.colors.text,
+                                }}
+                                style={{ marginVertical: 8 }}
+                            />
+
+                            <TouchableOpacity
+                                onPress={handleAddToPlan}
+                                disabled={adding}
+                                style={[
+                                    styles.addButton,
+                                    { backgroundColor: theme.colors.accent, marginTop: 12 },
+                                ]}
+                            >
+                                <Text style={styles.addButtonText}>
+                                    {adding ? "Adding..." : "Add to Plan"}
+                                </Text>
+                            </TouchableOpacity>
+                        </ScrollView>
+                    </View>
+                </Modal>
+            </View>
         </ImageBackground>
     );
 };

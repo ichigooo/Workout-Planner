@@ -145,10 +145,7 @@ export default function PlanDetailScreen() {
                     {/* CTA placed above week cards */}
                     {!showSetup && (
                         <TouchableOpacity
-                            style={[
-                                styles.button,
-                                { backgroundColor: theme.colors.accent },
-                            ]}
+                            style={[styles.button, { backgroundColor: theme.colors.accent }]}
                             onPress={() => setShowSetup(true)}
                         >
                             <Text style={styles.buttonText}>Use this plan</Text>
@@ -207,7 +204,6 @@ export default function PlanDetailScreen() {
                             </TouchableOpacity>
                         );
                     })}
-
                 </ScrollView>
                 <PlanSetupModal
                     visible={showSetup}

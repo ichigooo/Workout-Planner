@@ -88,57 +88,62 @@ export default function PlanScreen() {
                             />
                         }
                     >
-                    {loading ? (
-                        <ActivityIndicator size="large" color={theme.colors.accent} />
-                    ) : error ? (
-                        <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>
-                    ) : templates.length === 0 ? (
-                        <Text style={[styles.message, { color: theme.colors.subtext }]}>
-                            No templates available yet.
-                        </Text>
-                    ) : (
-                        templates.map((tpl, index) => {
-                            const isClimbTemplate = tpl.name.toLowerCase().includes("climb");
-                            const background = isClimbTemplate
-                                ? require("../../assets/images/workout_templates/climb_temp1.jpg")
-                                : templateBackgrounds[index % templateBackgrounds.length] ??
-                                  templateBackgrounds[0];
+                        {loading ? (
+                            <ActivityIndicator size="large" color={theme.colors.accent} />
+                        ) : error ? (
+                            <Text style={[styles.errorText, { color: theme.colors.error }]}>
+                                {error}
+                            </Text>
+                        ) : templates.length === 0 ? (
+                            <Text style={[styles.message, { color: theme.colors.subtext }]}>
+                                No templates available yet.
+                            </Text>
+                        ) : (
+                            templates.map((tpl, index) => {
+                                const isClimbTemplate = tpl.name.toLowerCase().includes("climb");
+                                const background = isClimbTemplate
+                                    ? require("../../assets/images/workout_templates/climb_temp1.jpg")
+                                    : (templateBackgrounds[index % templateBackgrounds.length] ??
+                                      templateBackgrounds[0]);
 
-                            return (
-                                <TouchableOpacity
-                                    key={tpl.id}
-                                    activeOpacity={0.9}
-                                    onPress={() => handlePressTemplate(tpl)}   // 👈
-                                >
-                                    <ImageBackground
-                                        source={background}
-                                        style={[
-                                            styles.templateCardBackground,
-                                            { borderColor: theme.colors.border },
-                                        ]}
-                                        imageStyle={styles.templateCardImage}
+                                return (
+                                    <TouchableOpacity
+                                        key={tpl.id}
+                                        activeOpacity={0.9}
+                                        onPress={() => handlePressTemplate(tpl)} // 👈
                                     >
-                                        <View style={styles.templateOverlay}>
-                                            <Text style={styles.templateName}>{tpl.name}</Text>
-                                            {tpl.description ? (
-                                                <Text style={styles.templateDescription}>
-                                                    {tpl.description}
-                                                </Text>
-                                            ) : null}
-                                            <View style={styles.metaRow}>
-                                                <Text style={styles.metaText}>
-                                                    {tpl.numWeeks} wk · {tpl.daysPerWeek} days/week
-                                                </Text>
-                                                {tpl.level ? (
-                                                    <Text style={styles.metaText}>{tpl.level}</Text>
+                                        <ImageBackground
+                                            source={background}
+                                            style={[
+                                                styles.templateCardBackground,
+                                                { borderColor: theme.colors.border },
+                                            ]}
+                                            imageStyle={styles.templateCardImage}
+                                        >
+                                            <View style={styles.templateOverlay}>
+                                                <Text style={styles.templateName}>{tpl.name}</Text>
+                                                {tpl.description ? (
+                                                    <Text style={styles.templateDescription}>
+                                                        {tpl.description}
+                                                    </Text>
                                                 ) : null}
+                                                <View style={styles.metaRow}>
+                                                    <Text style={styles.metaText}>
+                                                        {tpl.numWeeks} wk · {tpl.daysPerWeek}{" "}
+                                                        days/week
+                                                    </Text>
+                                                    {tpl.level ? (
+                                                        <Text style={styles.metaText}>
+                                                            {tpl.level}
+                                                        </Text>
+                                                    ) : null}
+                                                </View>
                                             </View>
-                                        </View>
-                                    </ImageBackground>
-                                </TouchableOpacity>
-                            );
-                        })
-                    )}
+                                        </ImageBackground>
+                                    </TouchableOpacity>
+                                );
+                            })
+                        )}
                     </ScrollView>
                 </View>
             </SafeAreaView>

@@ -170,161 +170,172 @@ export default function WorkoutScreen() {
             style={styles.screenBackground}
             imageStyle={styles.screenBackgroundImage}
         >
-        <SafeAreaView
-            edges={["top"]}
-            style={[styles.container, { backgroundColor: "transparent" }]}
-        >
-            <View style={[styles.headerRow, { borderBottomColor: theme.colors.border }]}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Text style={[styles.backText, { color: theme.colors.accent }]}>‹ Back</Text>
-                </TouchableOpacity>
-                {isAdmin ? (
-                    <TouchableOpacity
-                        onPress={() => setShowForm(true)}
-                        style={[styles.addBtn, { borderColor: theme.colors.accent }]}
-                        accessibilityRole="button"
-                        accessibilityLabel="Add workout"
-                    >
-                        <Text style={[styles.addBtnText, { color: theme.colors.accent }]}>Add</Text>
-                    </TouchableOpacity>
-                ) : (
-                    <View style={{ width: 60 }} />
-                )}
-            </View>
-
-            <View
-                style={[
-                    styles.filterBar,
-                    {
-                        borderBottomColor: "transparent",
-                    },
-                ]}
+            <SafeAreaView
+                edges={["top"]}
+                style={[styles.container, { backgroundColor: "transparent" }]}
             >
-                <FlatList
-                    ref={chipListRef as any}
-                    horizontal
-                    data={categoriesWithAll}
-                    keyExtractor={(item) => item}
-                    onScrollToIndexFailed={(info) => {
-                        // Retry by scrolling close to the desired offset; then try again
-                        try {
-                            const offset = Math.max(0, info.averageItemLength * info.index);
-                            (chipListRef.current as any)?.scrollToOffset?.({
-                                offset,
-                                animated: true,
-                            });
-                            setTimeout(() => {
-                                (chipListRef.current as any)?.scrollToIndex?.({
-                                    index: info.index,
-                                    animated: true,
-                                    viewPosition: 0.5,
-                                });
-                            }, 100);
-                        } catch {
-                            // ignore
-                        }
-                    }}
-                    renderItem={({ item }) => (
+                <View style={[styles.headerRow, { borderBottomColor: theme.colors.border }]}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                        <Text style={[styles.backText, { color: theme.colors.accent }]}>
+                            ‹ Back
+                        </Text>
+                    </TouchableOpacity>
+                    {isAdmin ? (
                         <TouchableOpacity
-                            onPress={() => setCategory(item === "All" ? null : item)}
-                            style={[
-                                styles.filterChip,
-                                {
-                                    borderColor: theme.colors.border,
-                                    backgroundColor: (
-                                        item === "All" ? category === null : category === item
-                                    )
-                                        ? theme.colors.accent
-                                        : "transparent",
-                                },
-                            ]}
+                            onPress={() => setShowForm(true)}
+                            style={[styles.addBtn, { borderColor: theme.colors.accent }]}
+                            accessibilityRole="button"
+                            accessibilityLabel="Add workout"
                         >
-                            <Text
+                            <Text style={[styles.addBtnText, { color: theme.colors.accent }]}>
+                                Add
+                            </Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={{ width: 60 }} />
+                    )}
+                </View>
+
+                <View
+                    style={[
+                        styles.filterBar,
+                        {
+                            borderBottomColor: "transparent",
+                        },
+                    ]}
+                >
+                    <FlatList
+                        ref={chipListRef as any}
+                        horizontal
+                        data={categoriesWithAll}
+                        keyExtractor={(item) => item}
+                        onScrollToIndexFailed={(info) => {
+                            // Retry by scrolling close to the desired offset; then try again
+                            try {
+                                const offset = Math.max(0, info.averageItemLength * info.index);
+                                (chipListRef.current as any)?.scrollToOffset?.({
+                                    offset,
+                                    animated: true,
+                                });
+                                setTimeout(() => {
+                                    (chipListRef.current as any)?.scrollToIndex?.({
+                                        index: info.index,
+                                        animated: true,
+                                        viewPosition: 0.5,
+                                    });
+                                }, 100);
+                            } catch {
+                                // ignore
+                            }
+                        }}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                onPress={() => setCategory(item === "All" ? null : item)}
                                 style={[
-                                    styles.filterText,
+                                    styles.filterChip,
                                     {
-                                        color: (
+                                        borderColor: theme.colors.border,
+                                        backgroundColor: (
                                             item === "All" ? category === null : category === item
                                         )
-                                            ? "#fff"
-                                            : theme.colors.text,
+                                            ? theme.colors.accent
+                                            : "transparent",
                                     },
                                 ]}
                             >
-                                {item}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8 }}
-                />
-                {/* Auto-scroll chips to selected category when provided via params */}
-                {/* Execute after layout to ensure list is measured */}
-                <View
-                    onLayout={() => {
-                        try {
-                            const idx = category
-                                ? Math.max(
-                                      0,
-                                      categories.findIndex((c) => c === (category as any)),
-                                  ) + 1
-                                : 0;
-                            if (chipListRef.current && idx >= 0) {
-                                (chipListRef.current as any).scrollToIndex?.({
-                                    index: idx,
-                                    animated: true,
-                                    viewPosition: 0.5,
-                                });
-                            }
-                        } catch {
-                            // best-effort only
-                        }
-                    }}
-                />
-            </View>
-
-            <View style={{ paddingHorizontal: 16 }}>{renderImportPrompt()}</View>
-
-            {loading ? (
-                <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ color: theme.colors.subtext }}>Loading workouts...</Text>
-                </View>
-            ) : (
-                <FlatList
-                    data={filtered}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <WorkoutCard
-                            workout={item}
-                            onPress={() => {
-                                router.push(`/workout-detail?id=${encodeURIComponent(item.id)}`);
-                            }}
-                        />
-                    )}
-                    contentContainerStyle={{ paddingVertical: 8, paddingBottom: insets.bottom + 16 }}
-                    showsVerticalScrollIndicator={false}
-                />
-            )}
-
-            {/* Create / Edit Workout */}
-            <Modal visible={showForm} animationType="slide" presentationStyle="pageSheet">
-                <View style={{ flex: 1 }}>
-                    <WorkoutForm
-                        onCancel={() => setShowForm(false)}
-                        onSubmit={async (payload: CreateWorkoutRequest) => {
+                                <Text
+                                    style={[
+                                        styles.filterText,
+                                        {
+                                            color: (
+                                                item === "All"
+                                                    ? category === null
+                                                    : category === item
+                                            )
+                                                ? "#fff"
+                                                : theme.colors.text,
+                                        },
+                                    ]}
+                                >
+                                    {item}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8 }}
+                    />
+                    {/* Auto-scroll chips to selected category when provided via params */}
+                    {/* Execute after layout to ensure list is measured */}
+                    <View
+                        onLayout={() => {
                             try {
-                                const created = await apiService.createWorkout(payload);
-                                setWorkouts((prev) => [created, ...prev]);
-                                setShowForm(false);
-                                Alert.alert("Created", "Workout created successfully");
-                            } catch (e) {
-                                Alert.alert("Error", "Failed to create workout");
+                                const idx = category
+                                    ? Math.max(
+                                          0,
+                                          categories.findIndex((c) => c === (category as any)),
+                                      ) + 1
+                                    : 0;
+                                if (chipListRef.current && idx >= 0) {
+                                    (chipListRef.current as any).scrollToIndex?.({
+                                        index: idx,
+                                        animated: true,
+                                        viewPosition: 0.5,
+                                    });
+                                }
+                            } catch {
+                                // best-effort only
                             }
                         }}
                     />
                 </View>
-            </Modal>
-        </SafeAreaView>
+
+                <View style={{ paddingHorizontal: 16 }}>{renderImportPrompt()}</View>
+
+                {loading ? (
+                    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+                        <Text style={{ color: theme.colors.subtext }}>Loading workouts...</Text>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={filtered}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item }) => (
+                            <WorkoutCard
+                                workout={item}
+                                onPress={() => {
+                                    router.push(
+                                        `/workout-detail?id=${encodeURIComponent(item.id)}`,
+                                    );
+                                }}
+                            />
+                        )}
+                        contentContainerStyle={{
+                            paddingVertical: 8,
+                            paddingBottom: insets.bottom + 16,
+                        }}
+                        showsVerticalScrollIndicator={false}
+                    />
+                )}
+
+                {/* Create / Edit Workout */}
+                <Modal visible={showForm} animationType="slide" presentationStyle="pageSheet">
+                    <View style={{ flex: 1 }}>
+                        <WorkoutForm
+                            onCancel={() => setShowForm(false)}
+                            onSubmit={async (payload: CreateWorkoutRequest) => {
+                                try {
+                                    const created = await apiService.createWorkout(payload);
+                                    setWorkouts((prev) => [created, ...prev]);
+                                    setShowForm(false);
+                                    Alert.alert("Created", "Workout created successfully");
+                                } catch (e) {
+                                    Alert.alert("Error", "Failed to create workout");
+                                }
+                            }}
+                        />
+                    </View>
+                </Modal>
+            </SafeAreaView>
         </ImageBackground>
     );
 }

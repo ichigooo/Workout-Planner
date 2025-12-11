@@ -40,7 +40,7 @@ export const AddWorkoutToPlanPage: React.FC<AddWorkoutToPlanPageProps> = ({
     return (
         <SafeAreaView
             edges={["top", "bottom"]}
-            style={[styles.container, { backgroundColor: 'transparent' }]}
+            style={[styles.container, { backgroundColor: "transparent" }]}
         >
             <View
                 style={[
@@ -109,9 +109,7 @@ export const AddWorkoutToPlanPage: React.FC<AddWorkoutToPlanPageProps> = ({
                     />
                 </View>
 
-                <Text
-                    style={[styles.fieldLabel, { color: theme.colors.text, marginTop: 8 }]}
-                >
+                <Text style={[styles.fieldLabel, { color: theme.colors.text, marginTop: 8 }]}>
                     Workout
                 </Text>
                 <View style={styles.workoutListContainer}>
@@ -152,12 +150,18 @@ export const AddWorkoutToPlanPage: React.FC<AddWorkoutToPlanPageProps> = ({
                                             }
                                         >
                                             <Text
-                                                style={{ color: theme.colors.text, fontWeight: "600" }}
+                                                style={{
+                                                    color: theme.colors.text,
+                                                    fontWeight: "600",
+                                                }}
                                             >
                                                 {w.title}
                                             </Text>
                                             <Text
-                                                style={{ color: theme.colors.subtext, marginTop: 2 }}
+                                                style={{
+                                                    color: theme.colors.subtext,
+                                                    marginTop: 2,
+                                                }}
                                             >
                                                 {w.category}
                                             </Text>
@@ -174,9 +178,7 @@ export const AddWorkoutToPlanPage: React.FC<AddWorkoutToPlanPageProps> = ({
                     )}
                 </View>
 
-                <Text
-                    style={[styles.fieldLabel, { color: theme.colors.text, marginTop: 16 }]}
-                >
+                <Text style={[styles.fieldLabel, { color: theme.colors.text, marginTop: 16 }]}>
                     Select Dates
                 </Text>
                 <Calendar
@@ -225,8 +227,8 @@ export const AddWorkoutToPlanPage: React.FC<AddWorkoutToPlanPageProps> = ({
                         {!selectedWorkoutId
                             ? "Select a workout to continue"
                             : Object.keys(selectedDates).length === 0
-                            ? "Select at least one date to continue"
-                            : ""}
+                              ? "Select at least one date to continue"
+                              : ""}
                     </Text>
                 )}
             </ScrollView>

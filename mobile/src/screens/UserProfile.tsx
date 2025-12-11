@@ -190,11 +190,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
 
     const performLogout = async () => {
         try {
-        await supabase.auth.signOut();
-        await clearCurrentUserId();
-        setCurrentPlanId(null);
-        setShowLogoutConfirm(false);
-        router.replace("/(auth)/sign-in");
+            await supabase.auth.signOut();
+            await clearCurrentUserId();
+            setCurrentPlanId(null);
+            setShowLogoutConfirm(false);
+            router.replace("/(auth)/sign-in");
         } catch (error) {
             console.error("[UserProfile] Failed to log out:", error);
             Alert.alert("Error", "Could not log out. Please try again.");
@@ -250,7 +250,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                                 onPress={handleImagePicker}
                             >
                                 {profilePhoto ? (
-                                    <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
+                                    <Image
+                                        source={{ uri: profilePhoto }}
+                                        style={styles.profileImage}
+                                    />
                                 ) : (
                                     <View
                                         style={[
@@ -342,7 +345,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                                     onPress={() => setShowDatePicker(true)}
                                 >
                                     <Text
-                                        style={[styles.dateButtonText, { color: theme.colors.text }]}
+                                        style={[
+                                            styles.dateButtonText,
+                                            { color: theme.colors.text },
+                                        ]}
                                     >
                                         {formatDate(birthday)}
                                     </Text>
@@ -395,12 +401,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                                 style={styles.logoutIcon}
                                 resizeMode="contain"
                             />
-                            <Text
-                                style={[
-                                    styles.logoutButtonText,
-                                    { color: theme.colors.text },
-                                ]}
-                            >
+                            <Text style={[styles.logoutButtonText, { color: theme.colors.text }]}>
                                 Log Out
                             </Text>
                         </TouchableOpacity>
@@ -414,7 +415,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                             activeOpacity={1}
                             onPress={() => setShowLogoutConfirm(false)}
                         />
-                        <View style={[styles.logoutSheet, { backgroundColor: theme.colors.surface }]}>
+                        <View
+                            style={[styles.logoutSheet, { backgroundColor: theme.colors.surface }]}
+                        >
                             <Text style={[styles.logoutTitle, { color: theme.colors.text }]}>
                                 Log out?
                             </Text>
@@ -433,7 +436,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                                     onPress={() => setShowLogoutConfirm(false)}
                                 >
                                     <Text
-                                        style={[styles.logoutCancelText, { color: theme.colors.text }]}
+                                        style={[
+                                            styles.logoutCancelText,
+                                            { color: theme.colors.text },
+                                        ]}
                                     >
                                         Cancel
                                     </Text>

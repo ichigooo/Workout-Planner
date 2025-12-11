@@ -52,7 +52,7 @@ export default function SignInScreen() {
 
             if (authError || !data?.user) {
                 console.warn("[SignIn] Auth failed:", authError);
-                setError(authError?.message +  "Invalid email or password. Please try again.");
+                setError(authError?.message + "Invalid email or password. Please try again.");
                 return;
             }
 
@@ -66,7 +66,11 @@ export default function SignInScreen() {
 
             // Ensure a corresponding profile exists in our backend users table
             try {
-                await apiService.createUserIfNeeded({ id: userId, email: userEmail, name: userName });
+                await apiService.createUserIfNeeded({
+                    id: userId,
+                    email: userEmail,
+                    name: userName,
+                });
             } catch (createErr) {
                 console.error("[SignIn] Failed to sync user profile to backend:", createErr);
                 setError("Account created, but we couldn't set up your profile. Please try again.");
@@ -95,7 +99,7 @@ export default function SignInScreen() {
 
     return (
         <KeyboardAvoidingView
-            style={[styles.container, { backgroundColor: 'transparent' }]}
+            style={[styles.container, { backgroundColor: "transparent" }]}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
             <ScrollView

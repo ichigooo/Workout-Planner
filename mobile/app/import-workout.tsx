@@ -1,5 +1,12 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, useColorScheme, ImageBackground } from "react-native";
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    useColorScheme,
+    ImageBackground,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getTheme } from "@/src/theme";
@@ -16,10 +23,17 @@ export default function ImportWorkoutScreen() {
             style={styles.screenBackground}
             imageStyle={styles.screenBackgroundImage}
         >
-            <View style={[styles.container, { paddingTop: insets.top, backgroundColor: "transparent" }]}>
+            <View
+                style={[
+                    styles.container,
+                    { paddingTop: insets.top, backgroundColor: "transparent" },
+                ]}
+            >
                 <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Text style={[styles.backText, { color: theme.colors.accent }]}>‹ Back</Text>
+                        <Text style={[styles.backText, { color: theme.colors.accent }]}>
+                            ‹ Back
+                        </Text>
                     </TouchableOpacity>
                     <Text style={[styles.title, { color: theme.colors.text }]}>Import Workout</Text>
                     <View style={{ width: 60 }} />

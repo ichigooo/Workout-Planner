@@ -30,7 +30,7 @@ export function initApp(): Promise<void> {
             // Step 1: Check for stored user ID and active Supabase session
             const storedUserId = await loadStoredUserId();
             const { data: authData, error: authError } = await supabase.auth.getUser();
-            const authUser = authError ? null : authData?.user ?? null;
+            const authUser = authError ? null : (authData?.user ?? null);
 
             if (!authUser) {
                 // No authenticated session; ensure local storage is clear and bail quietly.
@@ -90,7 +90,9 @@ export function initApp(): Promise<void> {
 
 export default initApp;
 
-async function ensureBackendUserProfile(authUser: { id: string; email?: string | null; user_metadata?: Record<string, any> } | null) {
+async function ensureBackendUserProfile(
+    authUser: { id: string; email?: string | null; user_metadata?: Record<string, any> } | null,
+) {
     if (!authUser || !authUser.email) {
         console.warn("[startup] Cannot ensure backend profile without auth user/email");
         return;

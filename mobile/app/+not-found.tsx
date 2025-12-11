@@ -10,7 +10,9 @@ export default function NotFound() {
             </View>
 
             <Text style={styles.title}>Nothing to see here.</Text>
-            <Text style={styles.subtitle}>The page you’re looking for doesn’t exist or has moved.</Text>
+            <Text style={styles.subtitle}>
+                The page you’re looking for doesn’t exist or has moved.
+            </Text>
 
             <Link href="/" asChild>
                 <TouchableOpacity style={styles.button}>

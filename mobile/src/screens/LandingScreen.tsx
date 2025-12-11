@@ -114,7 +114,9 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ onBegin, isLoading
                                 activeOpacity={0.85}
                             >
                                 <View style={styles.buttonLeft}>
-                                    <Text style={styles.buttonText}>{isLoading ? "Loading..." : "Get Started"}</Text>
+                                    <Text style={styles.buttonText}>
+                                        {isLoading ? "Loading..." : "Get Started"}
+                                    </Text>
                                 </View>
 
                                 <View style={styles.buttonRight}>
@@ -199,10 +201,10 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: theme.colors.accent,
-        borderRadius: 20,                 // <-- more square than 32
+        borderRadius: 20, // <-- more square than 32
         overflow: "hidden",
-        minWidth: 300,                    // wider
-        height: 60,                       // stable height
+        minWidth: 300, // wider
+        height: 60, // stable height
     },
 
     buttonLeft: {
@@ -215,10 +217,10 @@ const styles = StyleSheet.create({
     buttonRight: {
         width: 80,
         height: "100%",
-        backgroundColor: "#E7A9C8",      // pink circle
+        backgroundColor: "#E7A9C8", // pink circle
         justifyContent: "center",
         alignItems: "center",
-        borderRadius: 20,                // keeps the right side perfectly round
+        borderRadius: 20, // keeps the right side perfectly round
     },
 
     buttonText: {

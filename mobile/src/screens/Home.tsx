@@ -57,17 +57,16 @@ const getTimeBasedEmoji = (): string => {
 const categoryIconSources: Record<string, ImageSourcePropType> = {
     "Upper Body - Pull": require("../../assets/images/workout_types/upper_body_pull.png"),
     "Upper Body - Push": require("../../assets/images/workout_types/upper_body_push.png"),
-    Legs: require("../../assets/images/workout_types/legs.png"),
-    Core: require("../../assets/images/workout_types/core.png"),
+    "Legs": require("../../assets/images/workout_types/legs.png"),
+    "Core": require("../../assets/images/workout_types/core.png"),
     "Climbing - Power": require("../../assets/images/workout_types/climbing.png"),
     "Climbing - Endurance": require("../../assets/images/workout_types/climbing.png"),
     "Climbing - Warm Up": require("../../assets/images/workout_types/climbing.png"),
-    Cardio: require("../../assets/images/workout_types/warmup.png"),
+    "Cardio": require("../../assets/images/workout_types/warmup.png"),
 };
 
 const getTypeIcon = (category: WorkoutCategory): ImageSourcePropType =>
-    categoryIconSources[category] ||
-    require("../../assets/images/workout_types/default.png");
+    categoryIconSources[category] || require("../../assets/images/workout_types/default.png");
 
 const equipmentIconSources: Record<string, ImageSourcePropType> = {
     dumbbell: require("../../assets/images/equipment/dumbbell.png"),
@@ -169,13 +168,13 @@ const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
                                                 color: isSelected
                                                     ? "#FFFFFF"
                                                     : isToday
-                                                    ? theme.colors.accent
-                                                    : theme.colors.subtext,
+                                                      ? theme.colors.accent
+                                                      : theme.colors.subtext,
                                                 fontWeight: isSelected
                                                     ? "700"
                                                     : isToday
-                                                    ? "600"
-                                                    : "500",
+                                                      ? "600"
+                                                      : "500",
                                             },
                                         ]}
                                     >
@@ -330,9 +329,7 @@ export const Home: React.FC<HomeProps> = ({
                               const dt = new Date(sd as any);
                               return `${dt.getFullYear()}-${(dt.getMonth() + 1)
                                   .toString()
-                                  .padStart(2, "0")}-${dt.getDate()
-                                  .toString()
-                                  .padStart(2, "0")}`;
+                                  .padStart(2, "0")}-${dt.getDate().toString().padStart(2, "0")}`;
                           })();
                 if (sdStr === dateISO) {
                     result[dateISO].push(item.workout);
@@ -349,12 +346,11 @@ export const Home: React.FC<HomeProps> = ({
     const todaysWorkoutList = weekWorkouts[todayISO] || [];
     const isRestDay = selectedDate === todayISO && todaysWorkoutList.length === 0;
 
-    const displayDate =
-        isRestDay
-            ? todayISO
-            : weekWorkouts[selectedDate] && weekWorkouts[selectedDate].length > 0
-            ? selectedDate
-            : weekDates.find((d) => (weekWorkouts[d] || []).length > 0) || selectedDate;
+    const displayDate = isRestDay
+        ? todayISO
+        : weekWorkouts[selectedDate] && weekWorkouts[selectedDate].length > 0
+          ? selectedDate
+          : weekDates.find((d) => (weekWorkouts[d] || []).length > 0) || selectedDate;
 
     const handleRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -394,245 +390,254 @@ export const Home: React.FC<HomeProps> = ({
                     overScrollMode="never"
                     keyboardShouldPersistTaps="handled"
                 >
-                {/* HERO IMAGE WITH GREETING */}
-                <ImageBackground
-                    source={require("../../assets/images/homebg.png")}
-                    style={styles.heroBanner}
-                    imageStyle={styles.heroBannerImage}
-                >
-                    <View style={[styles.headerRow, styles.heroHeader]}>
-                        <TouchableOpacity
-                            onPress={onOpenProfile}
-                            style={[
-                                styles.iconButton,
-                                {
-                                    backgroundColor: "rgba(0,0,0,0.4)",
-                                    borderColor: "rgba(255,255,255,0.4)",
-                                    borderWidth: StyleSheet.hairlineWidth,
-                                },
-                            ]}
-                        >
-                            {profilePhoto ? (
-                                <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
-                            ) : (
-                                <View
-                                    style={[
-                                        styles.profileImage,
-                                        styles.profileImagePlaceholder,
-                                        { backgroundColor: "rgba(255,255,255,0.2)" },
-                                    ]}
-                                >
-                                    <Ionicons name="person" size={20} color="#fff" />
-                                </View>
-                            )}
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            onPress={onOpenCalendar}
-                            style={[
-                                styles.iconButton,
-                                {
-                                    backgroundColor: "rgba(0,0,0,0.4)",
-                                    borderColor: "rgba(255,255,255,0.4)",
-                                    borderWidth: StyleSheet.hairlineWidth,
-                                },
-                            ]}
-                        >
-                            <Ionicons name="calendar-outline" size={26} color="#fff" />
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.heroBannerOverlay}>
-                        <Text style={styles.heroBannerTitle}>
-                            {getTimeBasedGreeting()}
-                            {userName ? `, ${userName}` : ""} {getTimeBasedEmoji()}
-                        </Text>
-                        <Text style={styles.heroBannerSubtitle}>
-                            Curated workouts and plans tailored for your climb to the top.
-                        </Text>
-                        <View style={styles.heroBannerActions}>
+                    {/* HERO IMAGE WITH GREETING */}
+                    <ImageBackground
+                        source={require("../../assets/images/homebg.png")}
+                        style={styles.heroBanner}
+                        imageStyle={styles.heroBannerImage}
+                    >
+                        <View style={[styles.headerRow, styles.heroHeader]}>
                             <TouchableOpacity
-                                style={styles.heroBannerPrimaryButton}
-                                onPress={() => router.push("/workout")}
-                                activeOpacity={0.85}
-                            >
-                                <Text style={styles.heroBannerButtonText}>Browse Workouts</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.heroBannerSecondaryButton}
-                                onPress={() => router.push("/plan")}
-                                activeOpacity={0.85}
-                            >
-                                <Text style={styles.heroBannerSecondaryButtonText}>Browse Plans</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </ImageBackground>
-                {/* WEEK SNAPSHOT */}
-                <WeekSnapshot
-                    weekDates={weekDates}
-                    weekWorkouts={weekWorkouts}
-                    todayISO={todayISO}
-                    selectedDate={selectedDate}
-                    setSelectedDate={setSelectedDate}
-                    theme={theme}
-                    styles={styles}
-                />
-
-                {/* TODAY / SELECTED DAY WORKOUTS */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                        {isRestDay
-                            ? "Today's workouts"
-                            : displayDate === todayISO
-                            ? "Today's workouts"
-                            : (() => {
-                                  const [yy, mm, dd] = displayDate
-                                      .split("-")
-                                      .map((s) => parseInt(s, 10));
-                                  return new Date(yy, mm - 1, dd).toLocaleDateString("en-US", {
-                                      weekday: "long",
-                                      month: "long",
-                                      day: "numeric",
-                                  });
-                              })()}
-                    </Text>
-
-                    {isRestDay ? (
-                        <View style={styles.restDayRow}>
-                            <Text style={[styles.restDayText, { color: theme.colors.text }]}>
-                                Rest day
-                            </Text>
-                            <Text
+                                onPress={onOpenProfile}
                                 style={[
-                                    styles.restDaySubtext,
-                                    { color: theme.colors.subtext },
+                                    styles.iconButton,
+                                    {
+                                        backgroundColor: "rgba(0,0,0,0.4)",
+                                        borderColor: "rgba(255,255,255,0.4)",
+                                        borderWidth: StyleSheet.hairlineWidth,
+                                    },
                                 ]}
                             >
-                                Take today to recover—tonight’s stretch counts as progress too.
-                            </Text>
-                        </View>
-                    ) : weekWorkouts[displayDate] &&
-                      weekWorkouts[displayDate].length > 0 ? (
-                        <View style={{ gap: 12 }}>
-                            {weekWorkouts[displayDate].map((item, idx) => (
-                                <TouchableOpacity
-                                    key={`${item.id}-${idx}`}
-                                    style={[
-                                        styles.previewCardFull,
-                                        {
-                                            backgroundColor: theme.colors.surface,
-                                            borderColor: theme.colors.border,
-                                        },
-                                    ]}
-                                    activeOpacity={0.85}
-                                    onPress={() =>
-                                        router.push(
-                                            `/workout-detail?id=${encodeURIComponent(item.id)}`,
-                                        )
-                                    }
-                                >
-                                    <View style={styles.previewHeader}>
-                                        <View
-                                            style={[
-                                                styles.categoryBadge,
-                                                { backgroundColor: theme.colors.accent },
-                                            ]}
-                                        >
-                                            <Text style={styles.categoryBadgeText}>
-                                                {item.category.toUpperCase()}
-                                            </Text>
-                                        </View>
-                                        {getEquipmentIconForTitle(item.title) && (
-                                            <Image
-                                                source={getEquipmentIconForTitle(item.title)}
-                                                style={styles.previewEquipmentIcon}
-                                                resizeMode="contain"
-                                            />
-                                        )}
-                                    </View>
-                                    <Text
-                                        style={[styles.previewTitle, { color: theme.colors.text }]}
-                                        numberOfLines={1}
+                                {profilePhoto ? (
+                                    <Image
+                                        source={{ uri: profilePhoto }}
+                                        style={styles.profileImage}
+                                    />
+                                ) : (
+                                    <View
+                                        style={[
+                                            styles.profileImage,
+                                            styles.profileImagePlaceholder,
+                                            { backgroundColor: "rgba(255,255,255,0.2)" },
+                                        ]}
                                     >
-                                        {item.title}
+                                        <Ionicons name="person" size={20} color="#fff" />
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={onOpenCalendar}
+                                style={[
+                                    styles.iconButton,
+                                    {
+                                        backgroundColor: "rgba(0,0,0,0.4)",
+                                        borderColor: "rgba(255,255,255,0.4)",
+                                        borderWidth: StyleSheet.hairlineWidth,
+                                    },
+                                ]}
+                            >
+                                <Ionicons name="calendar-outline" size={26} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.heroBannerOverlay}>
+                            <Text style={styles.heroBannerTitle}>
+                                {getTimeBasedGreeting()}
+                                {userName ? `, ${userName}` : ""} {getTimeBasedEmoji()}
+                            </Text>
+                            <Text style={styles.heroBannerSubtitle}>
+                                Curated workouts and plans tailored for your climb to the top.
+                            </Text>
+                            <View style={styles.heroBannerActions}>
+                                <TouchableOpacity
+                                    style={styles.heroBannerPrimaryButton}
+                                    onPress={() => router.push("/workout")}
+                                    activeOpacity={0.85}
+                                >
+                                    <Text style={styles.heroBannerButtonText}>Browse Workouts</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.heroBannerSecondaryButton}
+                                    onPress={() => router.push("/plan")}
+                                    activeOpacity={0.85}
+                                >
+                                    <Text style={styles.heroBannerSecondaryButtonText}>
+                                        Browse Plans
                                     </Text>
-                                    {item.description ? (
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </ImageBackground>
+                    {/* WEEK SNAPSHOT */}
+                    <WeekSnapshot
+                        weekDates={weekDates}
+                        weekWorkouts={weekWorkouts}
+                        todayISO={todayISO}
+                        selectedDate={selectedDate}
+                        setSelectedDate={setSelectedDate}
+                        theme={theme}
+                        styles={styles}
+                    />
+
+                    {/* TODAY / SELECTED DAY WORKOUTS */}
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                            {isRestDay
+                                ? "Today's workouts"
+                                : displayDate === todayISO
+                                  ? "Today's workouts"
+                                  : (() => {
+                                        const [yy, mm, dd] = displayDate
+                                            .split("-")
+                                            .map((s) => parseInt(s, 10));
+                                        return new Date(yy, mm - 1, dd).toLocaleDateString(
+                                            "en-US",
+                                            {
+                                                weekday: "long",
+                                                month: "long",
+                                                day: "numeric",
+                                            },
+                                        );
+                                    })()}
+                        </Text>
+
+                        {isRestDay ? (
+                            <View style={styles.restDayRow}>
+                                <Text style={[styles.restDayText, { color: theme.colors.text }]}>
+                                    Rest day
+                                </Text>
+                                <Text
+                                    style={[styles.restDaySubtext, { color: theme.colors.subtext }]}
+                                >
+                                    Take today to recover—tonight’s stretch counts as progress too.
+                                </Text>
+                            </View>
+                        ) : weekWorkouts[displayDate] && weekWorkouts[displayDate].length > 0 ? (
+                            <View style={{ gap: 12 }}>
+                                {weekWorkouts[displayDate].map((item, idx) => (
+                                    <TouchableOpacity
+                                        key={`${item.id}-${idx}`}
+                                        style={[
+                                            styles.previewCardFull,
+                                            {
+                                                backgroundColor: theme.colors.surface,
+                                                borderColor: theme.colors.border,
+                                            },
+                                        ]}
+                                        activeOpacity={0.85}
+                                        onPress={() =>
+                                            router.push(
+                                                `/workout-detail?id=${encodeURIComponent(item.id)}`,
+                                            )
+                                        }
+                                    >
+                                        <View style={styles.previewHeader}>
+                                            <View
+                                                style={[
+                                                    styles.categoryBadge,
+                                                    { backgroundColor: theme.colors.accent },
+                                                ]}
+                                            >
+                                                <Text style={styles.categoryBadgeText}>
+                                                    {item.category.toUpperCase()}
+                                                </Text>
+                                            </View>
+                                            {getEquipmentIconForTitle(item.title) && (
+                                                <Image
+                                                    source={getEquipmentIconForTitle(item.title)}
+                                                    style={styles.previewEquipmentIcon}
+                                                    resizeMode="contain"
+                                                />
+                                            )}
+                                        </View>
                                         <Text
                                             style={[
-                                                styles.previewDesc,
-                                                { color: theme.colors.subtext },
+                                                styles.previewTitle,
+                                                { color: theme.colors.text },
                                             ]}
-                                            numberOfLines={2}
+                                            numberOfLines={1}
                                         >
-                                            {item.description}
+                                            {item.title}
                                         </Text>
-                                    ) : null}
-                                    <View style={styles.previewStats}>
-                                        {item.sets !== undefined && item.reps !== undefined ? (
+                                        {item.description ? (
                                             <Text
                                                 style={[
-                                                    styles.previewStatText,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                            >
-                                                {item.sets} sets × {item.reps} reps
-                                            </Text>
-                                        ) : null}
-                                        {item.intensity ? (
-                                            <Text
-                                                style={[
-                                                    styles.previewStatText,
+                                                    styles.previewDesc,
                                                     { color: theme.colors.subtext },
                                                 ]}
+                                                numberOfLines={2}
                                             >
-                                                {item.intensity}
+                                                {item.description}
                                             </Text>
                                         ) : null}
-                                    </View>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    ) : (
-                        <View
-                            style={[
-                                styles.todaysCard,
-                                {
-                                    backgroundColor: theme.colors.surface,
-                                    borderColor: theme.colors.border,
-                                },
-                            ]}
-                        >
-                            <Text style={[styles.todaysTitle, { color: theme.colors.text }]}>
-                                No workout scheduled
-                            </Text>
-                            <Text style={[styles.todaysDesc, { color: theme.colors.subtext }]}>
-                                Check back later or add a workout from the library.
-                            </Text>
-                        </View>
-                    )}
-                </View>
-
-                {!isRestDay && weekWorkouts[displayDate] && weekWorkouts[displayDate].length > 0 ? (
-                    <TouchableOpacity activeOpacity={0.85} style={styles.warmupCard}>
-                        <ImageBackground
-                            source={require("../../assets/images/warmup.png")}
-                            style={styles.warmupBackground}
-                            imageStyle={styles.warmupImage}
-                        >
-                            <View style={styles.warmupOverlay}>
-                                <Text style={styles.warmupTitle}>Start With A Warm Up</Text>
-                                <Text style={styles.warmupSubtitle}>
-                                    Ease into today’s session with pulses and mobility.
-                                </Text>
-                                <View style={styles.warmupPill}>
-                                    <Text style={styles.warmupPillText}>Let’s warm up</Text>
-                                </View>
+                                        <View style={styles.previewStats}>
+                                            {item.sets !== undefined && item.reps !== undefined ? (
+                                                <Text
+                                                    style={[
+                                                        styles.previewStatText,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                >
+                                                    {item.sets} sets × {item.reps} reps
+                                                </Text>
+                                            ) : null}
+                                            {item.intensity ? (
+                                                <Text
+                                                    style={[
+                                                        styles.previewStatText,
+                                                        { color: theme.colors.subtext },
+                                                    ]}
+                                                >
+                                                    {item.intensity}
+                                                </Text>
+                                            ) : null}
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
-                        </ImageBackground>
-                    </TouchableOpacity>
-                ) : null}
-            </ScrollView>
+                        ) : (
+                            <View
+                                style={[
+                                    styles.todaysCard,
+                                    {
+                                        backgroundColor: theme.colors.surface,
+                                        borderColor: theme.colors.border,
+                                    },
+                                ]}
+                            >
+                                <Text style={[styles.todaysTitle, { color: theme.colors.text }]}>
+                                    No workout scheduled
+                                </Text>
+                                <Text style={[styles.todaysDesc, { color: theme.colors.subtext }]}>
+                                    Check back later or add a workout from the library.
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+
+                    {!isRestDay &&
+                    weekWorkouts[displayDate] &&
+                    weekWorkouts[displayDate].length > 0 ? (
+                        <TouchableOpacity activeOpacity={0.85} style={styles.warmupCard}>
+                            <ImageBackground
+                                source={require("../../assets/images/warmup.png")}
+                                style={styles.warmupBackground}
+                                imageStyle={styles.warmupImage}
+                            >
+                                <View style={styles.warmupOverlay}>
+                                    <Text style={styles.warmupTitle}>Start With A Warm Up</Text>
+                                    <Text style={styles.warmupSubtitle}>
+                                        Ease into today’s session with pulses and mobility.
+                                    </Text>
+                                    <View style={styles.warmupPill}>
+                                        <Text style={styles.warmupPillText}>Let’s warm up</Text>
+                                    </View>
+                                </View>
+                            </ImageBackground>
+                        </TouchableOpacity>
+                    ) : null}
+                </ScrollView>
             </SafeAreaView>
         </ImageBackground>
     );

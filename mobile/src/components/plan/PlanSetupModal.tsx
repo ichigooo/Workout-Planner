@@ -144,12 +144,8 @@ export const PlanSetupModal: React.FC<PlanSetupModalProps> = ({
                     style={[
                         styles.dateButton,
                         {
-                            borderColor: isDark
-                                ? "rgba(255,255,255,0.25)"
-                                : "rgba(0,0,0,0.12)",
-                            backgroundColor: isDark
-                                ? "rgba(255,255,255,0.06)"
-                                : "rgba(0,0,0,0.03)",
+                            borderColor: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.12)",
+                            backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.03)",
                         },
                     ]}
                     onPress={() => setShowPicker(true)}
@@ -208,12 +204,7 @@ export const PlanSetupModal: React.FC<PlanSetupModalProps> = ({
                         >
                             <View style={styles.sheetHeader}>
                                 <TouchableOpacity onPress={onClose} hitSlop={8}>
-                                    <Text
-                                        style={[
-                                            styles.headerText,
-                                            { color: theme.colors.text },
-                                        ]}
-                                    >
+                                    <Text style={[styles.headerText, { color: theme.colors.text }]}>
                                         Close
                                     </Text>
                                 </TouchableOpacity>
@@ -231,186 +222,173 @@ export const PlanSetupModal: React.FC<PlanSetupModalProps> = ({
                                 ) : null}
                             </View>
 
-                        {step === 1 ? (
-                            <View style={styles.stepContent}>
-                                <Text
-                                    style={[
-                                        styles.title,
-                                        { color: theme.colors.text },
-                                    ]}
-                                >
-                                    Start your training plan
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.subtitle,
-                                        {
-                                            color: isDark
-                                                ? "rgba(255,255,255,0.8)"
-                                                : "rgba(0,0,0,0.65)",
-                                        },
-                                    ]}
-                                >
-                                    Choose when you want to begin.
-                                </Text>
-
-                                <View
-                                    style={[
-                                        styles.card,
-                                        {
-                                            borderColor: isDark
-                                                ? "rgba(255,255,255,0.16)"
-                                                : "rgba(0,0,0,0.08)",
-                                        },
-                                    ]}
-                                >
+                            {step === 1 ? (
+                                <View style={styles.stepContent}>
+                                    <Text style={[styles.title, { color: theme.colors.text }]}>
+                                        Start your training plan
+                                    </Text>
                                     <Text
                                         style={[
-                                            styles.helperLabel,
+                                            styles.subtitle,
                                             {
                                                 color: isDark
-                                                    ? "rgba(255,255,255,0.7)"
-                                                    : "rgba(0,0,0,0.6)",
+                                                    ? "rgba(255,255,255,0.8)"
+                                                    : "rgba(0,0,0,0.65)",
                                             },
                                         ]}
                                     >
-                                        Start date
+                                        Choose when you want to begin.
                                     </Text>
-                                    <Text
-                                        style={[
-                                            styles.dateValue,
-                                            { color: theme.colors.text },
-                                        ]}
-                                    >
-                                        {formattedDate}
-                                    </Text>
-                                    {renderDatePicker()}
-                                </View>
 
-                                <TouchableOpacity
-                                    style={[
-                                        styles.primaryButton,
-                                        { backgroundColor: theme.colors.accent },
-                                    ]}
-                                    onPress={handleContinue}
-                                >
-                                    <Text style={styles.primaryButtonText}>Continue</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ) : (
-                            <View style={styles.stepContent}>
-                                <Text
-                                    style={[
-                                        styles.title,
-                                        { color: theme.colors.text },
-                                    ]}
-                                >
-                                    Which days do you train each week?
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.subtitle,
-                                        {
-                                            color: isDark
-                                                ? "rgba(255,255,255,0.8)"
-                                                : "rgba(0,0,0,0.65)",
-                                        },
-                                    ]}
-                                >
-                                    Pick all the days you want this plan to run.
-                                </Text>
-
-                                <View style={styles.dayRow}>
-                                    {DAY_OPTIONS.map((day, idx) => {
-                                        const selected = selectedDays.includes(day.value);
-                                        return (
-                                            <TouchableOpacity
-                                                key={`${day.value}-${idx}`}
-                                                style={[
-                                                    styles.dayChip,
-                                                    {
-                                                        borderColor: selected
-                                                            ? theme.colors.accent
-                                                            : isDark
-                                                            ? "rgba(255,255,255,0.35)"
-                                                            : "rgba(0,0,0,0.15)",
-                                                        backgroundColor: selected
-                                                            ? theme.colors.accent
-                                                            : "transparent",
-                                                    },
-                                                ]}
-                                                onPress={() => toggleDay(day.value)}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.dayChipText,
-                                                        {
-                                                            color: selected
-                                                                ? "#111"
-                                                                : theme.colors.text,
-                                                        },
-                                                    ]}
-                                                >
-                                                    {day.label}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        );
-                                    })}
-                                </View>
-
-                                <TouchableOpacity
-                                    activeOpacity={0.8}
-                                    onPress={() => setClearExistingPlan((prev) => !prev)}
-                                    style={styles.checkboxRow}
-                                >
                                     <View
                                         style={[
-                                            styles.checkboxBox,
+                                            styles.card,
                                             {
                                                 borderColor: isDark
-                                                    ? "rgba(255,255,255,0.4)"
-                                                    : "rgba(0,0,0,0.25)",
-                                                backgroundColor: clearExistingPlan
-                                                    ? theme.colors.accent
-                                                    : "transparent",
+                                                    ? "rgba(255,255,255,0.16)"
+                                                    : "rgba(0,0,0,0.08)",
                                             },
                                         ]}
                                     >
-                                        {clearExistingPlan ? (
-                                            <Text style={styles.checkboxCheck}>✓</Text>
-                                        ) : null}
+                                        <Text
+                                            style={[
+                                                styles.helperLabel,
+                                                {
+                                                    color: isDark
+                                                        ? "rgba(255,255,255,0.7)"
+                                                        : "rgba(0,0,0,0.6)",
+                                                },
+                                            ]}
+                                        >
+                                            Start date
+                                        </Text>
+                                        <Text
+                                            style={[styles.dateValue, { color: theme.colors.text }]}
+                                        >
+                                            {formattedDate}
+                                        </Text>
+                                        {renderDatePicker()}
                                     </View>
+
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.primaryButton,
+                                            { backgroundColor: theme.colors.accent },
+                                        ]}
+                                        onPress={handleContinue}
+                                    >
+                                        <Text style={styles.primaryButtonText}>Continue</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                <View style={styles.stepContent}>
+                                    <Text style={[styles.title, { color: theme.colors.text }]}>
+                                        Which days do you train each week?
+                                    </Text>
                                     <Text
                                         style={[
-                                            styles.checkboxLabel,
-                                            { color: theme.colors.text },
+                                            styles.subtitle,
+                                            {
+                                                color: isDark
+                                                    ? "rgba(255,255,255,0.8)"
+                                                    : "rgba(0,0,0,0.65)",
+                                            },
                                         ]}
                                     >
-                                        Clear my current training plan before starting this plan
+                                        Pick all the days you want this plan to run.
                                     </Text>
-                                </TouchableOpacity>
 
-                                <TouchableOpacity
-                                    style={[
-                                        styles.primaryButton,
-                                        {
-                                            backgroundColor:
-                                                selectedDays.length === 0 || submitting
-                                                    ? isDark
-                                                        ? "rgba(255,255,255,0.18)"
-                                                        : "rgba(0,0,0,0.08)"
-                                                    : theme.colors.accent,
-                                        },
-                                    ]}
-                                    disabled={selectedDays.length === 0 || submitting}
-                                    onPress={handleCreatePlan}
-                                >
-                                    <Text style={styles.primaryButtonText}>
-                                        {submitting ? "Creating..." : "Create my plan"}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
+                                    <View style={styles.dayRow}>
+                                        {DAY_OPTIONS.map((day, idx) => {
+                                            const selected = selectedDays.includes(day.value);
+                                            return (
+                                                <TouchableOpacity
+                                                    key={`${day.value}-${idx}`}
+                                                    style={[
+                                                        styles.dayChip,
+                                                        {
+                                                            borderColor: selected
+                                                                ? theme.colors.accent
+                                                                : isDark
+                                                                  ? "rgba(255,255,255,0.35)"
+                                                                  : "rgba(0,0,0,0.15)",
+                                                            backgroundColor: selected
+                                                                ? theme.colors.accent
+                                                                : "transparent",
+                                                        },
+                                                    ]}
+                                                    onPress={() => toggleDay(day.value)}
+                                                >
+                                                    <Text
+                                                        style={[
+                                                            styles.dayChipText,
+                                                            {
+                                                                color: selected
+                                                                    ? "#111"
+                                                                    : theme.colors.text,
+                                                            },
+                                                        ]}
+                                                    >
+                                                        {day.label}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </View>
+
+                                    <TouchableOpacity
+                                        activeOpacity={0.8}
+                                        onPress={() => setClearExistingPlan((prev) => !prev)}
+                                        style={styles.checkboxRow}
+                                    >
+                                        <View
+                                            style={[
+                                                styles.checkboxBox,
+                                                {
+                                                    borderColor: isDark
+                                                        ? "rgba(255,255,255,0.4)"
+                                                        : "rgba(0,0,0,0.25)",
+                                                    backgroundColor: clearExistingPlan
+                                                        ? theme.colors.accent
+                                                        : "transparent",
+                                                },
+                                            ]}
+                                        >
+                                            {clearExistingPlan ? (
+                                                <Text style={styles.checkboxCheck}>✓</Text>
+                                            ) : null}
+                                        </View>
+                                        <Text
+                                            style={[
+                                                styles.checkboxLabel,
+                                                { color: theme.colors.text },
+                                            ]}
+                                        >
+                                            Clear my current training plan before starting this plan
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.primaryButton,
+                                            {
+                                                backgroundColor:
+                                                    selectedDays.length === 0 || submitting
+                                                        ? isDark
+                                                            ? "rgba(255,255,255,0.18)"
+                                                            : "rgba(0,0,0,0.08)"
+                                                        : theme.colors.accent,
+                                            },
+                                        ]}
+                                        disabled={selectedDays.length === 0 || submitting}
+                                        onPress={handleCreatePlan}
+                                    >
+                                        <Text style={styles.primaryButtonText}>
+                                            {submitting ? "Creating..." : "Create my plan"}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </ScrollView>
                     </View>
                 </SafeAreaView>

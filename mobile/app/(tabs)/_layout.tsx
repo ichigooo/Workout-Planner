@@ -52,7 +52,6 @@ export default function TabLayout() {
                     tabBarIcon: ({ color }) => <TabBarIcon name="barbell-outline" color={color} />,
                 }}
             />
-
         </Tabs>
     );
 }

@@ -42,9 +42,7 @@ export const generatePlanItemsFromTemplate = ({
 
     const rawDayIndexes =
         normalizedDays.length > 0
-            ? normalizedDays
-                  .map((day) => DAY_ORDER.indexOf(day))
-                  .filter((idx) => idx >= 0)
+            ? normalizedDays.map((day) => DAY_ORDER.indexOf(day)).filter((idx) => idx >= 0)
             : [];
 
     const startDayIndex = startBaseDate.getDay();
@@ -56,12 +54,13 @@ export const generatePlanItemsFromTemplate = ({
             .sort((a, b) => a - b);
 
         const hasStartDay = diffs.includes(0);
-        const firstOffset = hasStartDay ? 0 : diffs.find((diff) => diff > 0) ?? diffs[0] ?? 0;
+        const firstOffset = hasStartDay ? 0 : (diffs.find((diff) => diff > 0) ?? diffs[0] ?? 0);
         baseOffsets.push(firstOffset);
 
         diffs.filter((diff) => diff > firstOffset).forEach((diff) => baseOffsets.push(diff));
-        diffs.filter((diff) => diff > 0 && diff < firstOffset).forEach((diff) => baseOffsets.push(diff + 7));
-
+        diffs
+            .filter((diff) => diff > 0 && diff < firstOffset)
+            .forEach((diff) => baseOffsets.push(diff + 7));
     } else {
         baseOffsets.push(0);
     }
