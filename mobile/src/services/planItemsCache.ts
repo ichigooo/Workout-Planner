@@ -1,4 +1,4 @@
-import { PlanItem, Workout } from "../types";
+import { PlanItem, Workout, WorkoutPlanTemplate } from "../types";
 import { apiService } from "./api";
 
 interface CacheEntry {
@@ -14,6 +14,7 @@ class PlanItemsCache {
     private planId!: string; // Set during initialization, guaranteed to exist when methods are called
     private workoutsCache: Workout[] = []; // Cache for all workouts
     private workoutsCacheTimestamp: number = 0; // When workouts were last fetched
+    private templateCache: { items: WorkoutPlanTemplate[]; fetchedAt: number } | null = null;
 
     /**
      * Get the date window for caching: today-7 to today+5
@@ -369,6 +370,42 @@ class PlanItemsCache {
 
         console.log(`[PlanItemsCache] Workouts cache miss/invalid, fetching...`);
         return await this.fetchAndCacheWorkouts();
+    }
+
+    private isTemplateCacheValid(): boolean {
+        if (!this.templateCache) return false;
+        const age = Date.now() - this.templateCache.fetchedAt;
+        return age <= this.CACHE_TTL;
+    }
+
+    private async fetchTemplateCache(): Promise<WorkoutPlanTemplate[]> {
+        try {
+            console.log(`[PlanItemsCache] Fetching workout plan templates from API...`);
+            const fetched = await apiService.getWorkoutPlanTemplates();
+            this.templateCache = { items: fetched, fetchedAt: Date.now() };
+            console.log(`[PlanItemsCache] Cached ${fetched?.length ?? 0} workout plan templates`);
+            return fetched;
+        } catch (error) {
+            console.error(`[PlanItemsCache] Failed to fetch workout plan templates:`, error);
+            this.templateCache = null;
+            return [];
+        }
+    }
+
+    async getWorkoutPlanTemplates(): Promise<WorkoutPlanTemplate[]> {
+        if (this.isTemplateCacheValid() && this.templateCache) {
+            return this.templateCache.items;
+        }
+        return this.fetchTemplateCache();
+    }
+
+    invalidatePlanTemplates(): void {
+        this.templateCache = null;
+    }
+
+    getWorkoutById(workoutId: string): Workout | null {
+        if (!workoutId) return null;
+        return this.workoutsCache.find((workout) => workout.id === workoutId) ?? null;
     }
 
     /**

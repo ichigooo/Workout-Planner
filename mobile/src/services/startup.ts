@@ -1,6 +1,12 @@
 import { apiService } from "./api";
-import { setCurrentUserId, setCurrentPlanId, loadStoredUserId } from "../state/session";
+import {
+    setCurrentUserId,
+    setCurrentPlanId,
+    loadStoredUserId,
+    clearCurrentUserId,
+} from "../state/session";
 import { planItemsCache } from "./planItemsCache";
+import { supabase } from "../lib/supabase";
 
 let isInitialized = false;
 let initPromise: Promise<void> | null = null;
@@ -21,16 +27,33 @@ export function initApp(): Promise<void> {
         try {
             console.log("[startup] initApp starting");
 
-            // Step 1: Check for stored user ID
-            const userId = await loadStoredUserId();
+            // Step 1: Check for stored user ID and active Supabase session
+            const storedUserId = await loadStoredUserId();
+            const { data: authData, error: authError } = await supabase.auth.getUser();
+            const authUser = authError ? null : (authData?.user ?? null);
 
-            if (!userId) {
-                throw new Error("No user ID available. User must be logged in.");
+            if (!authUser) {
+                // No authenticated session; ensure local storage is clear and bail quietly.
+                if (storedUserId) {
+                    console.log(
+                        "[startup] Stored user found but Supabase session missing. Clearing stored id.",
+                    );
+                    await clearCurrentUserId();
+                } else {
+                    console.log("[startup] No logged-in user; skipping initialization.");
+                }
+                return;
             }
 
-            // Set user session
-            await setCurrentUserId(userId);
-            console.log("[startup] User session established");
+            const userId = storedUserId || authUser.id;
+            if (!storedUserId || storedUserId !== authUser.id) {
+                // Keep storage in sync with Supabase session
+                await setCurrentUserId(authUser.id);
+            }
+            console.log("[startup] User session established for", userId);
+
+            // Ensure backend profile exists; fixes cases where sign-up never hit our POST /users
+            await ensureBackendUserProfile(authUser);
 
             // Step 2: Get/create planId and set it in session (CRITICAL - everything depends on this)
             const planId = await apiService.getWorkoutPlanId(userId);
@@ -66,3 +89,25 @@ export function initApp(): Promise<void> {
 }
 
 export default initApp;
+
+async function ensureBackendUserProfile(
+    authUser: { id: string; email?: string | null; user_metadata?: Record<string, any> } | null,
+) {
+    if (!authUser || !authUser.email) {
+        console.warn("[startup] Cannot ensure backend profile without auth user/email");
+        return;
+    }
+    try {
+        await apiService.createUserIfNeeded({
+            id: authUser.id,
+            email: authUser.email,
+            name:
+                authUser.user_metadata?.full_name ||
+                authUser.user_metadata?.name ||
+                authUser.user_metadata?.display_name ||
+                null,
+        });
+    } catch (err) {
+        console.warn("[startup] Failed to ensure backend user profile:", err);
+    }
+}

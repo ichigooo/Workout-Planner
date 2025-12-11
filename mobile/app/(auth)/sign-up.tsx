@@ -106,7 +106,7 @@ export default function SignUpScreen() {
 
     return (
         <KeyboardAvoidingView
-            style={[styles.container, { backgroundColor: theme.colors.cream }]}
+            style={[styles.container, { backgroundColor: "transparent" }]}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
             <ScrollView
@@ -216,7 +216,9 @@ export default function SignUpScreen() {
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: theme.colors.text }]}>Confirm Password *</Text>
+                        <Text style={[styles.label, { color: theme.colors.text }]}>
+                            Confirm Password *
+                        </Text>
                         <View
                             style={[
                                 styles.inputContainer,
@@ -251,33 +253,33 @@ export default function SignUpScreen() {
                     </View>
 
                     {error && (
-	                        <View
-	                            style={[
-	                                styles.errorContainer,
-	                                { backgroundColor: theme.colors.surface },
-	                            ]}
-	                        >
+                        <View
+                            style={[
+                                styles.errorContainer,
+                                { backgroundColor: theme.colors.surface },
+                            ]}
+                        >
                             <Ionicons
                                 name="alert-circle-outline"
                                 size={20}
                                 color={theme.colors.danger}
                             />
-	                            <Text style={[styles.errorText, { color: theme.colors.danger }]}>
-	                                {error}
-	                            </Text>
+                            <Text style={[styles.errorText, { color: theme.colors.danger }]}>
+                                {error}
+                            </Text>
                         </View>
                     )}
 
-	                    <TouchableOpacity
-	                        style={[
-	                            styles.primaryButton,
-	                            {
-	                                backgroundColor:
-	                                    isFormValid && !isLoading
-	                                        ? theme.colors.accent
-	                                        : theme.colors.border,
-	                            },
-	                        ]}
+                    <TouchableOpacity
+                        style={[
+                            styles.primaryButton,
+                            {
+                                backgroundColor:
+                                    isFormValid && !isLoading
+                                        ? theme.colors.accent
+                                        : theme.colors.border,
+                            },
+                        ]}
                         onPress={handleSignUp}
                         disabled={!isFormValid || isLoading}
                         activeOpacity={0.8}
@@ -285,17 +287,17 @@ export default function SignUpScreen() {
                         {isLoading ? (
                             <ActivityIndicator color="#FFFFFF" />
                         ) : (
-	                            <Text
-	                                style={[
-	                                    styles.primaryButtonText,
-	                                    {
-	                                        color:
-	                                            isFormValid && !isLoading
-	                                                ? "#FFFFFF"
-	                                                : theme.colors.subtext,
-	                                    },
-	                                ]}
-	                            >
+                            <Text
+                                style={[
+                                    styles.primaryButtonText,
+                                    {
+                                        color:
+                                            isFormValid && !isLoading
+                                                ? "#FFFFFF"
+                                                : theme.colors.subtext,
+                                    },
+                                ]}
+                            >
                                 Create Account
                             </Text>
                         )}
@@ -306,9 +308,9 @@ export default function SignUpScreen() {
                             Already have an account?{" "}
                         </Text>
                         <TouchableOpacity onPress={() => router.push("/(auth)/sign-in")}>
-	                            <Text style={[styles.linkText, { color: theme.colors.accent }]}>
-	                                Sign In
-	                            </Text>
+                            <Text style={[styles.linkText, { color: theme.colors.accent }]}>
+                                Sign In
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -1,5 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { View, Text, StyleSheet, Alert, useColorScheme, TouchableOpacity, Modal, ScrollView, FlatList } from "react-native";
+import {
+    View,
+    Text,
+    StyleSheet,
+    Alert,
+    useColorScheme,
+    TouchableOpacity,
+    Modal,
+    ScrollView,
+    FlatList,
+    ImageBackground,
+} from "react-native";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
@@ -191,7 +202,10 @@ export const TrainingPlanManager: React.FC = () => {
                                       const dt = new Date(sd as any);
                                       return `${dt.getFullYear()}-${(dt.getMonth() + 1)
                                           .toString()
-                                          .padStart(2, "0")}-${dt.getDate().toString().padStart(2, "0")}`;
+                                          .padStart(
+                                              2,
+                                              "0",
+                                          )}-${dt.getDate().toString().padStart(2, "0")}`;
                                   })();
                         merged[date] = {
                             selected: true,
@@ -306,14 +320,11 @@ export const TrainingPlanManager: React.FC = () => {
         [theme.colors.accent],
     );
 
-    const handleSelectCategory = useCallback(
-        (category: string) => {
-            setSelectedCategory(category);
-            setSelectedWorkoutId(null);
-            setSelectedDates({});
-        },
-        [],
-    );
+    const handleSelectCategory = useCallback((category: string) => {
+        setSelectedCategory(category);
+        setSelectedWorkoutId(null);
+        setSelectedDates({});
+    }, []);
 
     const handleSelectWorkout = useCallback(
         (id: string | null) => {
@@ -327,145 +338,169 @@ export const TrainingPlanManager: React.FC = () => {
 
     if (loading) {
         return (
-            <SafeAreaView
-                edges={["top"]}
-                style={[styles.container, { backgroundColor: theme.colors.bg }]}
+            <ImageBackground
+                source={require("../../assets/images/bg6.png")}
+                style={styles.screenBackground}
+                imageStyle={styles.screenBackgroundImage}
             >
-                <Text style={{ color: theme.colors.text, textAlign: "center", marginTop: 24 }}>
-                    Loading routine...
-                </Text>
-            </SafeAreaView>
+                <SafeAreaView
+                    edges={["top"]}
+                    style={[styles.container, { backgroundColor: "transparent" }]}
+                >
+                    <Text style={{ color: theme.colors.text, textAlign: "center", marginTop: 24 }}>
+                        Loading routine...
+                    </Text>
+                </SafeAreaView>
+            </ImageBackground>
         );
     }
 
     return (
-        <SafeAreaView
-            edges={["top"]}
-            style={[styles.container, { backgroundColor: theme.colors.cream }]}
+        <ImageBackground
+            source={require("../../assets/images/bg6.png")}
+            style={styles.screenBackground}
+            imageStyle={styles.screenBackgroundImage}
         >
-            <View style={[styles.headerRow, { borderBottomColor: theme.colors.border }]}>
-                <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-                    Current Training Plan
-                </Text>
-                <TouchableOpacity
-                    onPress={() => {
-                        setSelectedDates({
-                            [todayISO]: {
-                                selected: true,
-                                selectedColor: theme.colors.accent,
-                            },
-                        });
-                        setShowAddSheet(true);
-                    }}
-                    style={[styles.browseButton, { borderColor: theme.colors.border }]}
-                >
-                    <Text style={[styles.browseText, { color: theme.colors.accent }]}>
-                        Browse all workouts
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Scheduled Workouts (next 5 days) wrapped in ScrollView so tab press can scroll to top */}
-            <ScrollView
-                ref={scrollRef}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12 }}
+            <SafeAreaView
+                edges={["top"]}
+                style={[styles.container, { backgroundColor: "transparent" }]}
             >
-                <View
-                    style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
-                    }}
-                >
-                    <Text style={{ fontSize: 18, fontWeight: "700", color: theme.colors.text }}>
-                        Scheduled Workouts
+                <View style={[styles.headerRow, { borderBottomColor: theme.colors.border }]}>
+                    <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+                        My Schedule
                     </Text>
                     <TouchableOpacity
-                        onPress={() => router.push("/calendar")}
-                        style={styles.calendarShortcut}
+                        onPress={() => router.push("/workout")}
+                        style={[styles.browseButton, { borderColor: theme.colors.border }]}
                     >
-                        <Ionicons name="calendar-outline" size={20} color={theme.colors.accent} />
+                        <Text style={[styles.browseText, { color: theme.colors.accent }]}>
+                            Browse all workouts
+                        </Text>
                     </TouchableOpacity>
                 </View>
-                {scheduledByDate.map((section) => (
-                    <View key={section.date} style={{ marginBottom: 12 }}>
-                        <Text style={{ color: theme.colors.subtext, marginBottom: 8 }}>
-                            {section.label}
-                        </Text>
-                        {section.items.length > 0 ? (
-                            section.items.map((it) => (
-                                <TouchableOpacity
-                                    key={it.id}
-                                    style={[
-                                        styles.scheduledCard,
-                                        {
-                                            backgroundColor: theme.colors.surface,
-                                            borderColor: theme.colors.border,
-                                        },
-                                    ]}
-                                    activeOpacity={0.8}
-                                    onPress={() =>
-                                        router.push(
-                                            `/workout-detail?id=${encodeURIComponent(it.workout.id)}`,
-                                        )
-                                    }
-                                >
-                                    <Text style={{ color: theme.colors.text, fontWeight: "600" }}>
-                                        {it.workout.title}
-                                    </Text>
-                                    <Text style={{ color: theme.colors.subtext, marginTop: 4 }}>
-                                        {it.workout.sets} sets × {it.workout.reps} reps •{" "}
-                                        {it.workout.category}
-                                    </Text>
-                                    {it.intensity ? (
-                                        <Text style={{ color: theme.colors.accent, marginTop: 6 }}>
-                                            {it.intensity}
-                                        </Text>
-                                    ) : null}
-                                </TouchableOpacity>
-                            ))
-                        ) : (
-                            <Text style={{ color: theme.colors.subtext }}>
-                                No workouts scheduled
-                            </Text>
-                        )}
-                    </View>
-                ))}
-            </ScrollView>
-            <TouchableOpacity
-                style={[styles.fab, { backgroundColor: theme.colors.accent }]}
-                onPress={handleOpenAddSheet}
-            >
-                <Ionicons name="add" color="#fff" size={28} />
-            </TouchableOpacity>
 
-            <Modal visible={showAddSheet} animationType="slide" onRequestClose={handleCloseAddSheet}>
-                <SafeAreaProvider>
-                    <AddWorkoutToPlanPage
-                        theme={theme}
-                        categories={categories}
-                        activeCategory={activeCategory}
-                        onSelectCategory={handleSelectCategory}
-                        workoutsByCategory={workoutsByCategory}
-                        selectedWorkoutId={selectedWorkoutId}
-                        onSelectWorkout={handleSelectWorkout}
-                        selectedDates={selectedDates}
-                        onToggleDate={toggleDate}
-                        canAdd={Boolean(selectedWorkoutId && Object.keys(selectedDates).length > 0)}
-                        onAdd={handleQuickAdd}
-                        onClose={handleCloseAddSheet}
-                        categoriesListRef={categoriesListRef}
-                    />
-                </SafeAreaProvider>
-            </Modal>
-        </SafeAreaView>
+                {/* Scheduled Workouts (next 5 days) wrapped in ScrollView so tab press can scroll to top */}
+                <ScrollView
+                    ref={scrollRef}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12 }}
+                >
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: 8,
+                        }}
+                    >
+                        <Text style={{ fontSize: 18, fontWeight: "700", color: theme.colors.text }}>
+                            Scheduled Workouts
+                        </Text>
+                        <TouchableOpacity
+                            onPress={() => router.push("/calendar")}
+                            style={styles.calendarShortcut}
+                        >
+                            <Ionicons
+                                name="calendar-outline"
+                                size={20}
+                                color={theme.colors.accent}
+                            />
+                        </TouchableOpacity>
+                    </View>
+                    {scheduledByDate.map((section) => (
+                        <View key={section.date} style={{ marginBottom: 12 }}>
+                            <Text style={{ color: theme.colors.subtext, marginBottom: 8 }}>
+                                {section.label}
+                            </Text>
+                            {section.items.length > 0 ? (
+                                section.items.map((it) => (
+                                    <TouchableOpacity
+                                        key={it.id}
+                                        style={[
+                                            styles.scheduledCard,
+                                            {
+                                                backgroundColor: theme.colors.surface,
+                                                borderColor: theme.colors.border,
+                                            },
+                                        ]}
+                                        activeOpacity={0.8}
+                                        onPress={() =>
+                                            router.push(
+                                                `/workout-detail?id=${encodeURIComponent(it.workout.id)}`,
+                                            )
+                                        }
+                                    >
+                                        <Text
+                                            style={{ color: theme.colors.text, fontWeight: "600" }}
+                                        >
+                                            {it.workout.title}
+                                        </Text>
+                                        <Text style={{ color: theme.colors.subtext, marginTop: 4 }}>
+                                            {it.workout.sets} sets × {it.workout.reps} reps •{" "}
+                                            {it.workout.category}
+                                        </Text>
+                                        {it.intensity ? (
+                                            <Text
+                                                style={{ color: theme.colors.accent, marginTop: 6 }}
+                                            >
+                                                {it.intensity}
+                                            </Text>
+                                        ) : null}
+                                    </TouchableOpacity>
+                                ))
+                            ) : (
+                                <Text style={{ color: theme.colors.subtext }}>
+                                    No workouts scheduled
+                                </Text>
+                            )}
+                        </View>
+                    ))}
+                </ScrollView>
+                <TouchableOpacity
+                    style={[styles.fab, { backgroundColor: theme.colors.accent }]}
+                    onPress={handleOpenAddSheet}
+                >
+                    <Ionicons name="add" color="#fff" size={28} />
+                </TouchableOpacity>
+
+                <Modal
+                    visible={showAddSheet}
+                    animationType="slide"
+                    onRequestClose={handleCloseAddSheet}
+                >
+                    <SafeAreaProvider>
+                        <AddWorkoutToPlanPage
+                            theme={theme}
+                            categories={categories}
+                            activeCategory={activeCategory}
+                            onSelectCategory={handleSelectCategory}
+                            workoutsByCategory={workoutsByCategory}
+                            selectedWorkoutId={selectedWorkoutId}
+                            onSelectWorkout={handleSelectWorkout}
+                            selectedDates={selectedDates}
+                            onToggleDate={toggleDate}
+                            canAdd={Boolean(
+                                selectedWorkoutId && Object.keys(selectedDates).length > 0,
+                            )}
+                            onAdd={handleQuickAdd}
+                            onClose={handleCloseAddSheet}
+                            categoriesListRef={categoriesListRef}
+                        />
+                    </SafeAreaProvider>
+                </Modal>
+            </SafeAreaView>
+        </ImageBackground>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    screenBackground: {
+        flex: 1,
+    },
+    screenBackgroundImage: {
+        resizeMode: "cover",
     },
     headerRow: {
         paddingHorizontal: 16,

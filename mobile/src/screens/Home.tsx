@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     ScrollView,
     Image,
+    ImageBackground,
     Animated,
     useColorScheme,
     ImageSourcePropType,
@@ -56,17 +57,16 @@ const getTimeBasedEmoji = (): string => {
 const categoryIconSources: Record<string, ImageSourcePropType> = {
     "Upper Body - Pull": require("../../assets/images/workout_types/upper_body_pull.png"),
     "Upper Body - Push": require("../../assets/images/workout_types/upper_body_push.png"),
-    Legs: require("../../assets/images/workout_types/legs.png"),
-    Core: require("../../assets/images/workout_types/core.png"),
+    "Legs": require("../../assets/images/workout_types/legs.png"),
+    "Core": require("../../assets/images/workout_types/core.png"),
     "Climbing - Power": require("../../assets/images/workout_types/climbing.png"),
     "Climbing - Endurance": require("../../assets/images/workout_types/climbing.png"),
     "Climbing - Warm Up": require("../../assets/images/workout_types/climbing.png"),
-    Cardio: require("../../assets/images/workout_types/warmup.png"),
+    "Cardio": require("../../assets/images/workout_types/warmup.png"),
 };
 
 const getTypeIcon = (category: WorkoutCategory): ImageSourcePropType =>
-    categoryIconSources[category] ||
-    require("../../assets/images/workout_types/default.png");
+    categoryIconSources[category] || require("../../assets/images/workout_types/default.png");
 
 const equipmentIconSources: Record<string, ImageSourcePropType> = {
     dumbbell: require("../../assets/images/equipment/dumbbell.png"),
@@ -168,13 +168,13 @@ const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
                                                 color: isSelected
                                                     ? "#FFFFFF"
                                                     : isToday
-                                                    ? theme.colors.accent
-                                                    : theme.colors.subtext,
+                                                      ? theme.colors.accent
+                                                      : theme.colors.subtext,
                                                 fontWeight: isSelected
                                                     ? "700"
                                                     : isToday
-                                                    ? "600"
-                                                    : "500",
+                                                      ? "600"
+                                                      : "500",
                                             },
                                         ]}
                                     >
@@ -329,9 +329,7 @@ export const Home: React.FC<HomeProps> = ({
                               const dt = new Date(sd as any);
                               return `${dt.getFullYear()}-${(dt.getMonth() + 1)
                                   .toString()
-                                  .padStart(2, "0")}-${dt.getDate()
-                                  .toString()
-                                  .padStart(2, "0")}`;
+                                  .padStart(2, "0")}-${dt.getDate().toString().padStart(2, "0")}`;
                           })();
                 if (sdStr === dateISO) {
                     result[dateISO].push(item.workout);
@@ -348,12 +346,11 @@ export const Home: React.FC<HomeProps> = ({
     const todaysWorkoutList = weekWorkouts[todayISO] || [];
     const isRestDay = selectedDate === todayISO && todaysWorkoutList.length === 0;
 
-    const displayDate =
-        isRestDay
-            ? todayISO
-            : weekWorkouts[selectedDate] && weekWorkouts[selectedDate].length > 0
-            ? selectedDate
-            : weekDates.find((d) => (weekWorkouts[d] || []).length > 0) || selectedDate;
+    const displayDate = isRestDay
+        ? todayISO
+        : weekWorkouts[selectedDate] && weekWorkouts[selectedDate].length > 0
+          ? selectedDate
+          : weekDates.find((d) => (weekWorkouts[d] || []).length > 0) || selectedDate;
 
     const handleRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -368,288 +365,281 @@ export const Home: React.FC<HomeProps> = ({
     }, [refreshCacheFromStore]);
 
     return (
-        <SafeAreaView
-            edges={["top", "bottom"]}
-            style={[styles.safeArea, { backgroundColor: theme.colors.cream }]}
+        <ImageBackground
+            source={require("../../assets/images/bg6.png")}
+            style={styles.screenBackground}
+            imageStyle={styles.screenBackgroundImage}
         >
-            <ScrollView
-                ref={scrollRef}
-                style={styles.container}
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={handleRefresh}
-                        colors={[theme.colors.accent]}
-                        progressBackgroundColor={theme.colors.surface}
-                    />
-                }
-                overScrollMode="never"
-                keyboardShouldPersistTaps="handled"
+            <SafeAreaView
+                edges={["top"]}
+                style={[styles.safeArea, { backgroundColor: "transparent" }]}
             >
-                {/* HEADER */}
-                <View style={styles.headerRow}>
-                    <TouchableOpacity
-                        onPress={onOpenProfile}
-                        style={[
-                            styles.iconButton,
-                            {
-                                backgroundColor: theme.colors.surface,
-                                borderColor: theme.colors.border,
-                                borderWidth: StyleSheet.hairlineWidth,
-                            },
-                        ]}
+                <ScrollView
+                    ref={scrollRef}
+                    style={[styles.container, { backgroundColor: "transparent" }]}
+                    contentContainerStyle={styles.content}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={handleRefresh}
+                            colors={[theme.colors.accent]}
+                            progressBackgroundColor={theme.colors.surface}
+                        />
+                    }
+                    overScrollMode="never"
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {/* HERO IMAGE WITH GREETING */}
+                    <ImageBackground
+                        source={require("../../assets/images/homebg.png")}
+                        style={styles.heroBanner}
+                        imageStyle={styles.heroBannerImage}
                     >
-                        {profilePhoto ? (
-                            <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
+                        <View style={[styles.headerRow, styles.heroHeader]}>
+                            <TouchableOpacity
+                                onPress={onOpenProfile}
+                                style={[
+                                    styles.iconButton,
+                                    {
+                                        backgroundColor: "rgba(0,0,0,0.4)",
+                                        borderColor: "rgba(255,255,255,0.4)",
+                                        borderWidth: StyleSheet.hairlineWidth,
+                                    },
+                                ]}
+                            >
+                                {profilePhoto ? (
+                                    <Image
+                                        source={{ uri: profilePhoto }}
+                                        style={styles.profileImage}
+                                    />
+                                ) : (
+                                    <View
+                                        style={[
+                                            styles.profileImage,
+                                            styles.profileImagePlaceholder,
+                                            { backgroundColor: "rgba(255,255,255,0.2)" },
+                                        ]}
+                                    >
+                                        <Ionicons name="person" size={20} color="#fff" />
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={onOpenCalendar}
+                                style={[
+                                    styles.iconButton,
+                                    {
+                                        backgroundColor: "rgba(0,0,0,0.4)",
+                                        borderColor: "rgba(255,255,255,0.4)",
+                                        borderWidth: StyleSheet.hairlineWidth,
+                                    },
+                                ]}
+                            >
+                                <Ionicons name="calendar-outline" size={26} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.heroBannerOverlay}>
+                            <Text style={styles.heroBannerTitle}>
+                                {getTimeBasedGreeting()}
+                                {userName ? `, ${userName}` : ""} {getTimeBasedEmoji()}
+                            </Text>
+                            <Text style={styles.heroBannerSubtitle}>
+                                Curated workouts and plans tailored for your climb to the top.
+                            </Text>
+                            <View style={styles.heroBannerActions}>
+                                <TouchableOpacity
+                                    style={styles.heroBannerPrimaryButton}
+                                    onPress={() => router.push("/workout")}
+                                    activeOpacity={0.85}
+                                >
+                                    <Text style={styles.heroBannerButtonText}>Browse Workouts</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.heroBannerSecondaryButton}
+                                    onPress={() => router.push("/plan")}
+                                    activeOpacity={0.85}
+                                >
+                                    <Text style={styles.heroBannerSecondaryButtonText}>
+                                        Browse Plans
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </ImageBackground>
+                    {/* WEEK SNAPSHOT */}
+                    <WeekSnapshot
+                        weekDates={weekDates}
+                        weekWorkouts={weekWorkouts}
+                        todayISO={todayISO}
+                        selectedDate={selectedDate}
+                        setSelectedDate={setSelectedDate}
+                        theme={theme}
+                        styles={styles}
+                    />
+
+                    {/* TODAY / SELECTED DAY WORKOUTS */}
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                            {isRestDay
+                                ? "Today's workouts"
+                                : displayDate === todayISO
+                                  ? "Today's workouts"
+                                  : (() => {
+                                        const [yy, mm, dd] = displayDate
+                                            .split("-")
+                                            .map((s) => parseInt(s, 10));
+                                        return new Date(yy, mm - 1, dd).toLocaleDateString(
+                                            "en-US",
+                                            {
+                                                weekday: "long",
+                                                month: "long",
+                                                day: "numeric",
+                                            },
+                                        );
+                                    })()}
+                        </Text>
+
+                        {isRestDay ? (
+                            <View style={styles.restDayRow}>
+                                <Text style={[styles.restDayText, { color: theme.colors.text }]}>
+                                    Rest day
+                                </Text>
+                                <Text
+                                    style={[styles.restDaySubtext, { color: theme.colors.subtext }]}
+                                >
+                                    Take today to recover—tonight’s stretch counts as progress too.
+                                </Text>
+                            </View>
+                        ) : weekWorkouts[displayDate] && weekWorkouts[displayDate].length > 0 ? (
+                            <View style={{ gap: 12 }}>
+                                {weekWorkouts[displayDate].map((item, idx) => (
+                                    <TouchableOpacity
+                                        key={`${item.id}-${idx}`}
+                                        style={[
+                                            styles.previewCardFull,
+                                            {
+                                                backgroundColor: theme.colors.surface,
+                                                borderColor: theme.colors.border,
+                                            },
+                                        ]}
+                                        activeOpacity={0.85}
+                                        onPress={() =>
+                                            router.push(
+                                                `/workout-detail?id=${encodeURIComponent(item.id)}`,
+                                            )
+                                        }
+                                    >
+                                        <View style={styles.previewHeader}>
+                                            <View
+                                                style={[
+                                                    styles.categoryBadge,
+                                                    { backgroundColor: theme.colors.accent },
+                                                ]}
+                                            >
+                                                <Text style={styles.categoryBadgeText}>
+                                                    {item.category.toUpperCase()}
+                                                </Text>
+                                            </View>
+                                            {getEquipmentIconForTitle(item.title) && (
+                                                <Image
+                                                    source={getEquipmentIconForTitle(item.title)}
+                                                    style={styles.previewEquipmentIcon}
+                                                    resizeMode="contain"
+                                                />
+                                            )}
+                                        </View>
+                                        <Text
+                                            style={[
+                                                styles.previewTitle,
+                                                { color: theme.colors.text },
+                                            ]}
+                                            numberOfLines={1}
+                                        >
+                                            {item.title}
+                                        </Text>
+                                        {item.description ? (
+                                            <Text
+                                                style={[
+                                                    styles.previewDesc,
+                                                    { color: theme.colors.subtext },
+                                                ]}
+                                                numberOfLines={2}
+                                            >
+                                                {item.description}
+                                            </Text>
+                                        ) : null}
+                                        <View style={styles.previewStats}>
+                                            {item.sets !== undefined && item.reps !== undefined ? (
+                                                <Text
+                                                    style={[
+                                                        styles.previewStatText,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                >
+                                                    {item.sets} sets × {item.reps} reps
+                                                </Text>
+                                            ) : null}
+                                            {item.intensity ? (
+                                                <Text
+                                                    style={[
+                                                        styles.previewStatText,
+                                                        { color: theme.colors.subtext },
+                                                    ]}
+                                                >
+                                                    {item.intensity}
+                                                </Text>
+                                            ) : null}
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         ) : (
                             <View
                                 style={[
-                                    styles.profileImage,
-                                    styles.profileImagePlaceholder,
-                                    { backgroundColor: theme.colors.surface },
+                                    styles.todaysCard,
+                                    {
+                                        backgroundColor: theme.colors.surface,
+                                        borderColor: theme.colors.border,
+                                    },
                                 ]}
                             >
-                                <Ionicons name="person" size={20} color={theme.colors.subtext} />
+                                <Text style={[styles.todaysTitle, { color: theme.colors.text }]}>
+                                    No workout scheduled
+                                </Text>
+                                <Text style={[styles.todaysDesc, { color: theme.colors.subtext }]}>
+                                    Check back later or add a workout from the library.
+                                </Text>
                             </View>
                         )}
-                    </TouchableOpacity>
+                    </View>
 
-                    <TouchableOpacity
-                        onPress={onOpenCalendar}
-                        style={[
-                            styles.iconButton,
-                            {
-                                backgroundColor: theme.colors.surface,
-                                borderColor: theme.colors.border,
-                                borderWidth: StyleSheet.hairlineWidth,
-                            },
-                        ]}
-                    >
-                        <Ionicons name="calendar-outline" size={26} color={theme.colors.text} />
-                    </TouchableOpacity>
-                </View>
-
-                {/* GREETING */}
-                <Text style={[styles.heroTitle, { color: theme.colors.text }]}>
-                    {getTimeBasedGreeting()}
-                    {userName ? `, ${userName}` : ""} {getTimeBasedEmoji()}
-                </Text>
-
-                {/* WEEK SNAPSHOT */}
-                <WeekSnapshot
-                    weekDates={weekDates}
-                    weekWorkouts={weekWorkouts}
-                    todayISO={todayISO}
-                    selectedDate={selectedDate}
-                    setSelectedDate={setSelectedDate}
-                    theme={theme}
-                    styles={styles}
-                />
-
-                {/* TODAY / SELECTED DAY WORKOUTS */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                        {isRestDay
-                            ? "Today's workouts"
-                            : displayDate === todayISO
-                            ? "Today's workouts"
-                            : (() => {
-                                  const [yy, mm, dd] = displayDate
-                                      .split("-")
-                                      .map((s) => parseInt(s, 10));
-                                  return new Date(yy, mm - 1, dd).toLocaleDateString("en-US", {
-                                      weekday: "long",
-                                      month: "long",
-                                      day: "numeric",
-                                  });
-                              })()}
-                    </Text>
-
-                    {isRestDay ? (
-                        <View style={styles.restDayRow}>
-                            <Text style={[styles.restDayText, { color: theme.colors.text }]}>
-                                Rest day
-                            </Text>
-                            <Text
-                                style={[
-                                    styles.restDaySubtext,
-                                    { color: theme.colors.subtext },
-                                ]}
+                    {!isRestDay &&
+                    weekWorkouts[displayDate] &&
+                    weekWorkouts[displayDate].length > 0 ? (
+                        <TouchableOpacity activeOpacity={0.85} style={styles.warmupCard}>
+                            <ImageBackground
+                                source={require("../../assets/images/warmup.png")}
+                                style={styles.warmupBackground}
+                                imageStyle={styles.warmupImage}
                             >
-                                Take today to recover—tonight’s stretch counts as progress too.
-                            </Text>
-                        </View>
-                    ) : weekWorkouts[displayDate] &&
-                      weekWorkouts[displayDate].length > 0 ? (
-                        <View style={{ gap: 12 }}>
-                            {weekWorkouts[displayDate].map((item, idx) => (
-                                <TouchableOpacity
-                                    key={`${item.id}-${idx}`}
-                                    style={[
-                                        styles.previewCardFull,
-                                        {
-                                            backgroundColor: theme.colors.surface,
-                                            borderColor: theme.colors.border,
-                                        },
-                                    ]}
-                                    activeOpacity={0.85}
-                                    onPress={() =>
-                                        router.push(
-                                            `/workout-detail?id=${encodeURIComponent(item.id)}`,
-                                        )
-                                    }
-                                >
-                                    <View style={styles.previewHeader}>
-                                        <View
-                                            style={[
-                                                styles.categoryBadge,
-                                                { backgroundColor: theme.colors.accent },
-                                            ]}
-                                        >
-                                            <Text style={styles.categoryBadgeText}>
-                                                {item.category.toUpperCase()}
-                                            </Text>
-                                        </View>
-                                        {getEquipmentIconForTitle(item.title) && (
-                                            <Image
-                                                source={getEquipmentIconForTitle(item.title)}
-                                                style={styles.previewEquipmentIcon}
-                                                resizeMode="contain"
-                                            />
-                                        )}
-                                    </View>
-                                    <Text
-                                        style={[styles.previewTitle, { color: theme.colors.text }]}
-                                        numberOfLines={1}
-                                    >
-                                        {item.title}
+                                <View style={styles.warmupOverlay}>
+                                    <Text style={styles.warmupTitle}>Start With A Warm Up</Text>
+                                    <Text style={styles.warmupSubtitle}>
+                                        Ease into today’s session with pulses and mobility.
                                     </Text>
-                                    {item.description ? (
-                                        <Text
-                                            style={[
-                                                styles.previewDesc,
-                                                { color: theme.colors.subtext },
-                                            ]}
-                                            numberOfLines={2}
-                                        >
-                                            {item.description}
-                                        </Text>
-                                    ) : null}
-                                    <View style={styles.previewStats}>
-                                        {item.sets !== undefined && item.reps !== undefined ? (
-                                            <Text
-                                                style={[
-                                                    styles.previewStatText,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                            >
-                                                {item.sets} sets × {item.reps} reps
-                                            </Text>
-                                        ) : null}
-                                        {item.intensity ? (
-                                            <Text
-                                                style={[
-                                                    styles.previewStatText,
-                                                    { color: theme.colors.subtext },
-                                                ]}
-                                            >
-                                                {item.intensity}
-                                            </Text>
-                                        ) : null}
+                                    <View style={styles.warmupPill}>
+                                        <Text style={styles.warmupPillText}>Let’s warm up</Text>
                                     </View>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    ) : (
-                        <View
-                            style={[
-                                styles.todaysCard,
-                                {
-                                    backgroundColor: theme.colors.surface,
-                                    borderColor: theme.colors.border,
-                                },
-                            ]}
-                        >
-                            <Text style={[styles.todaysTitle, { color: theme.colors.text }]}>
-                                No workout scheduled
-                            </Text>
-                            <Text style={[styles.todaysDesc, { color: theme.colors.subtext }]}>
-                                Check back later or add a workout from the library.
-                            </Text>
-                        </View>
-                    )}
-                </View>
-
-                {/* WORKOUT CATEGORIES */}
-                <View style={styles.section}>
-                    <View style={styles.rowBetween}>
-                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                            Workout
-                        </Text>
-                        <TouchableOpacity onPress={() => onOpenLibrary && onOpenLibrary()}>
-                            <Text style={[styles.linkText, { color: theme.colors.accent }]}>
-                                See all
-                            </Text>
+                                </View>
+                            </ImageBackground>
                         </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.categoryGrid}>
-                        {orderCategoriesWithClimbingAtEnd(
-                            Array.from(new Set(workouts.map((w) => w.category))),
-                        ).map((cat) => {
-                            const workoutCount = workouts.filter(
-                                (w) => w.category === cat,
-                            ).length;
-                            return (
-                                <TouchableOpacity
-                                    key={String(cat)}
-                                    style={[
-                                        styles.categoryTile,
-                                        {
-                                            backgroundColor: theme.colors.surface,
-                                            borderColor: theme.colors.border,
-                                        },
-                                    ]}
-                                    onPress={() => onOpenLibrary && onOpenLibrary(String(cat))}
-                                    activeOpacity={0.85}
-                                >
-                                    <View style={styles.categoryTileContent}>
-                                        <Text
-                                            style={[
-                                                styles.categoryTileText,
-                                                { color: theme.colors.text },
-                                            ]}
-                                            numberOfLines={2}
-                                            ellipsizeMode="tail"
-                                        >
-                                            {cat}
-                                        </Text>
-                                        <Text
-                                            style={[
-                                                styles.categoryTileCount,
-                                                { color: theme.colors.subtext },
-                                            ]}
-                                        >
-                                            {workoutCount}{" "}
-                                            {workoutCount === 1 ? "workout" : "workouts"}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.categoryTileIconWrapper}>
-                                        <Image
-                                            source={getTypeIcon(cat)}
-                                            style={styles.categoryTileIcon}
-                                            resizeMode="contain"
-                                        />
-                                    </View>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                </View>
-            </ScrollView>
-        </SafeAreaView>
+                    ) : null}
+                </ScrollView>
+            </SafeAreaView>
+        </ImageBackground>
     );
 };
 
@@ -659,6 +649,12 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
+    },
+    screenBackground: {
+        flex: 1,
+    },
+    screenBackgroundImage: {
+        resizeMode: "cover",
     },
     // This controls the *only* padding; no flexGrow tricks
     content: {
@@ -693,6 +689,118 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         letterSpacing: 0.2,
         marginBottom: 4,
+    },
+    heroBanner: {
+        width: "100%",
+        height: 420,
+        borderRadius: 32,
+        overflow: "hidden",
+        marginBottom: 28,
+    },
+    heroBannerImage: {
+        borderRadius: 32,
+    },
+    heroHeader: {
+        position: "absolute",
+        top: 16,
+        left: 20,
+        right: 20,
+        zIndex: 2,
+    },
+    heroBannerOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.35)",
+        paddingHorizontal: 24,
+        paddingVertical: 32,
+        justifyContent: "flex-end",
+    },
+    heroBannerTitle: {
+        fontSize: 22,
+        fontWeight: "700",
+        color: "#fff",
+        marginBottom: 6,
+    },
+    heroBannerSubtitle: {
+        fontSize: 14,
+        color: "rgba(255,255,255,0.92)",
+        marginBottom: 14,
+    },
+    heroBannerActions: {
+        flexDirection: "row",
+        gap: 12,
+        marginTop: 4,
+    },
+    heroBannerPrimaryButton: {
+        flex: 1,
+        alignItems: "center",
+        backgroundColor: "rgba(255,255,255,0.94)",
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 999,
+    },
+    heroBannerSecondaryButton: {
+        flex: 1,
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.8)",
+        backgroundColor: "rgba(0,0,0,0.35)",
+    },
+    heroBannerButtonText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#1f1f1f",
+    },
+    heroBannerSecondaryButtonText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#fff",
+    },
+    warmupCard: {
+        width: "100%",
+        height: 200,
+        borderRadius: 24,
+        overflow: "hidden",
+        marginBottom: 24,
+    },
+    warmupBackground: {
+        flex: 1,
+        width: "100%",
+        height: "100%",
+    },
+    warmupImage: {
+        borderRadius: 24,
+    },
+    warmupOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.35)",
+        padding: 20,
+        justifyContent: "flex-end",
+    },
+    warmupTitle: {
+        fontSize: 20,
+        fontWeight: "700",
+        color: "#fff",
+    },
+    warmupSubtitle: {
+        fontSize: 13,
+        color: "rgba(255,255,255,0.9)",
+        marginTop: 4,
+        marginBottom: 12,
+    },
+    warmupPill: {
+        alignSelf: "flex-start",
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: "rgba(255,255,255,0.92)",
+    },
+    warmupPillText: {
+        fontSize: 13,
+        fontWeight: "600",
+        color: "#262626",
     },
     heroSubtitle: {
         fontSize: 14,
@@ -830,17 +938,17 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         flexWrap: "wrap",
         justifyContent: "space-between",
-        rowGap: 12,
+        rowGap: 8,
     },
     categoryTile: {
         width: "48%",
-        aspectRatio: 1.25,
+        aspectRatio: 1.05,
         borderRadius: 18,
         borderWidth: StyleSheet.hairlineWidth,
         position: "relative",
         alignItems: "stretch",
         justifyContent: "flex-start",
-        padding: 14,
+        padding: 12,
     },
     categoryTileContent: {
         paddingLeft: 8,

@@ -20,10 +20,11 @@ export const palettes = {
     light: {
         // High-end, sophisticated color palette (light mode)
         iconBg: "#fa5f0e",
-        bg: "#F4EEDC", // Warm cream background (main canvas)
+        greeting: "#F0F0F0",
+        bg: "#F8F5EB", // Lighter cream background (main canvas)
         // Use a slightly deeper cream for cards so they don't
         // feel stark white against the main background.
-        surface: "#decea0", // Soft warm card background
+        surface: "#F0E6D2", // Soft card background with light contrast
         border: "#E0D6C4", // Soft warm border with a bit more definition
         text: "#1A1A1A", // Strong, high-contrast text
         subtext: "#353e52", // Muted grey subtext
@@ -33,7 +34,7 @@ export const palettes = {
         danger: "#C85A5A", // Muted red
         // Additional sophisticated colors
         sage: "#4C6B3C", // Primary olive
-        cream: "#db6f3d", // Warm cream (matches bg)
+        cream: "transparent", // Transparent so background image shows through
         mutedPink: "#F0C2C2", // Soft muted pink
         lightBlue: "#8FA8C0", // Muted blue
         warmGrey: "#8B8B8B", // Warm grey

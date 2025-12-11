@@ -8,6 +8,8 @@ import {
     CreatePlanItemRequest,
     UpdateUserProfileRequest,
     WorkoutPersonalRecord,
+    WorkoutPlanTemplate,
+    WorkoutDayTemplate,
 } from "../types";
 import { getLocalIp } from "../utils/getlocalIP";
 
@@ -26,7 +28,7 @@ console.log("[api] detectedLocalIp", detectedLocalIp);
 const LOCAL_BASE_URL = detectedLocalIp ? `http://${detectedLocalIp}:3001/api` : null;
 
 // Pick a base URL without ever throwing at module load.
-let API_BASE_URL = CLOUD_BASE_URL || LOCAL_BASE_URL || "";
+const API_BASE_URL = USE_CLOUD ? CLOUD_BASE_URL : LOCAL_BASE_URL || "";
 
 // Log everything so we can see what’s going on.
 console.log("[api] CLOUD_BASE_URL =", CLOUD_BASE_URL);
@@ -36,8 +38,7 @@ console.log("[api] FINAL API_BASE_URL =", API_BASE_URL);
 // As a safety net: in dev, loudly error if nothing is set.
 // In release, we’ll just log and let requests fail instead of crashing the app.
 if (!API_BASE_URL) {
-    const msg =
-        "API_BASE_URL is empty. Set EXPO_PUBLIC_API_BASE_URL or provide a local IP.";
+    const msg = "API_BASE_URL is empty. Set EXPO_PUBLIC_API_BASE_URL or provide a local IP.";
     if (__DEV__) {
         throw new Error(msg);
     } else {
@@ -261,6 +262,33 @@ class ApiService {
         // Invalidate cache since we removed an item
         const { planItemsCache } = await import("./planItemsCache");
         planItemsCache.invalidate();
+    }
+
+    // Workout Plan Template methods
+    async getWorkoutPlanTemplates(): Promise<WorkoutPlanTemplate[]> {
+        return this.request<WorkoutPlanTemplate[]>("/workout-plan-templates");
+    }
+
+    async getWorkoutPlanTemplate(id: string): Promise<WorkoutPlanTemplate> {
+        return this.request<WorkoutPlanTemplate>(`/workout-plan-templates/${id}`);
+    }
+
+    async upsertWorkoutPlanTemplate(
+        templateId: string,
+        payload: {
+            name: string;
+            description?: string | null;
+            numWeeks: number;
+            daysPerWeek: number;
+            workoutStructure: WorkoutDayTemplate[][];
+            level?: string | null;
+            createdBy?: string | null;
+        },
+    ): Promise<WorkoutPlanTemplate> {
+        return this.request<WorkoutPlanTemplate>(`/workout-plan-templates/${templateId}`, {
+            method: "PUT",
+            body: JSON.stringify(payload),
+        });
     }
 
     // User Profile Methods

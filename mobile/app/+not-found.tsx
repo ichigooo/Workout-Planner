@@ -1,34 +1,80 @@
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Link } from "expo-router";
 
 export default function NotFound() {
     return (
-        <main className="min-h-dvh bg-[radial-gradient(80%_50%_at_50%_0%,#f7f7f7_0%,#f2f2f2_45%,#efefef_100%)]">
-            <div className="mx-auto flex max-w-xl flex-col items-center px-6 pt-28 pb-24 text-center">
-                <div className="mb-8 rounded-2xl border border-neutral-200/70 bg-white/70 px-4 py-1.5 text-xs tracking-wider text-neutral-500 backdrop-blur">
-                    404 — Page not found
-                </div>
+        <View style={styles.container}>
+            <View style={styles.badge}>
+                <Text style={styles.badgeText}>404 — Page not found</Text>
+            </View>
 
-                <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">
-                    Nothing to see here.
-                </h1>
+            <Text style={styles.title}>Nothing to see here.</Text>
+            <Text style={styles.subtitle}>
+                The page you’re looking for doesn’t exist or has moved.
+            </Text>
 
-                <p className="mt-3 text-neutral-600 leading-relaxed">
-                    The page you’re looking for doesn’t exist or has moved.
-                </p>
+            <Link href="/" asChild>
+                <TouchableOpacity style={styles.button}>
+                    <Text style={styles.buttonText}>Go back home</Text>
+                </TouchableOpacity>
+            </Link>
 
-                <div className="mt-8">
-                    <Link
-                        href="/"
-                        className="inline-flex items-center rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-900 shadow-sm hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-400/40 transition"
-                    >
-                        Go back home
-                    </Link>
-                </div>
-
-                <div className="mt-14 h-px w-24 bg-neutral-200/80" />
-
-                <p className="mt-4 text-xs text-neutral-500">Workout Planner</p>
-            </div>
-        </main>
+            <Text style={styles.footer}>Workout Planner</Text>
+        </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 24,
+        backgroundColor: "#F8F5EB",
+        gap: 12,
+    },
+    badge: {
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: "rgba(0,0,0,0.15)",
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderRadius: 20,
+        backgroundColor: "rgba(255,255,255,0.8)",
+    },
+    badgeText: {
+        fontSize: 12,
+        letterSpacing: 1,
+        color: "rgba(0,0,0,0.5)",
+    },
+    title: {
+        fontSize: 26,
+        fontWeight: "700",
+        textAlign: "center",
+        color: "#1A1A1A",
+    },
+    subtitle: {
+        fontSize: 16,
+        color: "rgba(0,0,0,0.6)",
+        textAlign: "center",
+    },
+    button: {
+        marginTop: 16,
+        borderRadius: 16,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: "rgba(0,0,0,0.2)",
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        backgroundColor: "#fff",
+    },
+    buttonText: {
+        fontSize: 15,
+        fontWeight: "600",
+        color: "#1A1A1A",
+    },
+    footer: {
+        marginTop: 24,
+        fontSize: 12,
+        color: "rgba(0,0,0,0.4)",
+    },
+});

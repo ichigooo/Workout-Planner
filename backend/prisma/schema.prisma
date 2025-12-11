@@ -24,6 +24,7 @@ model User {
   workoutPlans      WorkoutPlan[]          // Their personal workout plans
   workoutLogs       WorkoutLog[]           // Their personal workout logs
   personalRecords   WorkoutPersonalRecord[]
+  planTemplates     WorkoutPlanTemplate[]   @relation("PlanTemplateCreator")
 
   @@map("users")
 }
@@ -124,4 +125,21 @@ model WorkoutPersonalRecord {
 
   @@unique([userId, workoutId])
   @@map("workout_personal_records")
+}
+
+model WorkoutPlanTemplate {
+  id               String   @id @default(cuid())
+  name             String
+  description      String?
+  numWeeks         Int
+  daysPerWeek      Int
+  workoutStructure Json
+  level            String?
+  createdBy        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  creator User? @relation("PlanTemplateCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@map("workout_plan_templates")
 }
