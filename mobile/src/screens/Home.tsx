@@ -63,6 +63,7 @@ const categoryIconSources: Record<string, ImageSourcePropType> = {
     "Climbing - Endurance": require("../../assets/images/workout_types/climbing.png"),
     "Climbing - Warm Up": require("../../assets/images/workout_types/climbing.png"),
     "Cardio": require("../../assets/images/workout_types/warmup.png"),
+    "Mobility": require("../../assets/images/workout_types/default.png"),
 };
 
 const getTypeIcon = (category: WorkoutCategory): ImageSourcePropType =>

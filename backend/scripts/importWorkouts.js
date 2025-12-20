@@ -17,6 +17,7 @@ const VALID_CATEGORIES = [
     "Climbing - Endurance",
     "Climbing - Warm Up",
     "Cardio",
+    "Mobility",
 ];
 
 // Function to validate and clean data

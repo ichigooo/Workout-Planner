@@ -90,6 +90,10 @@ function RootLayoutNav() {
                     options={{ headerShown: false, gestureEnabled: true }}
                 />
                 <Stack.Screen
+                    name="import-workout/custom"
+                    options={{ headerShown: false, gestureEnabled: true }}
+                />
+                <Stack.Screen
                     name="plan/[id]"
                     options={{ headerShown: false, gestureEnabled: true }}
                 />

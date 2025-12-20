@@ -10,6 +10,7 @@ import {
     WorkoutPersonalRecord,
     WorkoutPlanTemplate,
     WorkoutDayTemplate,
+    WorkoutImport,
 } from "../types";
 import { getLocalIp } from "../utils/getlocalIP";
 
@@ -321,6 +322,34 @@ class ApiService {
             }
             throw err;
         }
+    }
+
+    async importWorkoutFromInstagram(payload: {
+        userId: string;
+        url: string;
+        category?: string | null;
+    }): Promise<WorkoutImport> {
+        return this.request<WorkoutImport>("/workout-imports/instagram", {
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
+    }
+
+    async importWorkoutFromYouTube(payload: {
+        userId: string;
+        url: string;
+        category?: string | null;
+    }): Promise<WorkoutImport> {
+        return this.request<WorkoutImport>("/workout-imports/youtube", {
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
+    }
+
+    async getWorkoutImports(userId: string): Promise<WorkoutImport[]> {
+        return this.request<WorkoutImport[]>(
+            `/users/${encodeURIComponent(userId)}/workout-imports`,
+        );
     }
 }
 

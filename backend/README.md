@@ -68,4 +68,5 @@ The application uses the following main tables:
 - `SUPABASE_URL` - Your Supabase project URL
 - `SUPABASE_ANON_KEY` - Supabase anonymous key
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
+- `FACEBOOK_APP_ID` and `FACEBOOK_APP_SECRET` - Credentials for the Facebook/Instagram oEmbed API (required for Instagram imports)
 - `PORT` - Server port (default: 3001)

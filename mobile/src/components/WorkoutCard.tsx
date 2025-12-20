@@ -16,6 +16,7 @@ interface WorkoutCardProps {
     onPress?: () => void;
     onEdit?: () => void;
     onDelete?: () => void;
+    isCustom?: boolean;
 }
 
 export const WorkoutCard: React.FC<WorkoutCardProps> = ({
@@ -23,6 +24,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
     onPress,
     onEdit: _onEdit,
     onDelete: _onDelete,
+    isCustom = false,
 }) => {
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
@@ -56,10 +58,27 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
             onPress={onPress}
         >
             <View style={styles.header}>
-                <View style={[styles.categoryBadge, { backgroundColor: theme.colors.accent }]}>
-                    <Text style={[styles.categoryText, { color: theme.colors.surface }]}>
-                        {workout.category}
-                    </Text>
+                <View style={styles.badgesRow}>
+                    {!!workout.category && (
+                        <View style={[styles.categoryBadge, { backgroundColor: theme.colors.accent }]}>
+                            <Text style={[styles.categoryText, { color: theme.colors.surface }]}>
+                                {workout.category}
+                            </Text>
+                        </View>
+                    )}
+                    {isCustom && (
+                        <View
+                            style={[
+                                styles.categoryBadge,
+                                styles.customBadge,
+                                { backgroundColor: "#F0C2C2" },
+                            ]}
+                        >
+                            <Text style={[styles.categoryText, { color: theme.colors.surface }]}>
+                                CUSTOM
+                            </Text>
+                        </View>
+                    )}
                 </View>
                 {equipmentIcon && (
                     <Image
@@ -81,11 +100,19 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
                 )}
                 <View style={styles.details}>
                     <View style={styles.detailMeta}>
-                        <Text style={[styles.detailText, { color: theme.colors.text }]}>
-                            {workout.workoutType === "cardio"
-                                ? `${workout.duration} min`
-                                : `${workout.sets} sets × ${workout.reps} reps`}
-                        </Text>
+                        {workout.workoutType === "cardio" ? (
+                            workout.duration ? (
+                                <Text style={[styles.detailText, { color: theme.colors.text }]}>
+                                    {`${workout.duration} min`}
+                                </Text>
+                            ) : null
+                        ) : (
+                            workout.sets && workout.reps ? (
+                                <Text style={[styles.detailText, { color: theme.colors.text }]}>
+                                    {`${workout.sets} sets × ${workout.reps} reps`}
+                                </Text>
+                            ) : null
+                        )}
                     </View>
                     {!!workout.intensity && (
                         <View style={styles.detailIntensityContainer}>
@@ -120,6 +147,10 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
     },
+    badgesRow: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
     categoryBadge: {
         alignSelf: "flex-start",
         paddingHorizontal: 12,
@@ -132,6 +163,9 @@ const styles = StyleSheet.create({
         fontFamily: "Inter_600SemiBold",
         textTransform: "uppercase",
         letterSpacing: 0.5,
+    },
+    customBadge: {
+        marginLeft: 8,
     },
     equipmentIcon: {
         width: 24,

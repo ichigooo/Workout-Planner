@@ -9,6 +9,7 @@ export const WORKOUT_CATEGORIES: WorkoutCategory[] = [
     "Climbing - Endurance",
     "Climbing - Warm Up",
     "Cardio",
+    "Mobility",
 ];
 
 export const WORKOUT_CATEGORY_LABELS: Record<WorkoutCategory, string> = {
@@ -20,6 +21,7 @@ export const WORKOUT_CATEGORY_LABELS: Record<WorkoutCategory, string> = {
     "Climbing - Endurance": "Climbing - Endurance",
     "Climbing - Warm Up": "Climbing - Warm Up",
     "Cardio": "Cardio",
+    "Mobility": "Mobility",
 };
 
 export const WORKOUT_CATEGORY_DESCRIPTIONS: Record<WorkoutCategory, string> = {
@@ -31,6 +33,7 @@ export const WORKOUT_CATEGORY_DESCRIPTIONS: Record<WorkoutCategory, string> = {
     "Climbing - Endurance": "Sustained climbing and endurance training",
     "Climbing - Warm Up": "Climbing-specific warm-up and mobility exercises",
     "Cardio": "Cardiovascular exercises (running, cycling, swimming, etc.)",
+    "Mobility": "Flexibility and mobility exercises to improve range of motion",
 };
 
 export const WORKOUT_TYPES = {

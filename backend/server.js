@@ -92,6 +92,8 @@ if (
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
+const facebookAppId = process.env.FACEBOOK_APP_ID;
+const facebookAppSecret = process.env.FACEBOOK_APP_SECRET;
 
 // Helpers
 /**
@@ -497,6 +499,142 @@ function mapPlanTemplateRow(row) {
         createdBy: row.createdBy ?? row.created_by ?? null,
         createdAt: row.createdAt ?? row.created_at,
         updatedAt: row.updatedAt ?? row.updated_at,
+    };
+}
+
+function mapWorkoutImportRow(row) {
+    if (!row) return row;
+    return {
+        id: row.id,
+        userId: row.userId ?? row.user_id,
+        sourceUrl: row.sourceUrl ?? row.source_url,
+        sourcePlatform: row.sourcePlatform ?? row.source_platform ?? null,
+        title: row.title ?? null,
+        category: row.category ?? null,
+        description: row.description ?? null,
+        thumbnailUrl: row.thumbnailUrl ?? row.thumbnail_url ?? null,
+        html: row.html ?? row.embed_html ?? null,
+        metadata: row.metadata ?? null,
+        isGlobal: row.isGlobal ?? row.is_global ?? false,
+        createdAt: row.createdAt ?? row.created_at,
+        updatedAt: row.updatedAt ?? row.updated_at,
+    };
+}
+
+const INSTAGRAM_ALLOWED_HOSTS = ["instagram.com", "www.instagram.com", "m.instagram.com"];
+const YOUTUBE_ALLOWED_HOSTS = ["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"];
+
+function normalizeInstagramUrl(input) {
+    if (!input || typeof input !== "string") throw new Error("INVALID_URL");
+    let raw = input.trim();
+    if (!raw.startsWith("http://") && !raw.startsWith("https://")) {
+        raw = `https://${raw}`;
+    }
+    const parsed = new URL(raw);
+    if (!INSTAGRAM_ALLOWED_HOSTS.some((host) => parsed.hostname.toLowerCase().endsWith(host))) {
+        throw new Error("INVALID_INSTAGRAM_DOMAIN");
+    }
+    parsed.hash = "";
+    parsed.search = "";
+    return parsed.toString();
+}
+
+function normalizeYouTubeUrl(input) {
+    if (!input || typeof input !== "string") throw new Error("INVALID_URL");
+    let raw = input.trim();
+    if (!raw.startsWith("http://") && !raw.startsWith("https://")) {
+        raw = `https://${raw}`;
+    }
+    const parsed = new URL(raw);
+    const host = parsed.hostname.toLowerCase();
+    if (!YOUTUBE_ALLOWED_HOSTS.some((allowed) => host === allowed)) {
+        throw new Error("INVALID_YOUTUBE_DOMAIN");
+    }
+    if (host === "youtu.be") {
+        const videoId = parsed.pathname.replace("/", "");
+        if (!videoId) throw new Error("INVALID_YOUTUBE_URL");
+        return `https://www.youtube.com/watch?v=${videoId}`;
+    }
+    if (parsed.pathname.startsWith("/shorts/")) {
+        const id = parsed.pathname.split("/")[2];
+        if (id) {
+            parsed.pathname = "/watch";
+            parsed.searchParams.set("v", id);
+        }
+    }
+    return parsed.toString();
+}
+
+async function fetchInstagramMetadata(instagramUrl) {
+    if (!facebookAppId || !facebookAppSecret) {
+        throw new Error("INSTAGRAM_OEMBED_NOT_CONFIGURED");
+    }
+    const normalizedUrl = normalizeInstagramUrl(instagramUrl);
+    const endpoint = new URL("https://graph.facebook.com/v19.0/instagram_oembed");
+    endpoint.searchParams.set("url", normalizedUrl);
+    endpoint.searchParams.set("access_token", `${facebookAppId}|${facebookAppSecret}`);
+    endpoint.searchParams.set("omitscript", "true");
+    endpoint.searchParams.set("hidecaption", "false");
+
+    const response = await fetch(endpoint.toString(), {
+        headers: { "user-agent": "WorkoutPlannerBot/1.0" },
+    });
+    console.log("Instagram oEmbed response status:", response.status);
+    const text = await response.text();
+    if (!response.ok) {
+        console.error("Instagram oEmbed failed:", text);
+        throw new Error(`INSTAGRAM_OEMBED_FAILED_${response.status}`);
+    }
+
+    let payload;
+    try {
+        payload = JSON.parse(text);
+    } catch (err) {
+        console.error("Invalid Instagram oEmbed payload:", err);
+        throw new Error("INSTAGRAM_OEMBED_INVALID_RESPONSE");
+    }
+
+    return {
+        normalizedUrl,
+        title: payload.title || payload.author_name || null,
+        description: payload.author_name || null,
+        thumbnailUrl: payload.thumbnail_url || null,
+        mediaUrl: payload.thumbnail_url || null,
+        ogType: payload.provider_name || null,
+        html: payload.html || null,
+        raw: payload,
+    };
+}
+
+async function fetchYouTubeMetadata(youtubeUrl) {
+    const normalizedUrl = normalizeYouTubeUrl(youtubeUrl);
+    const endpoint = new URL("https://www.youtube.com/oembed");
+    endpoint.searchParams.set("format", "json");
+    endpoint.searchParams.set("url", normalizedUrl);
+    const response = await fetch(endpoint.toString(), {
+        headers: { "user-agent": "WorkoutPlannerBot/1.0" },
+    });
+    const text = await response.text();
+    if (!response.ok) {
+        console.error("YouTube oEmbed failed:", text);
+        throw new Error(`YOUTUBE_OEMBED_FAILED_${response.status}`);
+    }
+    let payload;
+    try {
+        payload = JSON.parse(text);
+    } catch (err) {
+        console.error("Invalid YouTube oEmbed payload:", err);
+        throw new Error("YOUTUBE_OEMBED_INVALID_RESPONSE");
+    }
+    return {
+        normalizedUrl,
+        title: payload.title || null,
+        description: payload.author_name || null,
+        thumbnailUrl: payload.thumbnail_url || null,
+        mediaUrl: payload.thumbnail_url || null,
+        ogType: payload.provider_name || null,
+        html: payload.html || null,
+        raw: payload,
     };
 }
 
@@ -1344,6 +1482,190 @@ app.put("/api/workout-plan-templates/:id", async (req, res) => {
     } catch (error) {
         console.error("Error upserting workout plan template:", error);
         res.status(500).json({ error: "Failed to save workout plan template" });
+    }
+});
+
+// Workout import entries (social media)
+app.post("/api/workout-imports", async (req, res) => {
+    try {
+        const body = req.body || {};
+        const { userId, sourceUrl } = body;
+        if (!userId) {
+            return res.status(400).json({ error: "userId is required" });
+        }
+        if (!sourceUrl || typeof sourceUrl !== "string") {
+            return res.status(400).json({ error: "sourceUrl is required" });
+        }
+
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
+        let metadataPayload = null;
+        if (body.metadata !== undefined) {
+            if (typeof body.metadata === "string") {
+                try {
+                    metadataPayload = JSON.parse(body.metadata);
+                } catch {
+                    metadataPayload = body.metadata;
+                }
+            } else {
+                metadataPayload = body.metadata;
+            }
+        }
+
+        const insertPayload = {
+            user_id: userId,
+            source_url: sourceUrl,
+            source_platform: body.sourcePlatform ?? null,
+            title: body.title ?? null,
+            category: body.category ?? null,
+            description: body.description ?? null,
+            thumbnail_url: body.thumbnailUrl ?? null,
+            html: body.html ?? null,
+            metadata: metadataPayload,
+            is_global: body.isGlobal === true,
+        };
+
+        const { data, error } = await supabase
+            .from("workout_imports")
+            .insert([insertPayload])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.status(201).json(mapWorkoutImportRow(data));
+    } catch (error) {
+        console.error("Error recording workout import:", error);
+        res.status(500).json({ error: "Failed to record workout import" });
+    }
+});
+
+app.post("/api/workout-imports/instagram", async (req, res) => {
+    try {
+        const body = req.body || {};
+        const { userId, url } = body;
+        if (!userId) {
+            return res.status(400).json({ error: "userId is required" });
+        }
+        if (!url || typeof url !== "string") {
+            return res.status(400).json({ error: "url is required" });
+        }
+
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
+        let metadata;
+        try {
+            metadata = await fetchInstagramMetadata(url);
+        } catch (err) {
+            console.error("Failed to fetch Instagram metadata:", err);
+            if (err && err.message === "INSTAGRAM_OEMBED_NOT_CONFIGURED") {
+                return res.status(500).json({
+                    error: "Instagram import is not configured on the server.",
+                });
+            }
+            return res
+                .status(400)
+                .json({ error: "Unable to fetch Instagram metadata for that URL." });
+        }
+
+        const insertPayload = {
+            user_id: userId,
+            source_url: metadata.normalizedUrl || url,
+            source_platform: "instagram",
+            title: metadata.title ?? null,
+            category: body.category ?? null,
+            description: metadata.description ?? null,
+            thumbnail_url: metadata.thumbnailUrl ?? null,
+            html: metadata.html ?? null,
+            metadata,
+            is_global: false,
+        };
+
+        const { data, error } = await supabase
+            .from("workout_imports")
+            .insert([insertPayload])
+            .select()
+            .single();
+        if (error) throw error;
+
+        res.status(201).json(mapWorkoutImportRow(data));
+    } catch (error) {
+        console.error("Error importing Instagram workout:", error);
+        res.status(500).json({ error: "Failed to import Instagram workout" });
+    }
+});
+
+app.post("/api/workout-imports/youtube", async (req, res) => {
+    try {
+        const body = req.body || {};
+        const { userId, url } = body;
+        if (!userId) {
+            return res.status(400).json({ error: "userId is required" });
+        }
+        if (!url || typeof url !== "string") {
+            return res.status(400).json({ error: "url is required" });
+        }
+
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
+        let metadata;
+        try {
+            metadata = await fetchYouTubeMetadata(url);
+        } catch (err) {
+            console.error("Failed to fetch YouTube metadata:", err);
+            return res
+                .status(400)
+                .json({ error: "Unable to fetch YouTube metadata for that URL." });
+        }
+
+        const insertPayload = {
+            user_id: userId,
+            source_url: metadata.normalizedUrl || url,
+            source_platform: "youtube",
+            title: metadata.title ?? null,
+            category: body.category ?? "custom",
+            description: metadata.description ?? null,
+            thumbnail_url: metadata.thumbnailUrl ?? null,
+            html: metadata.html ?? null,
+            metadata,
+            is_global: false,
+        };
+
+        const { data, error } = await supabase
+            .from("workout_imports")
+            .insert([insertPayload])
+            .select()
+            .single();
+        if (error) throw error;
+
+        res.status(201).json(mapWorkoutImportRow(data));
+    } catch (error) {
+        console.error("Error importing YouTube workout:", error);
+        res.status(500).json({ error: "Failed to import YouTube workout" });
+    }
+});
+
+app.get("/api/users/:userId/workout-imports", async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
+        const { data, error } = await supabase
+            .from("workout_imports")
+            .select("*")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false });
+        if (error) throw error;
+
+        const mapped = Array.isArray(data) ? data.map(mapWorkoutImportRow) : [];
+        res.json(mapped);
+    } catch (error) {
+        console.error("Error fetching workout imports:", error);
+        res.status(500).json({ error: "Failed to fetch workout imports" });
     }
 });
 
