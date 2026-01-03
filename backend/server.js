@@ -1669,6 +1669,22 @@ app.get("/api/users/:userId/workout-imports", async (req, res) => {
     }
 });
 
+// Delete a workout import
+app.delete("/api/workout-imports/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const { error } = await supabase.from("workout_imports").delete().eq("id", id);
+
+        if (error) throw error;
+
+        res.status(204).send();
+    } catch (error) {
+        console.error("Error deleting workout import:", error);
+        res.status(500).json({ error: "Failed to delete workout import" });
+    }
+});
+
 // User Profile Endpoints
 
 // Get user profile
