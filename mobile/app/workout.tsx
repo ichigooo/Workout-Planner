@@ -16,7 +16,8 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { getTheme } from "@/src/theme";
 import { apiService } from "@/src/services/api";
 import { Workout, CreateWorkoutRequest, WorkoutImport } from "@/src/types";
-import { WorkoutCard } from "@/src/components/WorkoutCard";
+import { EnhancedWorkoutCard } from "@/src/components/EnhancedWorkoutCard";
+import { ImportCTACard } from "@/src/components/ImportCTACard";
 import { WorkoutForm } from "@/src/components/WorkoutForm";
 import { getCurrentUser, getCurrentUserId, loadStoredUserId } from "@/src/state/session";
 import { Ionicons } from "@expo/vector-icons";
@@ -101,7 +102,6 @@ export default function WorkoutScreen() {
         (async () => {
             try {
                 const data = await apiService.getWorkoutImports(currentUserId);
-                console.log("Fetched custom workouts:", data);
                 if (!active) return;
                 setCustomWorkouts(data || []);
             } catch (err) {
@@ -157,58 +157,6 @@ export default function WorkoutScreen() {
         }
     }, [params?.id, router]);
 
-    const filteredByCategory = category
-        ? workouts.filter((w) => w.category === category)
-        : workouts;
-    const filtered = filteredByCategory;
-    const showingCustom = category === "Custom";
-    const listData = showingCustom ? customWorkouts : filtered;
-    const listLoading = showingCustom ? customLoading : loading;
-
-    // After data/categories are ready, auto-scroll the chip list to the selected category
-    useEffect(() => {
-        try {
-            const idx = computeChipIndex(category);
-            if (chipListRef.current && idx >= 0) {
-                chipListRef.current.scrollToIndex?.({
-                    index: idx,
-                    animated: true,
-                    viewPosition: 0.5,
-                });
-            }
-        } catch {
-            // best-effort only
-        }
-    }, [category, categoriesWithAll.length]);
-
-    const renderImportPrompt = () => (
-        <TouchableOpacity
-            style={[
-                styles.importPrompt,
-                {
-                    borderColor: "transparent",
-                    backgroundColor: "rgba(255,255,255,0.15)",
-                },
-            ]}
-            onPress={() => router.push("/import-workout")}
-        >
-            <View style={{ flex: 1 }}>
-                <Text style={[styles.importPromptTitle, { color: theme.colors.text }]}>
-                    Don’t find your workout?
-                </Text>
-                <View style={styles.importIconsRow}>
-                    <Ionicons name="logo-instagram" size={18} color={theme.colors.text} />
-                    <Ionicons name="logo-youtube" size={18} color={theme.colors.text} />
-                    <Ionicons name="logo-tiktok" size={18} color={theme.colors.text} />
-                    <Text style={[styles.importPromptSubtitle, { color: theme.colors.accent }]}>
-                        Import…
-                    </Text>
-                </View>
-            </View>
-            <Ionicons name="arrow-forward" size={20} color={theme.colors.accent} />
-        </TouchableOpacity>
-    );
-
     const convertImportToWorkout = (item: WorkoutImport): Workout => ({
         id: item.id,
         title: item.title || "Imported workout",
@@ -227,10 +175,74 @@ export default function WorkoutScreen() {
         updatedAt: item.updatedAt || item.createdAt || new Date().toISOString(),
     });
 
+    const showingCustom = category === "Custom";
+
+    // Filter regular workouts by category
+    const filteredRegularWorkouts = category && !showingCustom
+        ? workouts.filter((w) => w.category === category)
+        : workouts;
+
+    // Filter custom workouts by category (if not showing "Custom" tab)
+    const filteredCustomWorkouts = category && !showingCustom
+        ? customWorkouts.filter((w) => w.category === category)
+        : customWorkouts;
+
+    // Combine regular workouts with custom workouts for category views
+    // In "Custom" tab, only show custom workouts
+    // In "All" or specific category tabs, show both regular + matching custom workouts
+    const listData = showingCustom
+        ? customWorkouts
+        : [...filteredRegularWorkouts, ...filteredCustomWorkouts];
+
+    const listLoading = showingCustom ? customLoading : loading;
+
+    // After data/categories are ready, auto-scroll the chip list to the selected category
+    useEffect(() => {
+        try {
+            const idx = computeChipIndex(category);
+            if (chipListRef.current && idx >= 0) {
+                chipListRef.current.scrollToIndex?.({
+                    index: idx,
+                    animated: true,
+                    viewPosition: 0.5,
+                });
+            }
+        } catch {
+            // best-effort only
+        }
+    }, [category, categoriesWithAll.length]);
+
+    const handleDeleteCustomWorkout = (workoutId: string) => {
+        Alert.alert(
+            "Delete Workout",
+            "Are you sure you want to delete this workout? This action cannot be undone.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await apiService.deleteWorkoutImport(workoutId);
+                            // Refresh the custom workouts list
+                            if (currentUserId) {
+                                const imports = await apiService.getWorkoutImports(currentUserId);
+                                setCustomWorkouts(imports);
+                            }
+                        } catch (error) {
+                            console.error("Failed to delete workout:", error);
+                            Alert.alert("Error", "Failed to delete workout. Please try again.");
+                        }
+                    },
+                },
+            ],
+        );
+    };
+
     const renderCustomCard = (item: WorkoutImport) => {
         const mapped = convertImportToWorkout(item);
         return (
-            <WorkoutCard
+            <EnhancedWorkoutCard
                 workout={mapped}
                 isCustom
                 onPress={() =>
@@ -242,6 +254,8 @@ export default function WorkoutScreen() {
                         },
                     })
                 }
+                onDelete={() => handleDeleteCustomWorkout(item.id)}
+                showQuickActions={false}
             />
         );
     };
@@ -250,11 +264,24 @@ export default function WorkoutScreen() {
         if (!showingCustom) return null;
         return (
             <View style={styles.emptyState}>
+                <View style={[styles.emptyIconContainer, { backgroundColor: `${theme.colors.accent}15` }]}>
+                    <Ionicons name="cloud-upload-outline" size={36} color={theme.colors.accent} />
+                </View>
+                <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+                    No workouts found
+                </Text>
                 <Text style={[styles.emptyText, { color: theme.colors.subtext }]}>
                     {currentUserId
-                        ? "No custom workouts yet. Import one to see it here."
-                        : "Sign in to save custom workouts from social media."}
+                        ? "Import workouts from social media to see them here"
+                        : "Sign in to save custom workouts from social media"}
                 </Text>
+                <TouchableOpacity
+                    style={[styles.emptyButton, { backgroundColor: theme.colors.accent }]}
+                    onPress={() => router.push("/import-workout")}
+                >
+                    <Ionicons name="add-circle-outline" size={18} color="#fff" />
+                    <Text style={styles.emptyButtonText}>Import Workout</Text>
+                </TouchableOpacity>
             </View>
         );
     };
@@ -379,7 +406,9 @@ export default function WorkoutScreen() {
                     />
                 </View>
 
-                <View style={{ paddingHorizontal: 16 }}>{renderImportPrompt()}</View>
+                <View style={{ paddingHorizontal: 16 }}>
+                    <ImportCTACard onPress={() => router.push("/import-workout")} />
+                </View>
 
                 {listLoading ? (
                     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -391,11 +420,16 @@ export default function WorkoutScreen() {
                     <FlatList
                         data={listData}
                         keyExtractor={(item: any) => item.id}
-                        renderItem={({ item }) =>
-                            showingCustom ? (
-                                renderCustomCard(item as WorkoutImport)
-                            ) : (
-                                <WorkoutCard
+                        renderItem={({ item }) => {
+                            // Check if this is a custom workout import by looking for sourceUrl
+                            const isCustomImport = 'sourceUrl' in item;
+
+                            if (showingCustom || isCustomImport) {
+                                return renderCustomCard(item as WorkoutImport);
+                            }
+
+                            return (
+                                <EnhancedWorkoutCard
                                     workout={item as Workout}
                                     onPress={() => {
                                         router.push(
@@ -404,9 +438,10 @@ export default function WorkoutScreen() {
                                             )}`,
                                         );
                                     }}
+                                    showQuickActions={false}
                                 />
-                            )
-                        }
+                            );
+                        }}
                         contentContainerStyle={{
                             paddingVertical: 8,
                             paddingBottom: insets.bottom + 16,
@@ -501,19 +536,41 @@ const styles = StyleSheet.create({
     },
     emptyState: {
         paddingVertical: 32,
-        paddingHorizontal: 24,
+        paddingHorizontal: 32,
         alignItems: "center",
+    },
+    emptyIconContainer: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 16,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontWeight: "700",
+        marginBottom: 6,
+        textAlign: "center",
     },
     emptyText: {
         textAlign: "center",
-        fontSize: 15,
+        fontSize: 14,
+        lineHeight: 20,
+        marginBottom: 16,
+        maxWidth: 260,
     },
-    importIconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: "rgba(0,0,0,0.1)",
+    emptyButton: {
+        flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
+        gap: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 16,
+    },
+    emptyButtonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "600",
     },
 });

@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Image, ImageBackground, TouchableOpacity } from "react-native";
-import { useColorScheme } from "react-native";
-import { getTheme } from "../theme";
+import { View, Text, StyleSheet, ImageBackground, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { spacing } from "../theme";
 
 interface LandingScreenProps {
     onBegin: () => void;
     isLoading?: boolean;
+    isLoggedIn?: boolean; // Optional prop to conditionally show sign-in button
 }
 
-const theme = getTheme("light");
 const QUOTES = [
     "The body achieves what the mind believes.",
     "Your only limit is you.",
@@ -26,58 +26,11 @@ const QUOTES = [
     "Exercise is a tribute to the heart.",
 ];
 
-// Helper function to emphasize key words in quotes
-const renderQuoteWithEmphasis = (quote: string) => {
-    const keyWords = [
-        "achieves",
-        "believes",
-        "limit",
-        "stop",
-        "done",
-        "challenges",
-        "routines",
-        "journey",
-        "habit",
-        "success",
-        "health",
-        "stronger",
-        "excellence",
-        "start",
-        "hardest",
-        "showed",
-        "comfortable",
-        "uncomfortable",
-        "better",
-        "tribute",
-        "heart",
-    ];
-
-    const words = quote.split(" ");
-    return words.map((word, index) => {
-        const cleanWord = word.replace(/[.,;:!?]/g, "").toLowerCase();
-        const isKeyWord = keyWords.some((key) => cleanWord.includes(key.toLowerCase()));
-
-        if (isKeyWord) {
-            return (
-                <Text key={index}>
-                    <Text style={styles.quoteEmphasis}>{word}</Text>
-                    {index < words.length - 1 ? " " : ""}
-                </Text>
-            );
-        }
-        return (
-            <Text key={index}>
-                {word}
-                {index < words.length - 1 ? " " : ""}
-            </Text>
-        );
-    });
-};
-
-export const LandingScreen: React.FC<LandingScreenProps> = ({ onBegin, isLoading = false }) => {
-    const scheme = useColorScheme();
-    getTheme(scheme === "dark" ? "dark" : "light");
-
+export const LandingScreen: React.FC<LandingScreenProps> = ({
+    onBegin,
+    isLoading = false,
+    isLoggedIn = false,
+}) => {
     // Select a random quote once when component mounts
     const [quote] = useState(() => {
         const randomIndex = Math.floor(Math.random() * QUOTES.length);
@@ -85,153 +38,126 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ onBegin, isLoading
     });
 
     return (
-        <ImageBackground style={styles.background} resizeMode="cover">
-            <View style={styles.container}>
-                <ImageBackground
-                    source={require("../../assets/images/landing1.png")}
-                    style={styles.heroContainer}
-                    imageStyle={styles.heroImage}
-                    resizeMode="cover"
-                >
-                    <View style={styles.heroOverlay} />
-                </ImageBackground>
+        <ImageBackground
+            source={require("../../assets/images/landing2.png")}
+            style={styles.container}
+            resizeMode="cover"
+        >
+            {/* Gradient overlay from transparent to sage green */}
+            <View style={styles.gradientOverlay} />
 
-                <ImageBackground
-                    source={require("../../assets/images/landing1.png")}
-                    style={styles.bottomBackground}
-                    imageStyle={styles.bottomBackgroundImage}
-                >
-                    <View style={styles.bottomOverlay}>
-                        <View style={styles.quoteContainer}>
-                            <Text style={styles.quote}>{renderQuoteWithEmphasis(quote)}</Text>
-                        </View>
+            <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+                <View style={styles.content}>
+                    {/* Quote */}
+                    <View style={styles.quoteContainer}>
+                        <Text style={styles.quoteText}>"{quote}"</Text>
+                    </View>
 
-                        <View style={styles.buttonContainer}>
+                    {/* Buttons */}
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity
+                            style={styles.primaryButton}
+                            onPress={onBegin}
+                            disabled={isLoading}
+                            activeOpacity={0.85}
+                        >
+                            <Text style={styles.primaryButtonText}>
+                                {isLoading ? "Loading..." : "Get Started"}
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* Conditional Sign In Button */}
+                        {!isLoggedIn && (
                             <TouchableOpacity
-                                style={styles.compositeButton}
+                                style={styles.secondaryButton}
                                 onPress={onBegin}
-                                disabled={isLoading}
                                 activeOpacity={0.85}
                             >
-                                <View style={styles.buttonLeft}>
-                                    <Text style={styles.buttonText}>
-                                        {isLoading ? "Loading..." : "Get Started"}
-                                    </Text>
-                                </View>
-
-                                <View style={styles.buttonRight}>
-                                    <Text style={styles.arrow}>↗</Text>
-                                </View>
+                                <Text style={styles.secondaryButtonText}>
+                                    I already have an account
+                                </Text>
                             </TouchableOpacity>
-                        </View>
+                        )}
                     </View>
-                </ImageBackground>
-            </View>
+                </View>
+            </SafeAreaView>
         </ImageBackground>
     );
 };
 
 const styles = StyleSheet.create({
-    background: {
-        flex: 1,
-        width: "100%",
-        height: "100%",
-        backgroundColor: "#f16109",
-    },
     container: {
         flex: 1,
-        width: "100%",
     },
-    heroContainer: {
+    gradientOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "rgba(76, 107, 60, 0.75)", // Sage green overlay with transparency
+    },
+    safeArea: {
         flex: 1,
-        width: "100%",
     },
-    heroImage: {
-        width: "100%",
-        height: "100%",
-    },
-    heroOverlay: {
+    content: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.2)",
-    },
-    bottomBackground: {
-        flex: 1.2,
-        width: "100%",
-        justifyContent: "flex-start",
-    },
-    bottomBackgroundImage: {
-        width: "100%",
-        height: "100%",
-    },
-    bottomOverlay: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 32,
-        paddingBottom: 30,
-        paddingTop: 24,
-        backgroundColor: "rgba(0, 0, 0, 0.35)",
+        justifyContent: "flex-end",
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.xxl,
     },
     quoteContainer: {
         alignItems: "center",
-        justifyContent: "center",
-        marginBottom: 80,
-        maxWidth: 320,
+        marginBottom: spacing.xxl,
+        paddingHorizontal: spacing.md,
     },
-    quote: {
-        fontSize: 19,
-        fontFamily: "Roboto",
-        fontWeight: "300",
-        lineHeight: 32,
-        letterSpacing: 0.2,
-        color: "rgba(255, 255, 255, 0.95)",
-        textShadowColor: "rgba(0, 0, 0, 0.3)",
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
-    },
-    quoteEmphasis: {
-        fontWeight: "500",
+    quoteText: {
+        fontSize: 24,
+        fontWeight: "600",
         color: "#FFFFFF",
+        textAlign: "center",
+        lineHeight: 36,
+        letterSpacing: -0.5,
+        textShadowColor: "rgba(0, 0, 0, 0.3)",
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 4,
     },
     buttonContainer: {
         alignItems: "center",
+        gap: spacing.md,
         width: "100%",
     },
-    compositeButton: {
-        flexDirection: "row",
+    primaryButton: {
+        width: "80%",
+        paddingVertical: 18,
+        paddingHorizontal: 48,
+        borderRadius: 28,
+        backgroundColor: "#FFFFFF",
         alignItems: "center",
-        backgroundColor: theme.colors.accent,
-        borderRadius: 20, // <-- more square than 32
-        overflow: "hidden",
-        minWidth: 300, // wider
-        height: 60, // stable height
-    },
-
-    buttonLeft: {
-        flex: 1,
-        paddingHorizontal: 24,
         justifyContent: "center",
-        height: "100%",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 6,
     },
-
-    buttonRight: {
-        width: 80,
-        height: "100%",
-        backgroundColor: "#E7A9C8", // pink circle
-        justifyContent: "center",
-        alignItems: "center",
-        borderRadius: 20, // keeps the right side perfectly round
-    },
-
-    buttonText: {
+    primaryButtonText: {
+        color: "#4C6B3C",
         fontSize: 18,
-        fontWeight: "600",
-        color: "#FFFFFF",
+        fontWeight: "700",
+        letterSpacing: 0.3,
     },
-
-    arrow: {
-        fontSize: 20,
+    secondaryButton: {
+        width: "80%",
+        paddingVertical: 16,
+        paddingHorizontal: 48,
+        borderRadius: 28,
+        backgroundColor: "rgba(255, 255, 255, 0.15)",
+        borderWidth: 2,
+        borderColor: "rgba(255, 255, 255, 0.8)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    secondaryButtonText: {
+        color: "#FFFFFF",
+        fontSize: 16,
         fontWeight: "600",
-        color: "#000000",
+        letterSpacing: 0.3,
     },
 });

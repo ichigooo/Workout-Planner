@@ -661,6 +661,26 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                     </ScrollView>
                 </KeyboardAvoidingView>
 
+                {/* Sticky Add to Plan Button */}
+                <View
+                    style={[
+                        styles.stickyButtonContainer,
+                        {
+                            paddingBottom: insets.bottom + 16,
+                            backgroundColor: theme.colors.bg,
+                            borderTopColor: theme.colors.border,
+                        },
+                    ]}
+                >
+                    <TouchableOpacity
+                        style={[styles.addToPlanCTA, { backgroundColor: theme.colors.accent }]}
+                        onPress={openAddSheet}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={styles.addToPlanCTAText}>Add to Plan</Text>
+                    </TouchableOpacity>
+                </View>
+
                 {/* Menu Modal */}
                 <Modal
                     visible={showMenu}
@@ -1261,5 +1281,32 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "600",
         textAlign: "center",
+    },
+    stickyButtonContainer: {
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    addToPlanCTA: {
+        paddingVertical: 16,
+        borderRadius: 16,
+        alignItems: "center",
+        justifyContent: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    addToPlanCTAText: {
+        color: "#FFFFFF",
+        fontSize: 17,
+        fontWeight: "700",
+        letterSpacing: 0.5,
     },
 });

@@ -51,6 +51,10 @@ class ApiService {
     private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
         // Log each request for debugging (Metro/console)
         console.log(`[REQUEST][api] ${options?.method ?? "GET"} ${API_BASE_URL}${endpoint}`);
+        if (options?.body) {
+            console.log(`[REQUEST][api] Body:`, options.body);
+        }
+
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             headers: {
                 "Content-Type": "application/json",
@@ -59,12 +63,30 @@ class ApiService {
             ...options,
         });
 
+        console.log(
+            `[RESPONSE][api] ${options?.method ?? "GET"} ${endpoint} - Status: ${response.status}`,
+        );
+
         if (!response.ok) {
             const method = options?.method ?? "GET";
+            let errorBody = "";
+            try {
+                errorBody = await response.text();
+                // Only log as error if it's not an expected 409 conflict (e.g., user already exists)
+                if (response.status === 409) {
+                    console.log(`[RESPONSE][api] Conflict (409):`, errorBody);
+                } else {
+                    console.error(`[RESPONSE][api] Error body:`, errorBody);
+                }
+            } catch (e) {
+                console.error(`[RESPONSE][api] Could not read error body`);
+            }
+
             const error: any = new Error(
-                `API request failed: ${method} ${API_BASE_URL}${endpoint} - ${response.status} ${response.statusText}`,
+                `API request failed: ${method} ${API_BASE_URL}${endpoint} - ${response.status} ${response.statusText}${errorBody ? ` - ${errorBody}` : ""}`,
             );
             error.status = response.status;
+            error.responseBody = errorBody;
             throw error;
         }
 
@@ -350,6 +372,22 @@ class ApiService {
         return this.request<WorkoutImport[]>(
             `/users/${encodeURIComponent(userId)}/workout-imports`,
         );
+    }
+
+    async updateWorkoutImport(
+        id: string,
+        updates: Partial<WorkoutImport>,
+    ): Promise<WorkoutImport> {
+        return this.request<WorkoutImport>(`/workout-imports/${encodeURIComponent(id)}`, {
+            method: "PUT",
+            body: JSON.stringify(updates),
+        });
+    }
+
+    async deleteWorkoutImport(id: string): Promise<void> {
+        await this.request<void>(`/workout-imports/${encodeURIComponent(id)}`, {
+            method: "DELETE",
+        });
     }
 }
 
