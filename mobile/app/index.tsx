@@ -7,6 +7,7 @@ import { loadStoredUserId } from "@/src/state/session";
 export default function Index() {
     const router = useRouter();
     const [isInitializing, setIsInitializing] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     // Start initialization in the background (non-blocking)
     useEffect(() => {
@@ -17,12 +18,16 @@ export default function Index() {
                 if (userId) {
                     // User is logged in, start initialization in background
                     console.log("[Index] User found, initializing app in background");
+                    setIsLoggedIn(true);
                     initApp().catch((error) => {
                         console.error("[Index] Background initialization failed:", error);
                     });
+                } else {
+                    setIsLoggedIn(false);
                 }
             } catch (error) {
                 console.error("[Index] Failed to check for user:", error);
+                setIsLoggedIn(false);
             }
         };
 
@@ -64,5 +69,5 @@ export default function Index() {
     };
 
     // Always show landing screen first
-    return <LandingScreen onBegin={handleBegin} isLoading={isInitializing} />;
+    return <LandingScreen onBegin={handleBegin} isLoading={isInitializing} isLoggedIn={isLoggedIn} />;
 }

@@ -8,7 +8,7 @@ import {
     Image,
     ImageSourcePropType,
 } from "react-native";
-import { getTheme } from "../theme";
+import { getTheme, spacing, radii, typography } from "../theme";
 import { Workout } from "../types";
 
 interface WorkoutCardProps {
@@ -16,6 +16,7 @@ interface WorkoutCardProps {
     onPress?: () => void;
     onEdit?: () => void;
     onDelete?: () => void;
+    isCustom?: boolean;
 }
 
 export const WorkoutCard: React.FC<WorkoutCardProps> = ({
@@ -23,6 +24,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
     onPress,
     onEdit: _onEdit,
     onDelete: _onDelete,
+    isCustom = false,
 }) => {
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
@@ -56,10 +58,56 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
             onPress={onPress}
         >
             <View style={styles.header}>
-                <View style={[styles.categoryBadge, { backgroundColor: theme.colors.accent }]}>
-                    <Text style={[styles.categoryText, { color: theme.colors.surface }]}>
-                        {workout.category}
-                    </Text>
+                <View style={styles.badgesRow}>
+                    {!!workout.category && (
+                        <View
+                            style={[
+                                styles.categoryBadge,
+                                {
+                                    backgroundColor: theme.colors.accent,
+                                    borderRadius: radii.full,
+                                },
+                            ]}
+                        >
+                            <Text
+                                style={[
+                                    styles.categoryText,
+                                    {
+                                        color: "#FFFFFF",
+                                        fontFamily: typography.fonts.bodySemibold,
+                                        fontSize: typography.sizes.xs,
+                                    },
+                                ]}
+                            >
+                                {workout.category}
+                            </Text>
+                        </View>
+                    )}
+                    {isCustom && (
+                        <View
+                            style={[
+                                styles.categoryBadge,
+                                styles.customBadge,
+                                {
+                                    backgroundColor: theme.colors.sage,
+                                    borderRadius: radii.full,
+                                },
+                            ]}
+                        >
+                            <Text
+                                style={[
+                                    styles.categoryText,
+                                    {
+                                        color: "#FFFFFF",
+                                        fontFamily: typography.fonts.bodySemibold,
+                                        fontSize: typography.sizes.xs,
+                                    },
+                                ]}
+                            >
+                                CUSTOM
+                            </Text>
+                        </View>
+                    )}
                 </View>
                 {equipmentIcon && (
                     <Image
@@ -70,10 +118,28 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
                 )}
             </View>
             <View style={styles.content}>
-                <Text style={[styles.title, { color: theme.colors.text }]}>{workout.title}</Text>
+                <Text
+                    style={[
+                        styles.title,
+                        {
+                            color: theme.colors.text,
+                            fontFamily: typography.fonts.bodySemiBold,
+                            fontSize: typography.sizes.lg,
+                        },
+                    ]}
+                >
+                    {workout.title}
+                </Text>
                 {!!workout.description && (
                     <Text
-                        style={[styles.description, { color: theme.colors.subtext }]}
+                        style={[
+                            styles.description,
+                            {
+                                color: theme.colors.textSecondary,
+                                fontFamily: typography.fonts.body,
+                                fontSize: typography.sizes.sm,
+                            },
+                        ]}
                         numberOfLines={2}
                     >
                         {workout.description}
@@ -81,18 +147,48 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
                 )}
                 <View style={styles.details}>
                     <View style={styles.detailMeta}>
-                        <Text style={[styles.detailText, { color: theme.colors.text }]}>
-                            {workout.workoutType === "cardio"
-                                ? `${workout.duration} min`
-                                : `${workout.sets} sets × ${workout.reps} reps`}
-                        </Text>
+                        {workout.workoutType === "cardio" ? (
+                            workout.duration ? (
+                                <Text
+                                    style={[
+                                        styles.detailText,
+                                        {
+                                            color: theme.colors.text,
+                                            fontFamily: typography.fonts.bodyMedium,
+                                            fontSize: typography.sizes.sm,
+                                        },
+                                    ]}
+                                >
+                                    {`${workout.duration} min`}
+                                </Text>
+                            ) : null
+                        ) : (
+                            workout.sets && workout.reps ? (
+                                <Text
+                                    style={[
+                                        styles.detailText,
+                                        {
+                                            color: theme.colors.text,
+                                            fontFamily: typography.fonts.bodyMedium,
+                                            fontSize: typography.sizes.sm,
+                                        },
+                                    ]}
+                                >
+                                    {`${workout.sets} sets × ${workout.reps} reps`}
+                                </Text>
+                            ) : null
+                        )}
                     </View>
                     {!!workout.intensity && (
                         <View style={styles.detailIntensityContainer}>
                             <Text
                                 style={[
                                     styles.detailIntensityText,
-                                    { color: theme.colors.subtext },
+                                    {
+                                        color: theme.colors.textSecondary,
+                                        fontFamily: typography.fonts.bodyMedium,
+                                        fontSize: typography.sizes.sm,
+                                    },
                                 ]}
                             >
                                 {workout.intensity}
@@ -107,75 +203,71 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
 
 const styles = StyleSheet.create({
     card: {
-        borderRadius: 12,
-        marginVertical: 8,
-        marginHorizontal: 16,
+        borderRadius: radii.lg, // 20px - soft, organic shape
+        marginVertical: spacing.xs,
+        marginHorizontal: spacing.sm,
         borderWidth: 1,
     },
     header: {
-        paddingTop: 16,
-        paddingHorizontal: 16,
-        paddingBottom: 8,
+        paddingTop: spacing.md,
+        paddingHorizontal: spacing.md,
+        paddingBottom: spacing.xs,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
     },
+    badgesRow: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
     categoryBadge: {
         alignSelf: "flex-start",
-        paddingHorizontal: 12,
+        paddingHorizontal: spacing.sm,
         paddingVertical: 6,
-        borderRadius: 16,
     },
     categoryText: {
-        fontSize: 12,
         fontWeight: "600",
-        fontFamily: "Inter_600SemiBold",
         textTransform: "uppercase",
-        letterSpacing: 0.5,
+        letterSpacing: 0.8,
+    },
+    customBadge: {
+        marginLeft: spacing.xs,
     },
     equipmentIcon: {
         width: 24,
         height: 24,
-        marginLeft: 8,
+        marginLeft: spacing.xs,
     },
     content: {
-        paddingHorizontal: 16,
-        paddingBottom: 16,
+        paddingHorizontal: spacing.md,
+        paddingBottom: spacing.md,
     },
     title: {
-        fontSize: 18,
         fontWeight: "600",
-        marginBottom: 8,
-        fontFamily: "Inter_600SemiBold",
+        marginBottom: spacing.xs,
         letterSpacing: -0.3,
     },
     description: {
-        fontSize: 14,
-        marginBottom: 12,
+        marginBottom: spacing.sm,
         lineHeight: 20,
-        fontFamily: "Inter_400Regular",
     },
     details: {
         flexDirection: "row",
         alignItems: "flex-start",
-        marginTop: 4,
+        marginTop: spacing.xxs,
     },
     detailMeta: {
         flexShrink: 0,
-        marginRight: 12,
+        marginRight: spacing.sm,
     },
     detailText: {
-        fontSize: 14,
         fontWeight: "500",
-        fontFamily: "Inter_500Medium",
     },
     detailIntensityContainer: {
         flex: 1,
     },
     detailIntensityText: {
-        fontSize: 14,
         fontWeight: "500",
-        fontFamily: "Inter_500Medium",
         textAlign: "right",
     },
 });

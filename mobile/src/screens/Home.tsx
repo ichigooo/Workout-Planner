@@ -23,6 +23,7 @@ import { orderCategoriesWithClimbingAtEnd } from "../utils/categoryOrder";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import WarmUpModal from "../components/WarmUpModal";
 
 interface HomeProps {
     onOpenCalendar: () => void;
@@ -63,6 +64,7 @@ const categoryIconSources: Record<string, ImageSourcePropType> = {
     "Climbing - Endurance": require("../../assets/images/workout_types/climbing.png"),
     "Climbing - Warm Up": require("../../assets/images/workout_types/climbing.png"),
     "Cardio": require("../../assets/images/workout_types/warmup.png"),
+    "Mobility": require("../../assets/images/workout_types/default.png"),
 };
 
 const getTypeIcon = (category: WorkoutCategory): ImageSourcePropType =>
@@ -220,6 +222,7 @@ export const Home: React.FC<HomeProps> = ({
     const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [showWarmUpModal, setShowWarmUpModal] = useState(false);
 
     const nowLocal = new Date();
     const localTodayStr = `${nowLocal.getFullYear()}-${(nowLocal.getMonth() + 1)
@@ -365,11 +368,7 @@ export const Home: React.FC<HomeProps> = ({
     }, [refreshCacheFromStore]);
 
     return (
-        <ImageBackground
-            source={require("../../assets/images/bg6.png")}
-            style={styles.screenBackground}
-            imageStyle={styles.screenBackgroundImage}
-        >
+        <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
             <SafeAreaView
                 edges={["top"]}
                 style={[styles.safeArea, { backgroundColor: "transparent" }]}
@@ -619,7 +618,11 @@ export const Home: React.FC<HomeProps> = ({
                     {!isRestDay &&
                     weekWorkouts[displayDate] &&
                     weekWorkouts[displayDate].length > 0 ? (
-                        <TouchableOpacity activeOpacity={0.85} style={styles.warmupCard}>
+                        <TouchableOpacity
+                            activeOpacity={0.85}
+                            style={styles.warmupCard}
+                            onPress={() => setShowWarmUpModal(true)}
+                        >
                             <ImageBackground
                                 source={require("../../assets/images/warmup.png")}
                                 style={styles.warmupBackground}
@@ -628,10 +631,10 @@ export const Home: React.FC<HomeProps> = ({
                                 <View style={styles.warmupOverlay}>
                                     <Text style={styles.warmupTitle}>Start With A Warm Up</Text>
                                     <Text style={styles.warmupSubtitle}>
-                                        Ease into today’s session with pulses and mobility.
+                                        Ease into today's session with pulses and mobility.
                                     </Text>
                                     <View style={styles.warmupPill}>
-                                        <Text style={styles.warmupPillText}>Let’s warm up</Text>
+                                        <Text style={styles.warmupPillText}>Let's warm up</Text>
                                     </View>
                                 </View>
                             </ImageBackground>
@@ -639,7 +642,10 @@ export const Home: React.FC<HomeProps> = ({
                     ) : null}
                 </ScrollView>
             </SafeAreaView>
-        </ImageBackground>
+
+            {/* Warm Up Modal */}
+            <WarmUpModal visible={showWarmUpModal} onClose={() => setShowWarmUpModal(false)} />
+        </View>
     );
 };
 

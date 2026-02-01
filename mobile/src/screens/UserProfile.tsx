@@ -11,7 +11,6 @@ import {
     Platform,
     useColorScheme,
     KeyboardAvoidingView,
-    ImageBackground,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -203,11 +202,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
 
     if (loading) {
         return (
-            <ImageBackground
-                source={require("../../assets/images/bg6.png")}
-                style={styles.screenBackground}
-                imageStyle={styles.screenBackgroundImage}
-            >
+            <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
                 <SafeAreaView
                     edges={["top"]}
                     style={[styles.container, { backgroundColor: "transparent" }]}
@@ -216,16 +211,12 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                         Loading profile...
                     </Text>
                 </SafeAreaView>
-            </ImageBackground>
+            </View>
         );
     }
 
     return (
-        <ImageBackground
-            source={require("../../assets/images/bg6.png")}
-            style={styles.screenBackground}
-            imageStyle={styles.screenBackgroundImage}
-        >
+        <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
             <SafeAreaView
                 edges={["top"]}
                 style={[styles.container, { backgroundColor: "transparent" }]}
@@ -455,7 +446,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                     </View>
                 )}
             </SafeAreaView>
-        </ImageBackground>
+        </View>
     );
 };
 

@@ -17,7 +17,8 @@ export type WorkoutCategory =
     | "Climbing - Power"
     | "Climbing - Endurance"
     | "Climbing - Warm Up"
-    | "Cardio";
+    | "Cardio"
+    | "Mobility";
 
 export type WorkoutType = "strength" | "cardio";
 
@@ -137,4 +138,20 @@ export interface UpdateUserProfileRequest {
     email?: string;
     profilePhoto?: string;
     birthday?: string;
+}
+
+export interface WorkoutImport {
+    id: string;
+    userId: string;
+    sourceUrl: string;
+    sourcePlatform?: string | null;
+    title?: string | null;
+    category?: string | null;
+    description?: string | null;
+    thumbnailUrl?: string | null;
+    html?: string | null;
+    metadata?: Record<string, any> | null;
+    isGlobal: boolean;
+    createdAt: string;
+    updatedAt: string;
 }

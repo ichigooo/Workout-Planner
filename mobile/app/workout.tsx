@@ -8,15 +8,17 @@ import {
     useColorScheme,
     Modal,
     Alert,
-    ImageBackground,
+    Image,
+    Linking,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { getTheme } from "@/src/theme";
 import { apiService } from "@/src/services/api";
-import { Workout, CreateWorkoutRequest } from "@/src/types";
-import { WorkoutCard } from "@/src/components/WorkoutCard";
+import { Workout, CreateWorkoutRequest, WorkoutImport } from "@/src/types";
+import { EnhancedWorkoutCard } from "@/src/components/EnhancedWorkoutCard";
+import { ImportCTACard } from "@/src/components/ImportCTACard";
 import { WorkoutForm } from "@/src/components/WorkoutForm";
-import { getCurrentUser, getCurrentUserId } from "@/src/state/session";
+import { getCurrentUser, getCurrentUserId, loadStoredUserId } from "@/src/state/session";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { orderCategoriesWithClimbingAtEnd } from "@/src/utils/categoryOrder";
@@ -32,6 +34,9 @@ export default function WorkoutScreen() {
     const [category, setCategory] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(() => getCurrentUserId());
+    const [customWorkouts, setCustomWorkouts] = useState<WorkoutImport[]>([]);
+    const [customLoading, setCustomLoading] = useState(false);
     const chipListRef = useRef<import("react-native").FlatList<string> | null>(null);
 
     useEffect(() => {
@@ -53,13 +58,16 @@ export default function WorkoutScreen() {
             try {
                 // Prefer a resolved current user if available
                 const current = await getCurrentUser();
-                if (mounted && current) {
+                if (!mounted) return;
+                if (current) {
                     setIsAdmin(Boolean(current.isAdmin));
+                    setCurrentUserId(current.id);
                     return;
                 }
                 // Fallback: if only an id is available, fetch it
                 const id = getCurrentUserId();
                 if (id) {
+                    setCurrentUserId(id);
                     const u = await apiService.getUserProfile(id);
                     if (!mounted) return;
                     setIsAdmin(Boolean(u?.isAdmin));
@@ -73,20 +81,63 @@ export default function WorkoutScreen() {
         };
     }, []);
 
+    useEffect(() => {
+        if (currentUserId) return;
+        loadStoredUserId().then((storedId) => {
+            if (storedId) {
+                setCurrentUserId(storedId);
+            }
+        });
+    }, [currentUserId]);
+
+    useEffect(() => {
+        if (!currentUserId) {
+            console.log("No current user ID; skipping fetch of custom workouts");
+            setCustomWorkouts([]);
+            return;
+        }
+        let active = true;
+        setCustomLoading(true);
+        (async () => {
+            try {
+                const data = await apiService.getWorkoutImports(currentUserId);
+                if (!active) return;
+                setCustomWorkouts(data || []);
+            } catch (err) {
+                if (!active) return;
+                setCustomWorkouts([]);
+            } finally {
+                if (active) setCustomLoading(false);
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [currentUserId]);
+
+    const categoriesWithAll = React.useMemo(() => {
+        const base = orderCategoriesWithClimbingAtEnd(
+            Array.from(new Set(workouts.map((w) => w.category))),
+        );
+        return ["All", "Custom", ...base];
+    }, [workouts]);
+    const categories = categoriesWithAll.filter((cat) => cat !== "All" && cat !== "Custom");
+    const computeChipIndex = (value: string | null) => {
+        if (!value || value === "All") return 0;
+        const idx = categoriesWithAll.findIndex((cat) => cat === value);
+        return idx >= 0 ? idx : 0;
+    };
+
     // Initialize category from query param
     useEffect(() => {
+        if (!categoriesWithAll) return;
         if (typeof params?.category === "string" && params.category.length > 0) {
             setCategory(params.category);
         }
-        // After setting category, attempt to center the selected chip
         const idx =
             typeof params?.category === "string" && params.category.length > 0
-                ? Math.max(
-                      0,
-                      categories.findIndex((c) => c === (params.category as any)),
-                  ) + 1
+                ? computeChipIndex(params.category)
                 : 0;
-        // Defer to next frame to ensure FlatList ref is measured
         requestAnimationFrame(() => {
             try {
                 chipListRef.current?.scrollToIndex?.({
@@ -96,7 +147,7 @@ export default function WorkoutScreen() {
                 });
             } catch {}
         });
-    }, [params?.category]);
+    }, [params?.category, categoriesWithAll]);
 
     // When an id is provided, navigate to workout detail
     useEffect(() => {
@@ -105,25 +156,49 @@ export default function WorkoutScreen() {
         }
     }, [params?.id, router]);
 
-    const categories = orderCategoriesWithClimbingAtEnd(
-        Array.from(new Set(workouts.map((w) => w.category))),
-    );
-    const categoriesWithAll = ["All", ...categories];
-    const filteredByCategory = category
+    const convertImportToWorkout = (item: WorkoutImport): Workout => ({
+        id: item.id,
+        title: item.title || "Imported workout",
+        category: (item.category || null) as Workout["category"],
+        description: item.description || "",
+        workoutType: "cardio",
+        duration: undefined,
+        sets: undefined,
+        reps: undefined,
+        intensity: item.sourcePlatform || "custom",
+        imageUrl: item.thumbnailUrl || undefined,
+        imageUrl2: undefined,
+        isGlobal: false,
+        createdBy: undefined,
+        createdAt: item.createdAt || new Date().toISOString(),
+        updatedAt: item.updatedAt || item.createdAt || new Date().toISOString(),
+    });
+
+    const showingCustom = category === "Custom";
+
+    // Filter regular workouts by category
+    const filteredRegularWorkouts = category && !showingCustom
         ? workouts.filter((w) => w.category === category)
         : workouts;
-    const filtered = filteredByCategory;
+
+    // Filter custom workouts by category (if not showing "Custom" tab)
+    const filteredCustomWorkouts = category && !showingCustom
+        ? customWorkouts.filter((w) => w.category === category)
+        : customWorkouts;
+
+    // Combine regular workouts with custom workouts for category views
+    // In "Custom" tab, only show custom workouts
+    // In "All" or specific category tabs, show both regular + matching custom workouts
+    const listData = showingCustom
+        ? customWorkouts
+        : [...filteredRegularWorkouts, ...filteredCustomWorkouts];
+
+    const listLoading = showingCustom ? customLoading : loading;
 
     // After data/categories are ready, auto-scroll the chip list to the selected category
     useEffect(() => {
         try {
-            const idx =
-                category && categories.length > 0
-                    ? Math.max(
-                          0,
-                          categories.findIndex((c) => c === (category as any)),
-                      ) + 1 // +1 accounts for "All"
-                    : 0;
+            const idx = computeChipIndex(category);
             if (chipListRef.current && idx >= 0) {
                 chipListRef.current.scrollToIndex?.({
                     index: idx,
@@ -134,42 +209,84 @@ export default function WorkoutScreen() {
         } catch {
             // best-effort only
         }
-    }, [category, categories.length]);
+    }, [category, categoriesWithAll.length]);
 
-    const renderImportPrompt = () => (
-        <TouchableOpacity
-            style={[
-                styles.importPrompt,
+    const handleDeleteCustomWorkout = (workoutId: string) => {
+        Alert.alert(
+            "Delete Workout",
+            "Are you sure you want to delete this workout? This action cannot be undone.",
+            [
+                { text: "Cancel", style: "cancel" },
                 {
-                    borderColor: "transparent",
-                    backgroundColor: "rgba(255,255,255,0.15)",
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await apiService.deleteWorkoutImport(workoutId);
+                            // Refresh the custom workouts list
+                            if (currentUserId) {
+                                const imports = await apiService.getWorkoutImports(currentUserId);
+                                setCustomWorkouts(imports);
+                            }
+                        } catch (error) {
+                            console.error("Failed to delete workout:", error);
+                            Alert.alert("Error", "Failed to delete workout. Please try again.");
+                        }
+                    },
                 },
-            ]}
-            onPress={() => router.push("/import-workout")}
-        >
-            <View style={{ flex: 1 }}>
-                <Text style={[styles.importPromptTitle, { color: theme.colors.text }]}>
-                    Don’t find your workout?
-                </Text>
-                <View style={styles.importIconsRow}>
-                    <Ionicons name="logo-instagram" size={18} color={theme.colors.text} />
-                    <Ionicons name="logo-youtube" size={18} color={theme.colors.text} />
-                    <Ionicons name="logo-tiktok" size={18} color={theme.colors.text} />
-                    <Text style={[styles.importPromptSubtitle, { color: theme.colors.accent }]}>
-                        Import…
-                    </Text>
+            ],
+        );
+    };
+
+    const renderCustomCard = (item: WorkoutImport) => {
+        const mapped = convertImportToWorkout(item);
+        return (
+            <EnhancedWorkoutCard
+                workout={mapped}
+                isCustom
+                onPress={() =>
+                    router.push({
+                        pathname: "/import-workout/custom",
+                        params: {
+                            id: item.id,
+                            payload: JSON.stringify(item),
+                        },
+                    })
+                }
+                onDelete={() => handleDeleteCustomWorkout(item.id)}
+                showQuickActions={false}
+            />
+        );
+    };
+
+    const renderListEmpty = () => {
+        if (!showingCustom) return null;
+        return (
+            <View style={styles.emptyState}>
+                <View style={[styles.emptyIconContainer, { backgroundColor: `${theme.colors.accent}15` }]}>
+                    <Ionicons name="cloud-upload-outline" size={36} color={theme.colors.accent} />
                 </View>
+                <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+                    No workouts found
+                </Text>
+                <Text style={[styles.emptyText, { color: theme.colors.subtext }]}>
+                    {currentUserId
+                        ? "Import workouts from social media to see them here"
+                        : "Sign in to save custom workouts from social media"}
+                </Text>
+                <TouchableOpacity
+                    style={[styles.emptyButton, { backgroundColor: theme.colors.accent }]}
+                    onPress={() => router.push("/import-workout")}
+                >
+                    <Ionicons name="add-circle-outline" size={18} color="#fff" />
+                    <Text style={styles.emptyButtonText}>Import Workout</Text>
+                </TouchableOpacity>
             </View>
-            <Ionicons name="arrow-forward" size={20} color={theme.colors.accent} />
-        </TouchableOpacity>
-    );
+        );
+    };
 
     return (
-        <ImageBackground
-            source={require("../assets/images/bg6.png")}
-            style={styles.screenBackground}
-            imageStyle={styles.screenBackgroundImage}
-        >
+        <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
             <SafeAreaView
                 edges={["top"]}
                 style={[styles.container, { backgroundColor: "transparent" }]}
@@ -266,18 +383,13 @@ export default function WorkoutScreen() {
                     />
                     {/* Auto-scroll chips to selected category when provided via params */}
                     {/* Execute after layout to ensure list is measured */}
-                    <View
-                        onLayout={() => {
-                            try {
-                                const idx = category
-                                    ? Math.max(
-                                          0,
-                                          categories.findIndex((c) => c === (category as any)),
-                                      ) + 1
-                                    : 0;
-                                if (chipListRef.current && idx >= 0) {
-                                    (chipListRef.current as any).scrollToIndex?.({
-                                        index: idx,
+                <View
+                    onLayout={() => {
+                        try {
+                            const idx = computeChipIndex(category);
+                            if (chipListRef.current && idx >= 0) {
+                                (chipListRef.current as any).scrollToIndex?.({
+                                    index: idx,
                                         animated: true,
                                         viewPosition: 0.5,
                                     });
@@ -289,31 +401,48 @@ export default function WorkoutScreen() {
                     />
                 </View>
 
-                <View style={{ paddingHorizontal: 16 }}>{renderImportPrompt()}</View>
+                <View style={{ paddingHorizontal: 16 }}>
+                    <ImportCTACard onPress={() => router.push("/import-workout")} />
+                </View>
 
-                {loading ? (
+                {listLoading ? (
                     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                        <Text style={{ color: theme.colors.subtext }}>Loading workouts...</Text>
+                        <Text style={{ color: theme.colors.subtext }}>
+                            {showingCustom ? "Loading custom workouts..." : "Loading workouts..."}
+                        </Text>
                     </View>
                 ) : (
                     <FlatList
-                        data={filtered}
-                        keyExtractor={(item) => item.id}
-                        renderItem={({ item }) => (
-                            <WorkoutCard
-                                workout={item}
-                                onPress={() => {
-                                    router.push(
-                                        `/workout-detail?id=${encodeURIComponent(item.id)}`,
-                                    );
-                                }}
-                            />
-                        )}
+                        data={listData}
+                        keyExtractor={(item: any) => item.id}
+                        renderItem={({ item }) => {
+                            // Check if this is a custom workout import by looking for sourceUrl
+                            const isCustomImport = 'sourceUrl' in item;
+
+                            if (showingCustom || isCustomImport) {
+                                return renderCustomCard(item as WorkoutImport);
+                            }
+
+                            return (
+                                <EnhancedWorkoutCard
+                                    workout={item as Workout}
+                                    onPress={() => {
+                                        router.push(
+                                            `/workout-detail?id=${encodeURIComponent(
+                                                (item as Workout).id,
+                                            )}`,
+                                        );
+                                    }}
+                                    showQuickActions={false}
+                                />
+                            );
+                        }}
                         contentContainerStyle={{
                             paddingVertical: 8,
                             paddingBottom: insets.bottom + 16,
                         }}
                         showsVerticalScrollIndicator={false}
+                        ListEmptyComponent={renderListEmpty}
                     />
                 )}
 
@@ -336,7 +465,7 @@ export default function WorkoutScreen() {
                     </View>
                 </Modal>
             </SafeAreaView>
-        </ImageBackground>
+        </View>
     );
 }
 
@@ -400,12 +529,43 @@ const styles = StyleSheet.create({
         gap: 8,
         marginTop: 4,
     },
-    importIconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: "rgba(0,0,0,0.1)",
+    emptyState: {
+        paddingVertical: 32,
+        paddingHorizontal: 32,
+        alignItems: "center",
+    },
+    emptyIconContainer: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
         alignItems: "center",
         justifyContent: "center",
+        marginBottom: 16,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontWeight: "700",
+        marginBottom: 6,
+        textAlign: "center",
+    },
+    emptyText: {
+        textAlign: "center",
+        fontSize: 14,
+        lineHeight: 20,
+        marginBottom: 16,
+        maxWidth: 260,
+    },
+    emptyButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 16,
+    },
+    emptyButtonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "600",
     },
 });

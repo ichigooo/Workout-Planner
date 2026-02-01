@@ -104,25 +104,24 @@ export default function PlanDetailScreen() {
     };
 
     return (
-        <View style={{ flex: 1 }}>
-            {/* Transparent status bar over the image */}
-            <StatusBar style="light" translucent backgroundColor="transparent" />
+        <ImageBackground
+            source={require("../../assets/images/bg3.png")}
+            style={styles.bg}
+            imageStyle={styles.bgImage}
+        >
+            {/* Status bar */}
+            <StatusBar style="dark" translucent backgroundColor="transparent" />
 
-            <ImageBackground
-                source={require("@/assets/images/bg3.png")}
-                style={styles.bg}
-                imageStyle={styles.bgImage}
+            <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: 20,
+                    paddingTop: insets.top + 12,
+                    paddingBottom: insets.bottom + 32,
+                    gap: 16,
+                }}
+                contentInsetAdjustmentBehavior="never"
             >
-                <ScrollView
-                    style={{ flex: 1 }}
-                    contentContainerStyle={{
-                        paddingHorizontal: 20,
-                        paddingTop: insets.top + 12,
-                        paddingBottom: insets.bottom + 32,
-                        gap: 16,
-                    }}
-                    contentInsetAdjustmentBehavior="never"
-                >
                     {/* HERO */}
                     <View style={styles.hero}>
                         <TouchableOpacity
@@ -130,14 +129,14 @@ export default function PlanDetailScreen() {
                             activeOpacity={0.8}
                             style={styles.backButton}
                         >
-                            <Text style={styles.backText}>← Back</Text>
+                            <Text style={[styles.backText, { color: theme.colors.text }]}>← Back</Text>
                         </TouchableOpacity>
 
-                        <Text style={styles.heroTitle}>{template.name}</Text>
+                        <Text style={[styles.heroTitle, { color: theme.colors.text }]}>{template.name}</Text>
                         {template.description ? (
-                            <Text style={styles.heroSubtitle}>{template.description}</Text>
+                            <Text style={[styles.heroSubtitle, { color: theme.colors.textSecondary }]}>{template.description}</Text>
                         ) : null}
-                        <Text style={styles.heroMeta}>
+                        <Text style={[styles.heroMeta, { color: theme.colors.textSecondary }]}>
                             {template.numWeeks} weeks · {template.daysPerWeek} days/week
                         </Text>
                     </View>
@@ -204,20 +203,19 @@ export default function PlanDetailScreen() {
                             </TouchableOpacity>
                         );
                     })}
-                </ScrollView>
-                <PlanSetupModal
-                    visible={showSetup}
-                    templateId={template.id}
-                    template={template}
-                    weeklyDays={template.daysPerWeek}
-                    onClose={() => setShowSetup(false)}
-                    onPlanCreated={() => {
-                        setShowSetup(false);
-                        router.push("/calendar");
-                    }}
-                />
-            </ImageBackground>
-        </View>
+            </ScrollView>
+            <PlanSetupModal
+                visible={showSetup}
+                templateId={template.id}
+                template={template}
+                weeklyDays={template.daysPerWeek}
+                onClose={() => setShowSetup(false)}
+                onPlanCreated={() => {
+                    setShowSetup(false);
+                    router.push("/calendar");
+                }}
+            />
+        </ImageBackground>
     );
 }
 
@@ -235,24 +233,19 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     backText: {
-        color: "#FFFFFF",
         fontSize: 16,
     },
     heroTitle: {
-        color: "#FFFFFF",
         fontSize: 24,
         fontWeight: "700",
         marginBottom: 8,
     },
     heroSubtitle: {
-        color: "#FFFFFF",
-        opacity: 0.9,
         fontSize: 14,
         lineHeight: 20,
         marginBottom: 8,
     },
     heroMeta: {
-        color: "#FFFFFF",
         fontSize: 14,
         fontWeight: "500",
     },

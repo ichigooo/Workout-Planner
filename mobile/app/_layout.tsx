@@ -5,8 +5,32 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
-import { useColorScheme, ImageBackground, View } from "react-native";
+import { useColorScheme } from "react-native";
 import { AuthProvider } from "@/src/state/AuthContext";
+import {
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_600SemiBold,
+    DMSans_700Bold,
+} from "@expo-google-fonts/dm-sans";
+import {
+    Fraunces_400Regular,
+    Fraunces_400Regular_Italic,
+    Fraunces_500Medium,
+    Fraunces_600SemiBold,
+} from "@expo-google-fonts/fraunces";
+import { palettes } from "@/src/theme";
+
+// Custom theme with soft cream background
+const CustomDefaultTheme = {
+    ...DefaultTheme,
+    colors: {
+        ...DefaultTheme.colors,
+        background: palettes.light.bg, // #F5F5F0 soft cream
+        card: palettes.light.surface, // #FAFAF8 soft off-white
+        border: palettes.light.border, // #E8E8E8
+    },
+};
 
 export {
     // Catch any errors thrown by the Layout component.
@@ -24,6 +48,14 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
     const [loaded, error] = useFonts({
         SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+        DMSans_400Regular,
+        DMSans_500Medium,
+        DMSans_600SemiBold,
+        DMSans_700Bold,
+        Fraunces_400Regular,
+        Fraunces_400Regular_Italic,
+        Fraunces_500Medium,
+        Fraunces_600SemiBold,
         ...FontAwesome.font,
     });
 
@@ -53,12 +85,13 @@ function RootLayoutNav() {
     const colorScheme = useColorScheme();
 
     return (
-        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : CustomDefaultTheme}>
             <Stack
                 screenOptions={{
                     gestureEnabled: true,
                     gestureDirection: "horizontal",
                     animation: "slide_from_right",
+                    contentStyle: { backgroundColor: palettes.light.bg },
                 }}
             >
                 <Stack.Screen
@@ -87,6 +120,10 @@ function RootLayoutNav() {
                 />
                 <Stack.Screen
                     name="import-workout"
+                    options={{ headerShown: false, gestureEnabled: true }}
+                />
+                <Stack.Screen
+                    name="import-workout/custom"
                     options={{ headerShown: false, gestureEnabled: true }}
                 />
                 <Stack.Screen

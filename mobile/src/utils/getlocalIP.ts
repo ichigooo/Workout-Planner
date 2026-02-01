@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 
 // run ipconfig getifaddr en0 to get the local IP
-const CURRENT_IP = "192.168.86.22";
+const CURRENT_IP = "192.168.86.242";
 
 export function getLocalIp(): string | null {
     if (CURRENT_IP) return CURRENT_IP;
