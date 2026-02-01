@@ -13,10 +13,8 @@ import {
     TextInput,
     KeyboardAvoidingView,
     Platform,
-    ImageBackground,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Calendar } from "react-native-calendars";
 import { Workout, CreateWorkoutRequest, WorkoutPersonalRecord } from "../types";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
@@ -24,6 +22,7 @@ import { getCurrentPlanId, getCurrentUserId, getCurrentUser } from "../state/ses
 import { WorkoutForm } from "./WorkoutForm";
 import { planItemsCache } from "../services/planItemsCache";
 import { useRouter } from "expo-router";
+import { AddToPlanBottomSheet } from "./AddToPlanBottomSheet";
 
 interface WorkoutDetailProps {
     workout: Workout;
@@ -48,9 +47,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     const [showEditModal, setShowEditModal] = useState(false);
     // Add to plan sheet state
     const [showAddSheet, setShowAddSheet] = useState(false);
-    const [selectedDates, setSelectedDates] = useState<{ [key: string]: any }>({});
     const [planId, setPlanId] = useState<string | null>(null);
-    const [adding, setAdding] = useState(false);
     const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const windowWidth = Dimensions.get("window").width;
@@ -226,18 +223,16 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
         setPlanId(cachedPlanId!);
     };
 
-    const handleAddToPlan = async () => {
+    const handleAddToPlan = async (dates: string[]) => {
         if (!planId) {
             Alert.alert("No plan", "No plan available to add to");
-            return;
+            throw new Error("No plan available");
         }
-        const dates = Object.keys(selectedDates);
         if (dates.length === 0) {
             Alert.alert("No dates selected", "Please select at least one date");
-            return;
+            throw new Error("No dates selected");
         }
         try {
-            setAdding(true);
             await apiService.addWorkoutToPlanOnDates(planId, { workoutId: workout.id, dates });
             // refresh cache
             try {
@@ -245,23 +240,16 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
             } catch (e) {
                 console.warn("Failed to refresh plan items cache", e);
             }
-            setShowAddSheet(false);
-            setSelectedDates({});
             Alert.alert("Added", `Workout added to ${dates.length} date(s)`);
         } catch (e) {
             console.error("Add to plan failed", e);
             Alert.alert("Error", "Failed to add workout to plan");
-        } finally {
-            setAdding(false);
+            throw e;
         }
     };
 
     return (
-        <ImageBackground
-            source={require("../../assets/images/bg6.png")}
-            style={styles.screenBackground}
-            imageStyle={styles.screenBackgroundImage}
-        >
+        <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
             <View style={[styles.container, { backgroundColor: "transparent" }]}>
                 <View
                     style={[
@@ -277,9 +265,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                             ✕
                         </Text>
                     </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: theme.colors.subtext }]}>
-                        Workout
-                    </Text>
+                    <View style={styles.headerSpacer} />
                     {isCurrentUserAdmin ? (
                         <TouchableOpacity
                             onPress={() => setShowMenu(true)}
@@ -751,77 +737,16 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                         />
                     </View>
                 </Modal>
-                <Modal
-                    visible={showAddSheet}
-                    animationType="slide"
-                    presentationStyle="pageSheet"
-                    onRequestClose={() => setShowAddSheet(false)}
-                >
-                    <View style={[styles.modalContainer, { backgroundColor: theme.colors.bg }]}>
-                        <View
-                            style={[
-                                styles.modalHeader,
-                                {
-                                    borderBottomColor: theme.colors.border,
-                                    backgroundColor: theme.colors.surface,
-                                },
-                            ]}
-                        >
-                            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-                                Add to Plan
-                            </Text>
-                            <TouchableOpacity onPress={() => setShowAddSheet(false)}>
-                                <Text style={{ color: theme.colors.accent }}>Close</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <ScrollView contentContainerStyle={styles.modalContent}>
-                            <Text style={[styles.label, { color: theme.colors.text }]}>
-                                Select Dates
-                            </Text>
-                            <Calendar
-                                onDayPress={(day) => {
-                                    const dateString = day.dateString;
-                                    setSelectedDates((prev) => {
-                                        const newDates = { ...prev };
-                                        if (newDates[dateString]) delete newDates[dateString];
-                                        else
-                                            newDates[dateString] = {
-                                                selected: true,
-                                                selectedColor: theme.colors.accent,
-                                            };
-                                        return newDates;
-                                    });
-                                }}
-                                markedDates={selectedDates}
-                                theme={{
-                                    backgroundColor: theme.colors.surface,
-                                    calendarBackground: theme.colors.surface,
-                                    textSectionTitleColor: theme.colors.text,
-                                    selectedDayBackgroundColor: theme.colors.accent,
-                                    selectedDayTextColor: "#fff",
-                                    todayTextColor: theme.colors.accent,
-                                    dayTextColor: theme.colors.text,
-                                }}
-                                style={{ marginVertical: 8 }}
-                            />
 
-                            <TouchableOpacity
-                                onPress={handleAddToPlan}
-                                disabled={adding}
-                                style={[
-                                    styles.addButton,
-                                    { backgroundColor: theme.colors.accent, marginTop: 12 },
-                                ]}
-                            >
-                                <Text style={styles.addButtonText}>
-                                    {adding ? "Adding..." : "Add to Plan"}
-                                </Text>
-                            </TouchableOpacity>
-                        </ScrollView>
-                    </View>
-                </Modal>
+                {/* Add to Plan Bottom Sheet */}
+                <AddToPlanBottomSheet
+                    visible={showAddSheet}
+                    workoutTitle={workout.title}
+                    onClose={() => setShowAddSheet(false)}
+                    onConfirm={handleAddToPlan}
+                />
             </View>
-        </ImageBackground>
+        </View>
     );
 };
 
@@ -858,6 +783,9 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 16,
         fontWeight: "500",
+    },
+    headerSpacer: {
+        flex: 1,
     },
     menuButton: {
         width: 32,
@@ -1293,8 +1221,8 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     addToPlanCTA: {
-        paddingVertical: 16,
-        borderRadius: 16,
+        paddingVertical: 12,
+        borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
         shadowColor: "#000",
@@ -1305,7 +1233,7 @@ const styles = StyleSheet.create({
     },
     addToPlanCTAText: {
         color: "#FFFFFF",
-        fontSize: 17,
+        fontSize: 15,
         fontWeight: "700",
         letterSpacing: 0.5,
     },

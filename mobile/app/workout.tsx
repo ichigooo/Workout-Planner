@@ -8,7 +8,6 @@ import {
     useColorScheme,
     Modal,
     Alert,
-    ImageBackground,
     Image,
     Linking,
 } from "react-native";
@@ -287,11 +286,7 @@ export default function WorkoutScreen() {
     };
 
     return (
-        <ImageBackground
-            source={require("../assets/images/bg6.png")}
-            style={styles.screenBackground}
-            imageStyle={styles.screenBackgroundImage}
-        >
+        <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
             <SafeAreaView
                 edges={["top"]}
                 style={[styles.container, { backgroundColor: "transparent" }]}
@@ -470,7 +465,7 @@ export default function WorkoutScreen() {
                     </View>
                 </Modal>
             </SafeAreaView>
-        </ImageBackground>
+        </View>
     );
 }
 

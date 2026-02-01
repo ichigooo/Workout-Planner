@@ -5,7 +5,6 @@ import {
     ScrollView,
     useColorScheme,
     TouchableOpacity,
-    ImageBackground,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
@@ -111,11 +110,7 @@ export default function CalendarScreen() {
     const selectedDayWorkouts = scheduledFromMonth.filter((w) => w.date === selectedDate);
 
     return (
-        <ImageBackground
-            source={require("../../assets/images/bg6.png")}
-            style={{ flex: 1 }}
-            imageStyle={{ resizeMode: "cover" }}
-        >
+        <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
             <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: "transparent" }}>
                 <View
                     style={{
@@ -234,6 +229,6 @@ export default function CalendarScreen() {
                     </View>
                 </ScrollView>
             </SafeAreaView>
-        </ImageBackground>
+        </View>
     );
 }

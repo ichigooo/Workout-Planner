@@ -9,7 +9,6 @@ import {
     Modal,
     ScrollView,
     FlatList,
-    ImageBackground,
 } from "react-native";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -338,11 +337,7 @@ export const TrainingPlanManager: React.FC = () => {
 
     if (loading) {
         return (
-            <ImageBackground
-                source={require("../../assets/images/bg6.png")}
-                style={styles.screenBackground}
-                imageStyle={styles.screenBackgroundImage}
-            >
+            <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
                 <SafeAreaView
                     edges={["top"]}
                     style={[styles.container, { backgroundColor: "transparent" }]}
@@ -351,16 +346,12 @@ export const TrainingPlanManager: React.FC = () => {
                         Loading routine...
                     </Text>
                 </SafeAreaView>
-            </ImageBackground>
+            </View>
         );
     }
 
     return (
-        <ImageBackground
-            source={require("../../assets/images/bg6.png")}
-            style={styles.screenBackground}
-            imageStyle={styles.screenBackgroundImage}
-        >
+        <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
             <SafeAreaView
                 edges={["top"]}
                 style={[styles.container, { backgroundColor: "transparent" }]}
@@ -488,7 +479,7 @@ export const TrainingPlanManager: React.FC = () => {
                     </SafeAreaProvider>
                 </Modal>
             </SafeAreaView>
-        </ImageBackground>
+        </View>
     );
 };
 

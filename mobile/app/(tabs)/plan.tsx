@@ -7,8 +7,8 @@ import {
     ActivityIndicator,
     RefreshControl,
     useColorScheme,
-    ImageBackground,
     TouchableOpacity,
+    ImageBackground,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getTheme } from "@/src/theme";
@@ -67,11 +67,7 @@ export default function PlanScreen() {
     };
 
     return (
-        <ImageBackground
-            source={require("../../assets/images/bg6.png")}
-            style={styles.screenBackground}
-            imageStyle={styles.screenBackgroundImage}
-        >
+        <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
             <SafeAreaView
                 style={[styles.safeArea, { backgroundColor: "transparent" }]}
                 edges={["top"]}
@@ -147,7 +143,7 @@ export default function PlanScreen() {
                     </ScrollView>
                 </View>
             </SafeAreaView>
-        </ImageBackground>
+        </View>
     );
 }
 

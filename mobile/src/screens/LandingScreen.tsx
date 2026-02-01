@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ImageBackground, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, useColorScheme } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { spacing } from "../theme";
+import { getTheme, spacing, radii, typography } from "../theme";
 
 interface LandingScreenProps {
     onBegin: () => void;
@@ -31,6 +31,9 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
     isLoading = false,
     isLoggedIn = false,
 }) => {
+    const scheme = useColorScheme();
+    const theme = getTheme(scheme === "dark" ? "dark" : "light");
+
     // Select a random quote once when component mounts
     const [quote] = useState(() => {
         const randomIndex = Math.floor(Math.random() * QUOTES.length);
@@ -43,37 +46,79 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
             style={styles.container}
             resizeMode="cover"
         >
-            {/* Gradient overlay from transparent to sage green */}
-            <View style={styles.gradientOverlay} />
+            {/* Warm overlay for readability */}
+            <View style={styles.imageOverlay} />
 
             <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
                 <View style={styles.content}>
-                    {/* Quote */}
+                    {/* Quote - Fraunces serif font */}
                     <View style={styles.quoteContainer}>
-                        <Text style={styles.quoteText}>"{quote}"</Text>
+                        <Text
+                            style={[
+                                styles.quoteText,
+                                {
+                                    fontFamily: typography.fonts.display,
+                                    fontSize: typography.sizes.xl,
+                                },
+                            ]}
+                        >
+                            "{quote}"
+                        </Text>
                     </View>
 
-                    {/* Buttons */}
+                    {/* Buttons - Neutral & Minimal style */}
                     <View style={styles.buttonContainer}>
                         <TouchableOpacity
-                            style={styles.primaryButton}
+                            style={[
+                                styles.primaryButton,
+                                {
+                                    backgroundColor: theme.colors.accent,
+                                    borderRadius: radii.md,
+                                    ...theme.shadows.subtle,
+                                },
+                            ]}
                             onPress={onBegin}
                             disabled={isLoading}
-                            activeOpacity={0.85}
+                            activeOpacity={0.8}
                         >
-                            <Text style={styles.primaryButtonText}>
+                            <Text
+                                style={[
+                                    styles.primaryButtonText,
+                                    {
+                                        color: "#FFFFFF",
+                                        fontFamily: typography.fonts.bodyMedium,
+                                        fontSize: typography.sizes.md,
+                                    },
+                                ]}
+                            >
                                 {isLoading ? "Loading..." : "Get Started"}
                             </Text>
                         </TouchableOpacity>
 
-                        {/* Conditional Sign In Button */}
+                        {/* Conditional Sign In Button - Outline style */}
                         {!isLoggedIn && (
                             <TouchableOpacity
-                                style={styles.secondaryButton}
+                                style={[
+                                    styles.secondaryButton,
+                                    {
+                                        backgroundColor: "transparent",
+                                        borderColor: "#FFFFFF",
+                                        borderRadius: radii.md,
+                                    },
+                                ]}
                                 onPress={onBegin}
-                                activeOpacity={0.85}
+                                activeOpacity={0.8}
                             >
-                                <Text style={styles.secondaryButtonText}>
+                                <Text
+                                    style={[
+                                        styles.secondaryButtonText,
+                                        {
+                                            color: "#FFFFFF",
+                                            fontFamily: typography.fonts.bodyMedium,
+                                            fontSize: typography.sizes.sm,
+                                        },
+                                    ]}
+                                >
                                     I already have an account
                                 </Text>
                             </TouchableOpacity>
@@ -89,9 +134,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    gradientOverlay: {
+    imageOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: "rgba(76, 107, 60, 0.75)", // Sage green overlay with transparency
+        backgroundColor: "rgba(44, 41, 37, 0.5)", // Warm espresso overlay
     },
     safeArea: {
         flex: 1,
@@ -108,15 +153,14 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
     },
     quoteText: {
-        fontSize: 24,
-        fontWeight: "600",
-        color: "#FFFFFF",
+        // Base style - dynamic values applied inline
         textAlign: "center",
         lineHeight: 36,
-        letterSpacing: -0.5,
-        textShadowColor: "rgba(0, 0, 0, 0.3)",
+        letterSpacing: -0.3, // Tighter for serif font
+        color: "#FFFFFF", // White text on dark overlay
+        textShadowColor: "rgba(0, 0, 0, 0.4)",
         textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 4,
+        textShadowRadius: 8,
     },
     buttonContainer: {
         alignItems: "center",
@@ -124,40 +168,28 @@ const styles = StyleSheet.create({
         width: "100%",
     },
     primaryButton: {
+        // Terracotta button with white text
         width: "80%",
-        paddingVertical: 18,
-        paddingHorizontal: 48,
-        borderRadius: 28,
-        backgroundColor: "#FFFFFF",
+        paddingVertical: spacing.sm, // 16
+        paddingHorizontal: spacing.lg, // 32
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 6,
+        minHeight: 48, // Touch target
     },
     primaryButtonText: {
-        color: "#4C6B3C",
-        fontSize: 18,
-        fontWeight: "700",
-        letterSpacing: 0.3,
+        fontWeight: "500",
     },
     secondaryButton: {
+        // Outline button with transparent bg
         width: "80%",
-        paddingVertical: 16,
-        paddingHorizontal: 48,
-        borderRadius: 28,
-        backgroundColor: "rgba(255, 255, 255, 0.15)",
-        borderWidth: 2,
-        borderColor: "rgba(255, 255, 255, 0.8)",
+        paddingVertical: spacing.sm - 2, // 14 (account for border)
+        paddingHorizontal: spacing.lg,
+        borderWidth: 1.5,
         alignItems: "center",
         justifyContent: "center",
+        minHeight: 48,
     },
     secondaryButtonText: {
-        color: "#FFFFFF",
-        fontSize: 16,
-        fontWeight: "600",
-        letterSpacing: 0.3,
+        fontWeight: "500",
     },
 });

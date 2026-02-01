@@ -5,7 +5,6 @@ import {
     StyleSheet,
     TouchableOpacity,
     useColorScheme,
-    ImageBackground,
     TextInput,
     ActivityIndicator,
     ScrollView,
@@ -337,11 +336,7 @@ export default function ImportWorkoutScreen() {
         : false;
 
     return (
-        <ImageBackground
-            source={require("../assets/images/bg6.png")}
-            style={styles.screenBackground}
-            imageStyle={styles.screenBackgroundImage}
-        >
+        <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
             <KeyboardAvoidingView
                 behavior={RNPlatform.OS === "ios" ? "padding" : "height"}
                 style={{ flex: 1 }}
@@ -695,7 +690,7 @@ export default function ImportWorkoutScreen() {
                 onConfirm={handleConfirmImport}
                 onCancel={handleCancelPreview}
             />
-        </ImageBackground>
+        </View>
     );
 }
 

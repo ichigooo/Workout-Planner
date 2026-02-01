@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trainichi Design System</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Warm Neutrals */
+      --cream: #FAF7F2;
+      --warm-white: #F5F1EA;
+      --sand: #E8E2D9;
+      --stone: #D4CCC0;
+      --warm-gray: #9C948A;
+      --charcoal: #3D3A36;
+      --espresso: #2C2925;
+      
+      /* Earthy Accents */
+      --terracotta: #C17F61;
+      --terracotta-light: #D4A088;
+      --sage: #8B9A7E;
+      --sage-light: #A8B59D;
+      --clay: #B8977A;
+      --moss: #6B7B5E;
+      
+      /* Functional */
+      --success: #7A9B6F;
+      --warning: #D4A574;
+      --error: #C4776A;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--cream);
+      color: var(--espresso);
+      line-height: 1.6;
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: var(--cream);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -30%;
+      right: -20%;
+      width: 70%;
+      height: 70%;
+      background: radial-gradient(circle, rgba(193, 127, 97, 0.08) 0%, transparent 60%);
+      border-radius: 50%;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -20%;
+      left: -10%;
+      width: 50%;
+      height: 50%;
+      background: radial-gradient(circle, rgba(139, 154, 126, 0.08) 0%, transparent 60%);
+      border-radius: 50%;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-overline {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--terracotta);
+      margin-bottom: 24px;
+    }
+
+    .hero-title {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(48px, 10vw, 100px);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-bottom: 24px;
+      color: var(--espresso);
+    }
+
+    .hero-title em {
+      font-style: italic;
+      font-weight: 300;
+    }
+
+    .hero-subtitle {
+      font-size: 18px;
+      color: var(--warm-gray);
+      max-width: 450px;
+      margin: 0 auto 48px;
+      font-weight: 400;
+    }
+
+    .version-badge {
+      display: inline-block;
+      padding: 10px 20px;
+      background: var(--warm-white);
+      border: 1px solid var(--sand);
+      border-radius: 100px;
+      font-size: 13px;
+      color: var(--warm-gray);
+    }
+
+    /* Section Styles */
+    section {
+      padding: 120px 48px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-alt {
+      background: var(--warm-white);
+      max-width: 100%;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .section-alt > * {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 48px;
+    }
+
+    .section-header {
+      margin-bottom: 80px;
+    }
+
+    .section-number {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--terracotta);
+      letter-spacing: 0.15em;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    .section-title {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      margin-bottom: 16px;
+      color: var(--espresso);
+    }
+
+    .section-desc {
+      font-size: 17px;
+      color: var(--warm-gray);
+      max-width: 550px;
+      line-height: 1.7;
+    }
+
+    /* Color Palette */
+    .color-category {
+      margin-bottom: 64px;
+    }
+
+    .color-category-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+      margin-bottom: 24px;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .color-card {
+      border-radius: 16px;
+      overflow: hidden;
+      background: white;
+      box-shadow: 0 2px 8px rgba(44, 41, 37, 0.06);
+    }
+
+    .color-swatch {
+      height: 120px;
+      display: flex;
+      align-items: flex-end;
+      padding: 16px;
+    }
+
+    .color-info {
+      padding: 20px;
+    }
+
+    .color-name {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--espresso);
+    }
+
+    .color-hex {
+      font-family: 'SF Mono', 'Monaco', monospace;
+      font-size: 13px;
+      color: var(--warm-gray);
+    }
+
+    /* Typography Section */
+    .type-scale {
+      margin-bottom: 80px;
+    }
+
+    .type-item {
+      border-bottom: 1px solid var(--sand);
+      padding: 48px 0;
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 48px;
+      align-items: baseline;
+    }
+
+    .type-item:last-child {
+      border-bottom: none;
+    }
+
+    .type-meta {
+      color: var(--warm-gray);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .type-meta-name {
+      font-weight: 600;
+      color: var(--espresso);
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .type-display {
+      font-family: 'Fraunces', serif;
+      font-size: 64px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: var(--espresso);
+    }
+
+    .type-display em {
+      font-style: italic;
+    }
+
+    .type-h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 42px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      line-height: 1.15;
+      color: var(--espresso);
+    }
+
+    .type-h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 28px;
+      font-weight: 500;
+      line-height: 1.25;
+      color: var(--espresso);
+    }
+
+    .type-h3 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.35;
+      color: var(--espresso);
+    }
+
+    .type-body {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.7;
+      color: var(--charcoal);
+    }
+
+    .type-caption {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--warm-gray);
+      line-height: 1.6;
+    }
+
+    .type-overline {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--terracotta);
+    }
+
+    /* Font Showcase */
+    .font-showcase {
+      background: white;
+      border-radius: 20px;
+      padding: 48px;
+      margin-top: 64px;
+      box-shadow: 0 2px 12px rgba(44, 41, 37, 0.06);
+    }
+
+    .font-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 28px 0;
+      border-bottom: 1px solid var(--sand);
+    }
+
+    .font-row:last-child {
+      border-bottom: none;
+    }
+
+    .font-name {
+      font-size: 13px;
+      color: var(--warm-gray);
+      width: 140px;
+    }
+
+    .font-preview-display {
+      font-family: 'Fraunces', serif;
+      font-size: 36px;
+      font-weight: 400;
+      color: var(--espresso);
+    }
+
+    .font-preview-body {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 22px;
+      color: var(--espresso);
+    }
+
+    .font-desc {
+      color: var(--warm-gray);
+      font-size: 13px;
+      text-align: right;
+    }
+
+    /* Spacing Section */
+    .spacing-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .spacing-item {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      padding: 12px 0;
+    }
+
+    .spacing-visual {
+      width: 200px;
+      height: 44px;
+      background: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      padding-left: 16px;
+      box-shadow: 0 1px 4px rgba(44, 41, 37, 0.06);
+    }
+
+    .spacing-bar {
+      height: 6px;
+      background: linear-gradient(90deg, var(--terracotta) 0%, var(--terracotta-light) 100%);
+      border-radius: 3px;
+    }
+
+    .spacing-info {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .spacing-token {
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--terracotta);
+      width: 90px;
+    }
+
+    .spacing-value {
+      font-size: 14px;
+      color: var(--charcoal);
+      width: 50px;
+      font-weight: 500;
+    }
+
+    .spacing-use {
+      font-size: 14px;
+      color: var(--warm-gray);
+    }
+
+    /* Radius Section */
+    .radius-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+
+    .radius-item {
+      text-align: center;
+    }
+
+    .radius-box {
+      width: 100%;
+      aspect-ratio: 1;
+      background: white;
+      border: 2px solid var(--terracotta-light);
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(44, 41, 37, 0.06);
+    }
+
+    .radius-label {
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--terracotta);
+      margin-bottom: 4px;
+    }
+
+    .radius-value {
+      font-size: 12px;
+      color: var(--warm-gray);
+    }
+
+    /* Components Section */
+    .component-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 28px;
+    }
+
+    .component-card {
+      background: white;
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 2px 12px rgba(44, 41, 37, 0.06);
+    }
+
+    .component-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      color: var(--warm-gray);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .component-demo {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-align: center;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--espresso);
+      color: var(--cream);
+    }
+
+    .btn-primary:hover {
+      background: var(--charcoal);
+    }
+
+    .btn-accent {
+      background: var(--terracotta);
+      color: white;
+    }
+
+    .btn-accent:hover {
+      background: var(--terracotta-light);
+    }
+
+    .btn-soft {
+      background: var(--sage);
+      color: white;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--espresso);
+      border: 1.5px solid var(--stone);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--charcoal);
+    }
+
+    /* Selection Cards */
+    .selection-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .selection-card {
+      aspect-ratio: 1;
+      background: var(--warm-white);
+      border: 2px solid transparent;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .selection-card:hover {
+      background: var(--sand);
+    }
+
+    .selection-card.selected {
+      border-color: var(--terracotta);
+      background: rgba(193, 127, 97, 0.08);
+    }
+
+    .selection-card.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 18px;
+      height: 18px;
+      background: var(--terracotta);
+      color: white;
+      border-radius: 50%;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .selection-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--espresso);
+    }
+
+    /* Date Picker */
+    .date-picker-demo {
+      display: flex;
+      gap: 10px;
+    }
+
+    .date-chip {
+      padding: 14px 18px;
+      background: var(--warm-white);
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+    }
+
+    .date-chip:hover {
+      background: var(--sand);
+    }
+
+    .date-chip.selected {
+      background: rgba(193, 127, 97, 0.08);
+      border-color: var(--terracotta);
+    }
+
+    .date-day {
+      font-size: 22px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--espresso);
+    }
+
+    .date-name {
+      font-size: 11px;
+      color: var(--warm-gray);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 2px;
+    }
+
+    /* Time Slots */
+    .time-slots {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .time-slot {
+      padding: 12px 18px;
+      background: var(--warm-white);
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      color: var(--espresso);
+      transition: all 0.2s ease;
+    }
+
+    .time-slot:hover {
+      background: var(--sand);
+    }
+
+    .time-slot.selected {
+      background: rgba(193, 127, 97, 0.08);
+      border-color: var(--terracotta);
+    }
+
+    .time-slot.unavailable {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Badges */
+    .badge-demo {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 8px 14px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-terracotta {
+      background: rgba(193, 127, 97, 0.15);
+      color: var(--terracotta);
+    }
+
+    .badge-sage {
+      background: rgba(139, 154, 126, 0.15);
+      color: var(--moss);
+    }
+
+    .badge-clay {
+      background: rgba(184, 151, 122, 0.2);
+      color: var(--clay);
+    }
+
+    .badge-neutral {
+      background: var(--sand);
+      color: var(--charcoal);
+    }
+
+    /* Input Demo */
+    .input-demo {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .input-field {
+      padding: 16px 20px;
+      background: var(--warm-white);
+      border: 1.5px solid var(--sand);
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--espresso);
+      transition: all 0.2s ease;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--terracotta);
+      background: white;
+    }
+
+    .input-field::placeholder {
+      color: var(--warm-gray);
+    }
+
+    /* Phone Mockup */
+    .phone-mockup-section {
+      background: linear-gradient(180deg, var(--warm-white) 0%, var(--cream) 100%);
+      padding: 120px 48px;
+      max-width: 100%;
+    }
+
+    .mockup-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .phone-frame {
+      width: 300px;
+      height: 620px;
+      background: var(--espresso);
+      border-radius: 44px;
+      padding: 12px;
+      margin: 0 auto;
+      box-shadow: 0 40px 80px rgba(44, 41, 37, 0.2);
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: var(--cream);
+      border-radius: 36px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .phone-header-image {
+      height: 42%;
+      background: linear-gradient(180deg, transparent 30%, var(--cream) 100%),
+                  linear-gradient(135deg, #d4a088 0%, #c17f61 50%, #a86d52 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 20px;
+    }
+
+    .phone-overline {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--terracotta);
+      margin-bottom: 6px;
+    }
+
+    .phone-title {
+      font-family: 'Fraunces', serif;
+      font-size: 26px;
+      font-weight: 400;
+      line-height: 1.15;
+      color: var(--espresso);
+    }
+
+    .phone-content {
+      padding: 20px;
+    }
+
+    .phone-card {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(44, 41, 37, 0.06);
+    }
+
+    .phone-card-title {
+      font-size: 11px;
+      color: var(--warm-gray);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    .phone-selection-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .phone-selection-item {
+      aspect-ratio: 1;
+      background: var(--warm-white);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--espresso);
+      border: 2px solid transparent;
+    }
+
+    .phone-selection-item.selected {
+      border-color: var(--terracotta);
+      background: rgba(193, 127, 97, 0.08);
+    }
+
+    .phone-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--espresso);
+      color: var(--cream);
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      margin-top: 12px;
+    }
+
+    /* Pattern List */
+    .pattern-list {
+      margin-top: 48px;
+    }
+
+    .pattern-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .pattern-number {
+      width: 36px;
+      height: 36px;
+      background: var(--terracotta);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .pattern-content h4 {
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--espresso);
+    }
+
+    .pattern-content p {
+      color: var(--warm-gray);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* Scroll indicator */
+    .scroll-indicator {
+      position: absolute;
+      bottom: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--warm-gray);
+      font-size: 12px;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(10px); }
+    }
+
+    .scroll-indicator svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--warm-gray);
+    }
+
+    /* CSS Tokens Section */
+    .tokens-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 24px;
+    }
+
+    .token-card {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 2px 8px rgba(44, 41, 37, 0.06);
+    }
+
+    .token-card-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--warm-gray);
+      margin-bottom: 20px;
+    }
+
+    .token-line {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+      line-height: 2;
+      color: var(--charcoal);
+    }
+
+    .token-line .key {
+      color: var(--terracotta);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 80px 48px;
+      background: var(--warm-white);
+    }
+
+    .footer-logo {
+      font-family: 'Fraunces', serif;
+      font-size: 28px;
+      font-weight: 400;
+      margin-bottom: 12px;
+      color: var(--espresso);
+    }
+
+    .footer-text {
+      color: var(--warm-gray);
+      font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      section {
+        padding: 80px 24px;
+      }
+
+      .section-alt > * {
+        padding: 0 24px;
+      }
+
+      .type-item {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .mockup-container {
+        grid-template-columns: 1fr;
+      }
+
+      .radius-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .spacing-item {
+        flex-wrap: wrap;
+      }
+
+      .font-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .font-desc {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-overline">Design System</div>
+      <h1 class="hero-title">Trainichi</h1>
+      <p class="hero-subtitle">A warm, earthy design language for mindful fitness experiences</p>
+      <span class="version-badge">Version 1.0 · December 2025</span>
+    </div>
+    <div class="scroll-indicator">
+      <span>Scroll to explore</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 5v14M5 12l7 7 7-7"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Color System -->
+  <section>
+    <div class="section-header">
+      <div class="section-number">01 — Colors</div>
+      <h2 class="section-title">Color Palette</h2>
+      <p class="section-desc">Grounded in nature. Warm neutrals create calm while earthy accents inspire movement.</p>
+    </div>
+
+    <div class="color-category">
+      <div class="color-category-title">Warm Neutrals</div>
+      <div class="color-grid">
+        <div class="color-card">
+          <div class="color-swatch" style="background: #FAF7F2;"></div>
+          <div class="color-info">
+            <div class="color-name">Cream</div>
+            <div class="color-hex">#FAF7F2</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #F5F1EA;"></div>
+          <div class="color-info">
+            <div class="color-name">Warm White</div>
+            <div class="color-hex">#F5F1EA</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #E8E2D9;"></div>
+          <div class="color-info">
+            <div class="color-name">Sand</div>
+            <div class="color-hex">#E8E2D9</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #D4CCC0;"></div>
+          <div class="color-info">
+            <div class="color-name">Stone</div>
+            <div class="color-hex">#D4CCC0</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #9C948A;"></div>
+          <div class="color-info">
+            <div class="color-name">Warm Gray</div>
+            <div class="color-hex">#9C948A</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #3D3A36;">
+            <span style="color: #9C948A; font-size: 12px;">Text</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Charcoal</div>
+            <div class="color-hex">#3D3A36</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #2C2925;">
+            <span style="color: #9C948A; font-size: 12px;">Primary</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Espresso</div>
+            <div class="color-hex">#2C2925</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="color-category">
+      <div class="color-category-title">Earthy Accents</div>
+      <div class="color-grid">
+        <div class="color-card">
+          <div class="color-swatch" style="background: #C17F61;">
+            <span style="color: white; font-size: 12px; font-weight: 500;">Primary Accent</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Terracotta</div>
+            <div class="color-hex">#C17F61</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #D4A088;">
+            <span style="color: white; font-size: 12px;">Hover / Light</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Terracotta Light</div>
+            <div class="color-hex">#D4A088</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #8B9A7E;">
+            <span style="color: white; font-size: 12px; font-weight: 500;">Secondary</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Sage</div>
+            <div class="color-hex">#8B9A7E</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #A8B59D;">
+            <span style="color: white; font-size: 12px;">Light</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Sage Light</div>
+            <div class="color-hex">#A8B59D</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #B8977A;">
+            <span style="color: white; font-size: 12px;">Warm</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Clay</div>
+            <div class="color-hex">#B8977A</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #6B7B5E;">
+            <span style="color: white; font-size: 12px;">Deep</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Moss</div>
+            <div class="color-hex">#6B7B5E</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Typography -->
+  <section class="section-alt">
+    <div class="section-header">
+      <div class="section-number">02 — Typography</div>
+      <h2 class="section-title">Type System</h2>
+      <p class="section-desc">Elegant serifs for headlines paired with clean sans-serifs for readability. Calm, confident, approachable.</p>
+    </div>
+
+    <div class="type-scale">
+      <div class="type-item">
+        <div class="type-meta">
+          <div class="type-meta-name">Display</div>
+          48–64px / Regular 400<br>
+          Fraunces
+        </div>
+        <div class="type-display">Move <em>mindfully</em></div>
+      </div>
+
+      <div class="type-item">
+        <div class="type-meta">
+          <div class="type-meta-name">Heading 1</div>
+          36–42px / Regular 400<br>
+          Fraunces
+        </div>
+        <div class="type-h1">Book your session</div>
+      </div>
+
+      <div class="type-item">
+        <div class="type-meta">
+          <div class="type-meta-name">Heading 2</div>
+          24–28px / Medium 500<br>
+          Fraunces
+        </div>
+        <div class="type-h2">Choose your practice</div>
+      </div>
+
+      <div class="type-item">
+        <div class="type-meta">
+          <div class="type-meta-name">Heading 3</div>
+          18–20px / Semibold 600<br>
+          DM Sans
+        </div>
+        <div class="type-h3">Available Time Slots</div>
+      </div>
+
+      <div class="type-item">
+        <div class="type-meta">
+          <div class="type-meta-name">Body</div>
+          15–16px / Regular 400<br>
+          DM Sans, 1.7 line-height
+        </div>
+        <div class="type-body">Training is a journey, not a destination. Each session brings you closer to the strongest version of yourself. Find your rhythm and let movement become meditation.</div>
+      </div>
+
+      <div class="type-item">
+        <div class="type-meta">
+          <div class="type-meta-name">Caption</div>
+          13–14px / Regular 400<br>
+          DM Sans
+        </div>
+        <div class="type-caption">By confirming your reservation, a 50% deposit will be collected. The remainder is due at check-in.</div>
+      </div>
+
+      <div class="type-item">
+        <div class="type-meta">
+          <div class="type-meta-name">Overline</div>
+          11–12px / Semibold 600<br>
+          DM Sans, tracking 15%
+        </div>
+        <div class="type-overline">WELLNESS · STUDIO · RESERVATION</div>
+      </div>
+    </div>
+
+    <div class="font-showcase">
+      <div class="font-row">
+        <div class="font-name">Display & Headlines</div>
+        <div class="font-preview-display">Fraunces</div>
+        <div class="font-desc">Soft serif with warmth and character</div>
+      </div>
+      <div class="font-row">
+        <div class="font-name">Body & UI</div>
+        <div class="font-preview-body">DM Sans</div>
+        <div class="font-desc">Geometric, friendly, highly readable</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Spacing & Layout -->
+  <section>
+    <div class="section-header">
+      <div class="section-number">03 — Spacing</div>
+      <h2 class="section-title">Space & Rhythm</h2>
+      <p class="section-desc">Generous breathing room creates a sense of calm. An 8px base unit ensures consistency.</p>
+    </div>
+
+    <div class="spacing-grid">
+      <div class="spacing-item">
+        <div class="spacing-visual">
+          <div class="spacing-bar" style="width: 4px;"></div>
+        </div>
+        <div class="spacing-info">
+          <span class="spacing-token">xs</span>
+          <span class="spacing-value">4px</span>
+          <span class="spacing-use">Icon gaps, tight elements</span>
+        </div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-visual">
+          <div class="spacing-bar" style="width: 8px;"></div>
+        </div>
+        <div class="spacing-info">
+          <span class="spacing-token">sm</span>
+          <span class="spacing-value">8px</span>
+          <span class="spacing-use">Inline spacing, small gaps</span>
+        </div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-visual">
+          <div class="spacing-bar" style="width: 16px;"></div>
+        </div>
+        <div class="spacing-info">
+          <span class="spacing-token">md</span>
+          <span class="spacing-value">16px</span>
+          <span class="spacing-use">Default padding, form gaps</span>
+        </div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-visual">
+          <div class="spacing-bar" style="width: 24px;"></div>
+        </div>
+        <div class="spacing-info">
+          <span class="spacing-token">lg</span>
+          <span class="spacing-value">24px</span>
+          <span class="spacing-use">Card padding, sections</span>
+        </div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-visual">
+          <div class="spacing-bar" style="width: 32px;"></div>
+        </div>
+        <div class="spacing-info">
+          <span class="spacing-token">xl</span>
+          <span class="spacing-value">32px</span>
+          <span class="spacing-use">Section dividers</span>
+        </div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-visual">
+          <div class="spacing-bar" style="width: 48px;"></div>
+        </div>
+        <div class="spacing-info">
+          <span class="spacing-token">2xl</span>
+          <span class="spacing-value">48px</span>
+          <span class="spacing-use">Page margins, hero areas</span>
+        </div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-visual">
+          <div class="spacing-bar" style="width: 64px;"></div>
+        </div>
+        <div class="spacing-info">
+          <span class="spacing-token">3xl</span>
+          <span class="spacing-value">64px</span>
+          <span class="spacing-use">Major sections</span>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-family: 'Fraunces', serif; font-size: 24px; margin-bottom: 16px; margin-top: 80px;">Border Radius</h3>
+    <p style="color: var(--warm-gray); margin-bottom: 32px; font-size: 15px;">Soft, organic shapes that feel natural and inviting.</p>
+    <div class="radius-grid">
+      <div class="radius-item">
+        <div class="radius-box" style="border-radius: 8px;"></div>
+        <div class="radius-label">sm</div>
+        <div class="radius-value">8px — Buttons, badges</div>
+      </div>
+      <div class="radius-item">
+        <div class="radius-box" style="border-radius: 12px;"></div>
+        <div class="radius-label">md</div>
+        <div class="radius-value">12px — Inputs, small cards</div>
+      </div>
+      <div class="radius-item">
+        <div class="radius-box" style="border-radius: 20px;"></div>
+        <div class="radius-label">lg</div>
+        <div class="radius-value">20px — Cards, panels</div>
+      </div>
+      <div class="radius-item">
+        <div class="radius-box" style="border-radius: 50%;"></div>
+        <div class="radius-label">full</div>
+        <div class="radius-value">50% — Avatars, pills</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Components -->
+  <section class="section-alt">
+    <div class="section-header">
+      <div class="section-number">04 — Components</div>
+      <h2 class="section-title">Building Blocks</h2>
+      <p class="section-desc">Core interface elements designed for warmth, clarity, and ease of use.</p>
+    </div>
+
+    <div class="component-grid">
+      <div class="component-card">
+        <div class="component-title">Buttons</div>
+        <div class="component-demo">
+          <button class="btn btn-primary">Book Session</button>
+          <button class="btn btn-accent">Start Training</button>
+          <button class="btn btn-soft">Explore Classes</button>
+          <button class="btn btn-ghost">View Details</button>
+        </div>
+      </div>
+
+      <div class="component-card">
+        <div class="component-title">Form Inputs</div>
+        <div class="input-demo">
+          <input type="text" class="input-field" placeholder="Your name">
+          <input type="email" class="input-field" placeholder="Email address">
+          <input type="text" class="input-field" value="sarah@example.com" style="border-color: var(--terracotta); background: white;">
+        </div>
+      </div>
+
+      <div class="component-card">
+        <div class="component-title">Selection Grid</div>
+        <div class="selection-grid">
+          <div class="selection-card">
+            <span class="selection-label">A1</span>
+          </div>
+          <div class="selection-card">
+            <span class="selection-label">A2</span>
+          </div>
+          <div class="selection-card selected">
+            <span class="selection-label">B1</span>
+          </div>
+          <div class="selection-card">
+            <span class="selection-label">B2</span>
+          </div>
+          <div class="selection-card">
+            <span class="selection-label">C1</span>
+          </div>
+          <div class="selection-card" style="opacity: 0.4;">
+            <span class="selection-label">C2</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="component-card">
+        <div class="component-title">Date Selection</div>
+        <div class="date-picker-demo">
+          <div class="date-chip selected">
+            <div class="date-day">13</div>
+            <div class="date-name">Mon</div>
+          </div>
+          <div class="date-chip">
+            <div class="date-day">14</div>
+            <div class="date-name">Tue</div>
+          </div>
+          <div class="date-chip">
+            <div class="date-day">15</div>
+            <div class="date-name">Wed</div>
+          </div>
+          <div class="date-chip">
+            <div class="date-day">16</div>
+            <div class="date-name">Thu</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="component-card">
+        <div class="component-title">Time Slots</div>
+        <div class="time-slots">
+          <div class="time-slot selected">9:00 AM</div>
+          <div class="time-slot">10:30 AM</div>
+          <div class="time-slot">12:00 PM</div>
+          <div class="time-slot unavailable">2:00 PM</div>
+          <div class="time-slot">4:30 PM</div>
+        </div>
+      </div>
+
+      <div class="component-card">
+        <div class="component-title">Badges & Tags</div>
+        <div class="badge-demo">
+          <span class="badge badge-terracotta">Popular</span>
+          <span class="badge badge-sage">Beginner</span>
+          <span class="badge badge-clay">Premium</span>
+          <span class="badge badge-neutral">Indoor</span>
+          <span class="badge badge-sage">New</span>
+        </div>
+      </div>
+
+      <div class="component-card">
+        <div class="component-title">Pricing</div>
+        <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;">
+          <span style="font-family: 'Fraunces', serif; font-size: 36px; color: var(--espresso);">$45</span>
+          <span style="color: var(--warm-gray); font-size: 14px;">/ session</span>
+        </div>
+        <p style="font-size: 13px; color: var(--warm-gray); line-height: 1.5;">
+          Includes studio access, equipment, and post-session amenities.
+        </p>
+      </div>
+
+      <div class="component-card">
+        <div class="component-title">Card Example</div>
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div style="width: 64px; height: 64px; background: linear-gradient(135deg, var(--terracotta-light), var(--terracotta)); border-radius: 12px;"></div>
+          <div>
+            <div style="font-weight: 600; margin-bottom: 4px;">Morning Flow</div>
+            <div style="font-size: 13px; color: var(--warm-gray);">Yoga · 60 min · Sarah M.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- App Preview -->
+  <section class="phone-mockup-section">
+    <div class="mockup-container">
+      <div>
+        <div class="section-number">05 — In Practice</div>
+        <h2 class="section-title">All Together</h2>
+        <p class="section-desc" style="margin-bottom: 32px;">See how the system comes to life in a cohesive, calming experience.</p>
+        
+        <div class="pattern-list">
+          <div class="pattern-item">
+            <div class="pattern-number">1</div>
+            <div class="pattern-content">
+              <h4>Warm, Light Backgrounds</h4>
+              <p>Cream and warm white create an inviting, spa-like atmosphere</p>
+            </div>
+          </div>
+          <div class="pattern-item">
+            <div class="pattern-number">2</div>
+            <div class="pattern-content">
+              <h4>Terracotta Accents</h4>
+              <p>Earthy orange-brown highlights guide attention to key actions</p>
+            </div>
+          </div>
+          <div class="pattern-item">
+            <div class="pattern-number">3</div>
+            <div class="pattern-content">
+              <h4>Elegant Typography</h4>
+              <p>Fraunces serif headlines feel refined yet approachable</p>
+            </div>
+          </div>
+          <div class="pattern-item">
+            <div class="pattern-number">4</div>
+            <div class="pattern-content">
+              <h4>Generous Spacing</h4>
+              <p>Breathing room between elements creates calm and clarity</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="phone-header-image">
+            <div class="phone-overline">Wellness Studio</div>
+            <div class="phone-title">Morning<br>Flow</div>
+          </div>
+          <div class="phone-content">
+            <div class="phone-card">
+              <div class="phone-card-title">Select a Room</div>
+              <div class="phone-selection-grid">
+                <div class="phone-selection-item">A1</div>
+                <div class="phone-selection-item selected">A2</div>
+                <div class="phone-selection-item">B1</div>
+                <div class="phone-selection-item">B2</div>
+              </div>
+            </div>
+            <div class="phone-card">
+              <div class="phone-card-title">Choose Time</div>
+              <div style="display: flex; gap: 8px;">
+                <div style="padding: 10px 14px; background: rgba(193, 127, 97, 0.1); border-radius: 8px; font-size: 12px; font-weight: 500; border: 1.5px solid var(--terracotta); color: var(--espresso);">9:00 AM</div>
+                <div style="padding: 10px 14px; background: var(--warm-white); border-radius: 8px; font-size: 12px; color: var(--charcoal);">10:30 AM</div>
+                <div style="padding: 10px 14px; background: var(--warm-white); border-radius: 8px; font-size: 12px; color: var(--charcoal);">12:00 PM</div>
+              </div>
+            </div>
+            <button class="phone-btn">Book Now · $45</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Design Tokens -->
+  <section>
+    <div class="section-header">
+      <div class="section-number">06 — Tokens</div>
+      <h2 class="section-title">Design Tokens</h2>
+      <p class="section-desc">Copy these CSS variables directly into your project for instant consistency.</p>
+    </div>
+
+    <div class="tokens-grid">
+      <div class="token-card">
+        <div class="token-card-title">Neutrals</div>
+        <div class="token-line"><span class="key">--cream</span>: #FAF7F2;</div>
+        <div class="token-line"><span class="key">--warm-white</span>: #F5F1EA;</div>
+        <div class="token-line"><span class="key">--sand</span>: #E8E2D9;</div>
+        <div class="token-line"><span class="key">--stone</span>: #D4CCC0;</div>
+        <div class="token-line"><span class="key">--warm-gray</span>: #9C948A;</div>
+        <div class="token-line"><span class="key">--charcoal</span>: #3D3A36;</div>
+        <div class="token-line"><span class="key">--espresso</span>: #2C2925;</div>
+      </div>
+
+      <div class="token-card">
+        <div class="token-card-title">Accents</div>
+        <div class="token-line"><span class="key">--terracotta</span>: #C17F61;</div>
+        <div class="token-line"><span class="key">--terracotta-light</span>: #D4A088;</div>
+        <div class="token-line"><span class="key">--sage</span>: #8B9A7E;</div>
+        <div class="token-line"><span class="key">--sage-light</span>: #A8B59D;</div>
+        <div class="token-line"><span class="key">--clay</span>: #B8977A;</div>
+        <div class="token-line"><span class="key">--moss</span>: #6B7B5E;</div>
+      </div>
+
+      <div class="token-card">
+        <div class="token-card-title">Spacing</div>
+        <div class="token-line"><span class="key">--space-xs</span>: 4px;</div>
+        <div class="token-line"><span class="key">--space-sm</span>: 8px;</div>
+        <div class="token-line"><span class="key">--space-md</span>: 16px;</div>
+        <div class="token-line"><span class="key">--space-lg</span>: 24px;</div>
+        <div class="token-line"><span class="key">--space-xl</span>: 32px;</div>
+        <div class="token-line"><span class="key">--space-2xl</span>: 48px;</div>
+        <div class="token-line"><span class="key">--space-3xl</span>: 64px;</div>
+      </div>
+
+      <div class="token-card">
+        <div class="token-card-title">Radius & Motion</div>
+        <div class="token-line"><span class="key">--radius-sm</span>: 8px;</div>
+        <div class="token-line"><span class="key">--radius-md</span>: 12px;</div>
+        <div class="token-line"><span class="key">--radius-lg</span>: 20px;</div>
+        <div class="token-line"><span class="key">--radius-full</span>: 9999px;</div>
+        <div class="token-line" style="margin-top: 16px;"><span class="key">--ease-out</span>: cubic-bezier(0.16, 1, 0.3, 1);</div>
+        <div class="token-line"><span class="key">--duration</span>: 250ms;</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">Trainichi</div>
+    <div class="footer-text">Design System v1.0 · December 2025</div>
+  </footer>
+
+</body>
+</html>

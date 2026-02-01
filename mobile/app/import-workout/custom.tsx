@@ -7,7 +7,6 @@ import {
     TouchableOpacity,
     ScrollView,
     Alert,
-    ImageBackground,
     Dimensions,
     Modal,
 } from "react-native";
@@ -16,9 +15,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getTheme, spacing, radii } from "@/src/theme";
 import { useColorScheme } from "react-native";
 import * as Linking from "expo-linking";
-import { WorkoutImport } from "@/src/types";
+import { WorkoutImport, CreateWorkoutRequest, WorkoutCategory } from "@/src/types";
 import { Ionicons } from "@expo/vector-icons";
 import { apiService } from "@/src/services/api";
+import { AddToPlanBottomSheet } from "@/src/components/AddToPlanBottomSheet";
+import { getCurrentPlanId, getCurrentUserId } from "@/src/state/session";
+import { planItemsCache } from "@/src/services/planItemsCache";
 
 export default function CustomImportScreen() {
     const router = useRouter();
@@ -29,6 +31,8 @@ export default function CustomImportScreen() {
     const windowWidth = Dimensions.get("window").width;
     const heroHeight = Math.round(windowWidth * 0.75);
     const [showMenu, setShowMenu] = useState(false);
+    const [showAddSheet, setShowAddSheet] = useState(false);
+    const [planId, setPlanId] = useState<string | null>(null);
 
     const data: WorkoutImport | null = useMemo(() => {
         if (!params?.payload) return null;
@@ -79,13 +83,70 @@ export default function CustomImportScreen() {
         );
     };
 
+    const openAddSheet = async () => {
+        setShowAddSheet(true);
+        const cachedPlanId = getCurrentPlanId();
+        setPlanId(cachedPlanId!);
+    };
+
+    const handleAddToPlan = async (dates: string[]) => {
+        if (!planId) {
+            Alert.alert("No plan", "No plan available to add to");
+            throw new Error("No plan available");
+        }
+        if (dates.length === 0) {
+            Alert.alert("No dates selected", "Please select at least one date");
+            throw new Error("No dates selected");
+        }
+        if (!data) {
+            Alert.alert("Error", "No workout data available");
+            throw new Error("No workout data");
+        }
+
+        const userId = getCurrentUserId();
+        if (!userId) {
+            Alert.alert("Error", "Please sign in to add workouts to your plan");
+            throw new Error("No user ID");
+        }
+
+        try {
+            // Step 1: Convert the imported workout to a regular workout
+            const workoutRequest: CreateWorkoutRequest = {
+                title: data.title || "Imported Workout",
+                description: data.description || undefined,
+                category: (data.category as WorkoutCategory) || "Cardio",
+                intensity: data.metadata?.intensity || "Medium",
+                imageUrl: data.thumbnailUrl || undefined,
+                workoutType: "cardio", // Default, can be adjusted based on category
+                createdBy: userId,
+            };
+
+            const createdWorkout = await apiService.createWorkout(workoutRequest);
+
+            // Step 2: Add the newly created workout to the plan
+            await apiService.addWorkoutToPlanOnDates(planId, {
+                workoutId: createdWorkout.id,
+                dates
+            });
+
+            // Refresh cache
+            try {
+                await planItemsCache.getCachedItems();
+            } catch (e) {
+                console.warn("Failed to refresh plan items cache", e);
+            }
+
+            Alert.alert("Added", `Workout added to ${dates.length} date(s)`);
+        } catch (e) {
+            console.error("Add to plan failed", e);
+            Alert.alert("Error", "Failed to add workout to plan");
+            throw e;
+        }
+    };
+
     if (!data) {
         return (
-            <ImageBackground
-                source={require("../../assets/images/bg6.png")}
-                style={styles.screenBackground}
-                imageStyle={styles.screenBackgroundImage}
-            >
+            <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
                 <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
                     <Text style={{ color: theme.colors.text, textAlign: "center" }}>
                         Unable to load imported workout.
@@ -94,7 +155,7 @@ export default function CustomImportScreen() {
                         <Text style={{ color: theme.colors.accent }}>Go Back</Text>
                     </TouchableOpacity>
                 </View>
-            </ImageBackground>
+            </View>
         );
     }
 
@@ -119,11 +180,7 @@ export default function CustomImportScreen() {
     const platformColor = getPlatformColor(data.sourcePlatform);
 
     return (
-        <ImageBackground
-            source={require("../../assets/images/bg6.png")}
-            style={styles.screenBackground}
-            imageStyle={styles.screenBackgroundImage}
-        >
+        <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
             <View style={[styles.container, { backgroundColor: "transparent" }]}>
                 {/* Header */}
                 <View
@@ -322,16 +379,21 @@ export default function CustomImportScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.primaryButton, { backgroundColor: theme.colors.accent }]}
-                        onPress={() => {
-                            // TODO: Implement add to plan functionality
-                            Alert.alert("Coming Soon", "Add to plan functionality will be implemented soon!");
-                        }}
+                        onPress={openAddSheet}
                         activeOpacity={0.8}
                     >
                         <Ionicons name="add-circle-outline" size={18} color="#fff" />
                         <Text style={styles.primaryButtonText}>Add to Plan</Text>
                     </TouchableOpacity>
                 </View>
+
+                {/* Add to Plan Bottom Sheet */}
+                <AddToPlanBottomSheet
+                    visible={showAddSheet}
+                    workoutTitle={data.title || "Imported Workout"}
+                    onClose={() => setShowAddSheet(false)}
+                    onConfirm={handleAddToPlan}
+                />
 
                 {/* Menu Modal */}
                 <Modal
@@ -373,7 +435,7 @@ export default function CustomImportScreen() {
                     </TouchableOpacity>
                 </Modal>
             </View>
-        </ImageBackground>
+        </View>
     );
 }
 

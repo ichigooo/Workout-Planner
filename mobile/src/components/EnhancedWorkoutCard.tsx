@@ -9,7 +9,7 @@ import {
     ImageSourcePropType,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { getTheme, spacing, radii } from "../theme";
+import { getTheme, spacing, radii, typography } from "../theme";
 import { Workout } from "../types";
 
 interface EnhancedWorkoutCardProps {
@@ -52,19 +52,19 @@ export const EnhancedWorkoutCard: React.FC<EnhancedWorkoutCardProps> = ({
 
     const equipmentIcon = getEquipmentIconForTitle(workout.title);
 
-    // Determine intensity color
+    // Determine intensity color - Neutral & Minimal design uses grays
     const getIntensityColor = (intensity: string) => {
         const lower = intensity.toLowerCase();
         if (lower.includes("max") || lower.includes("high") || lower.includes("hard")) {
-            return "#F44336"; // Red
+            return theme.colors.text; // #1A1A1A - dark for high intensity
         }
         if (lower.includes("medium") || lower.includes("moderate")) {
-            return "#FF9800"; // Orange
+            return theme.colors.textSecondary; // #666666 - medium gray
         }
-        return "#4CAF50"; // Green
+        return theme.colors.textTertiary; // #999999 - light gray for low
     };
 
-    const intensityColor = workout.intensity ? getIntensityColor(workout.intensity) : theme.colors.subtext;
+    const intensityColor = workout.intensity ? getIntensityColor(workout.intensity) : theme.colors.textSecondary;
 
     return (
         <TouchableOpacity
@@ -77,18 +77,56 @@ export const EnhancedWorkoutCard: React.FC<EnhancedWorkoutCardProps> = ({
                 },
             ]}
             onPress={onPress}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
         >
             {/* Category Badge - Top Right Corner */}
             <View style={styles.badgeContainer}>
                 {!!workout.category && (
-                    <View style={[styles.categoryBadge, { backgroundColor: theme.colors.accent }]}>
-                        <Text style={styles.categoryText}>{workout.category}</Text>
+                    <View
+                        style={[
+                            styles.categoryBadge,
+                            {
+                                backgroundColor: theme.colors.accent,
+                                borderRadius: radii.full,
+                            },
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                styles.categoryText,
+                                {
+                                    color: "#FFFFFF",
+                                    fontFamily: typography.fonts.bodySemibold,
+                                    fontSize: typography.sizes.xs,
+                                },
+                            ]}
+                        >
+                            {workout.category}
+                        </Text>
                     </View>
                 )}
                 {isCustom && (
-                    <View style={[styles.customBadge, { backgroundColor: "#F0C2C2" }]}>
-                        <Text style={styles.customText}>CUSTOM</Text>
+                    <View
+                        style={[
+                            styles.customBadge,
+                            {
+                                backgroundColor: theme.colors.sage,
+                                borderRadius: radii.full,
+                            },
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                styles.customText,
+                                {
+                                    color: "#FFFFFF",
+                                    fontFamily: typography.fonts.bodySemibold,
+                                    fontSize: typography.sizes.xs,
+                                },
+                            ]}
+                        >
+                            CUSTOM
+                        </Text>
                     </View>
                 )}
             </View>
@@ -217,7 +255,7 @@ export const EnhancedWorkoutCard: React.FC<EnhancedWorkoutCardProps> = ({
                                     onAddToPlan();
                                 }}
                             >
-                                <Ionicons name="add-circle-outline" size={18} color="#fff" />
+                                <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" />
                                 <Text style={styles.actionTextPrimary}>Add to Plan</Text>
                             </TouchableOpacity>
                         )}
@@ -230,9 +268,9 @@ export const EnhancedWorkoutCard: React.FC<EnhancedWorkoutCardProps> = ({
 
 const styles = StyleSheet.create({
     card: {
-        borderRadius: radii.lg,
+        borderRadius: radii.lg, // 20px - soft, organic shape
         marginVertical: spacing.xs,
-        marginHorizontal: spacing.md,
+        marginHorizontal: spacing.sm,
         borderWidth: 1,
         overflow: "hidden",
     },
@@ -250,11 +288,9 @@ const styles = StyleSheet.create({
         borderRadius: radii.sm,
     },
     categoryText: {
-        fontSize: 10,
-        fontWeight: "700",
-        color: "#fff",
+        fontWeight: "600",
         textTransform: "uppercase",
-        letterSpacing: 0.5,
+        letterSpacing: 0.8,
     },
     customBadge: {
         paddingHorizontal: spacing.sm,
@@ -262,11 +298,9 @@ const styles = StyleSheet.create({
         borderRadius: radii.sm,
     },
     customText: {
-        fontSize: 10,
-        fontWeight: "700",
-        color: "#fff",
+        fontWeight: "600",
         textTransform: "uppercase",
-        letterSpacing: 0.5,
+        letterSpacing: 0.8,
     },
     content: {
         padding: spacing.md,
@@ -322,7 +356,7 @@ const styles = StyleSheet.create({
         marginTop: spacing.xs,
         paddingTop: spacing.sm,
         borderTopWidth: 1,
-        borderTopColor: "rgba(0,0,0,0.05)",
+        borderTopColor: "#E8E2D9", // Sand border
     },
     actionButton: {
         flex: 1,
@@ -345,7 +379,7 @@ const styles = StyleSheet.create({
     actionTextPrimary: {
         fontSize: 14,
         fontWeight: "600",
-        color: "#fff",
+        color: "#FFFFFF",
     },
     deleteButton: {
         flexDirection: "row",
