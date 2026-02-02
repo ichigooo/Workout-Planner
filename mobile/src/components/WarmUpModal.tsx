@@ -9,6 +9,7 @@ import {
     Linking,
     Pressable,
     useColorScheme,
+    Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -52,17 +53,29 @@ const WarmUpModal: React.FC<WarmUpModalProps> = ({ visible, onClose }) => {
         },
     ];
 
-    const handleVideoPress = async (url: string) => {
-        try {
-            const supported = await Linking.canOpenURL(url);
-            if (supported) {
-                await Linking.openURL(url);
-            } else {
-                console.log("Can't open URL: " + url);
-            }
-        } catch (error) {
-            console.error("Error opening URL:", error);
-        }
+    const handleVideoPress = (url: string) => {
+        Alert.alert(
+            "Open in YouTube",
+            "This will open the video in the YouTube app or browser.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Open",
+                    onPress: async () => {
+                        try {
+                            const supported = await Linking.canOpenURL(url);
+                            if (supported) {
+                                await Linking.openURL(url);
+                            } else {
+                                console.log("Can't open URL: " + url);
+                            }
+                        } catch (error) {
+                            console.error("Error opening URL:", error);
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     return (

@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
-import { getCurrentUserId } from "../state/session";
+import { useAuth } from "../state/AuthContext";
 import { planItemsCache } from "../services/planItemsCache";
 import { Workout, PlanItem, WorkoutCategory } from "../types";
 import { orderCategoriesWithClimbingAtEnd } from "../utils/categoryOrder";
@@ -215,6 +215,7 @@ export const Home: React.FC<HomeProps> = ({
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
     const scrollRef = useScrollToTopOnTabPress();
+    const { user: authUser } = useAuth();
 
     const [workouts, setWorkouts] = useState<Workout[]>([]);
     const [planItems, setPlanItems] = useState<PlanItem[]>([]);
@@ -257,17 +258,16 @@ export const Home: React.FC<HomeProps> = ({
     }, []);
 
     const loadUserProfile = useCallback(async () => {
-        const userId = getCurrentUserId();
-        if (!userId) return;
+        if (!authUser?.id) return;
 
         try {
-            const user = await apiService.getUserProfile(userId);
+            const user = await apiService.getUserProfile(authUser.id);
             setProfilePhoto(user.profilePhoto || null);
             setUserName(user.name || null);
         } catch (error) {
             console.error("[Home] Error loading user profile:", error);
         }
-    }, []);
+    }, [authUser?.id]);
 
     const refreshCacheFromStore = useCallback(async () => {
         try {
@@ -615,31 +615,27 @@ export const Home: React.FC<HomeProps> = ({
                         )}
                     </View>
 
-                    {!isRestDay &&
-                    weekWorkouts[displayDate] &&
-                    weekWorkouts[displayDate].length > 0 ? (
-                        <TouchableOpacity
-                            activeOpacity={0.85}
-                            style={styles.warmupCard}
-                            onPress={() => setShowWarmUpModal(true)}
+                    <TouchableOpacity
+                        activeOpacity={0.85}
+                        style={styles.warmupCard}
+                        onPress={() => setShowWarmUpModal(true)}
+                    >
+                        <ImageBackground
+                            source={require("../../assets/images/warmup.png")}
+                            style={styles.warmupBackground}
+                            imageStyle={styles.warmupImage}
                         >
-                            <ImageBackground
-                                source={require("../../assets/images/warmup.png")}
-                                style={styles.warmupBackground}
-                                imageStyle={styles.warmupImage}
-                            >
-                                <View style={styles.warmupOverlay}>
-                                    <Text style={styles.warmupTitle}>Start With A Warm Up</Text>
-                                    <Text style={styles.warmupSubtitle}>
-                                        Ease into today's session with pulses and mobility.
-                                    </Text>
-                                    <View style={styles.warmupPill}>
-                                        <Text style={styles.warmupPillText}>Let's warm up</Text>
-                                    </View>
+                            <View style={styles.warmupOverlay}>
+                                <Text style={styles.warmupTitle}>Start With A Warm Up</Text>
+                                <Text style={styles.warmupSubtitle}>
+                                    Ease into today's session with pulses and mobility.
+                                </Text>
+                                <View style={styles.warmupPill}>
+                                    <Text style={styles.warmupPillText}>Let's warm up</Text>
                                 </View>
-                            </ImageBackground>
-                        </TouchableOpacity>
-                    ) : null}
+                            </View>
+                        </ImageBackground>
+                    </TouchableOpacity>
                 </ScrollView>
             </SafeAreaView>
 
