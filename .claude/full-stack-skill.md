@@ -103,6 +103,3 @@ Final Lighthouse/accessibility/security scores
 Playwright test run summary (100% pass)
 
 Start the process NOW: Analyze the app description, choose stack, output the tailored phase plan, then immediately execute Phase 1 with full code, commit, and browser-based E2E test results.
-
-all the docs are in docs/
-design guideline is /Users/linnawang/dev/workout-planner/mobile/assets/Trainichi-Design-Guidelines-Warm.html
