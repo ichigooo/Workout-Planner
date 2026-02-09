@@ -116,11 +116,15 @@ export default function WorkoutScreen() {
     }, [currentUserId]);
 
     const categoriesWithAll = React.useMemo(() => {
-        const base = orderCategoriesWithClimbingAtEnd(
-            Array.from(new Set(workouts.map((w) => w.category))),
-        );
+        // Include categories from both regular workouts and custom imports
+        const regularCategories = workouts.map((w) => w.category);
+        const customCategories = customWorkouts
+            .map((w) => w.category)
+            .filter((c): c is string => c !== null && c !== undefined);
+        const allCategories = Array.from(new Set([...regularCategories, ...customCategories]));
+        const base = orderCategoriesWithClimbingAtEnd(allCategories);
         return ["All", "Custom", ...base];
-    }, [workouts]);
+    }, [workouts, customWorkouts]);
     const categories = categoriesWithAll.filter((cat) => cat !== "All" && cat !== "Custom");
     const computeChipIndex = (value: string | null) => {
         if (!value || value === "All") return 0;

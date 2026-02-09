@@ -940,7 +940,8 @@ app.put("/api/workouts/:id", requireAdmin, async (req, res) => {
             intensity: body.intensity,
             imageUrl: computedImageUrl,
             imageUrl2: computedImageUrl2,
-            trackRecords: body.trackRecords ?? false,
+            // Only update trackRecords if explicitly provided in request
+            ...(body.trackRecords !== undefined && { trackRecords: body.trackRecords }),
             // Note: is_global and created_by are not updated here to maintain data integrity
             updatedAt: new Date().toISOString(),
         };
