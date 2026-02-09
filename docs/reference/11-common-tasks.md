@@ -26,6 +26,74 @@ npx prisma migrate dev          # Run migrations
 
 ---
 
+## Switch Between Dev and Production
+
+### Running Against Local Dev Database
+
+**Setup:**
+
+1. **Update backend environment** (`backend/.env`):
+   - Point `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `DATABASE_URL` to your dev Supabase database
+
+2. **Update mobile environment** (`mobile/.env`):
+   ```env
+   EXPO_PUBLIC_USE_CLOUD="false"
+   EXPO_PUBLIC_SUPABASE_URL="https://YOUR-DEV-PROJECT.supabase.co"
+   EXPO_PUBLIC_SUPABASE_ANON_KEY="your-dev-anon-key"
+   ```
+
+3. **Update local IP** (`mobile/src/utils/getlocalIP.ts`):
+   ```bash
+   # Get your current IP
+   ipconfig getifaddr en0
+
+   # Update CURRENT_IP in getlocalIP.ts to match
+   ```
+
+**Start:**
+```bash
+# Terminal 1 - Backend
+cd backend
+npm run dev
+
+# Terminal 2 - Mobile
+cd mobile
+npx expo start --dev-client --host tunnel
+```
+
+### Running Against Production Database
+
+**Setup:**
+
+1. **Backend environment** (`backend/.env`):
+   - Point to prod Supabase database
+
+2. **Mobile environment** (`mobile/.env`):
+   ```env
+   EXPO_PUBLIC_USE_CLOUD="true"
+   EXPO_PUBLIC_API_BASE_URL="https://workoutplannerservice-fhg2t5u6w-nanas-projects-294a362f.vercel.app/api"
+   EXPO_PUBLIC_SUPABASE_URL="https://fhihhkkcauotipxqqpii.supabase.co"
+   EXPO_PUBLIC_SUPABASE_ANON_KEY="your-prod-anon-key"
+   ```
+
+**Start:**
+```bash
+# Only need mobile - uses deployed backend
+cd mobile
+npx expo start --dev-client --host tunnel
+```
+
+**Quick Reference:**
+
+| Mode | `EXPO_PUBLIC_USE_CLOUD` | Backend | Database |
+|------|------------------------|---------|----------|
+| **Local Dev** | `"false"` | Local (`npm run dev`) | Dev Supabase |
+| **Prod** | `"true"` | Vercel (deployed) | Prod Supabase |
+
+**Note:** Restart Expo dev server after changing `.env` values.
+
+---
+
 ## Add a New Screen
 
 1. **Create the file** in `app/`:

@@ -36,6 +36,7 @@ export interface Workout {
     imageUrl2?: string; // camelCase column name
     isGlobal: boolean; // Global workout library - shared across all users
     createdBy?: string; // Optional: who created this workout (for admin purposes)
+    trackRecords?: boolean; // Enable PR tracking for this workout
     createdAt: string;
     updatedAt: string;
 }
@@ -88,6 +89,57 @@ export interface WorkoutPersonalRecord {
     updatedAt: string;
 }
 
+// New structured PR tracking types
+export interface PersonalRecordEntry {
+    id: string;
+    userId: string;
+    workoutId: string;
+    reps: number;
+    weight: number;
+    dateAchieved: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CurrentPR {
+    reps: number;
+    weight: number;
+    dateAchieved: string;
+    entryId: string;
+}
+
+export interface CreatePREntryRequest {
+    userId: string;
+    reps: number;
+    weight: number;
+    dateAchieved?: string;
+}
+
+export interface CreatePREntryResponse {
+    entry: PersonalRecordEntry;
+    isNewRecord: boolean;
+    previousBest: { weight: number; dateAchieved: string } | null;
+}
+
+export interface UserWorkoutRepConfig {
+    id?: string;
+    userId?: string;
+    workoutId?: string;
+    customReps: number[];
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface WorkoutPRSummary {
+    workout: Pick<Workout, "id" | "title" | "category" | "imageUrl">;
+    currentRecords: CurrentPR[];
+    customReps: number[];
+}
+
+export interface AllPRsResponse {
+    workouts: WorkoutPRSummary[];
+}
+
 export interface WorkoutDayTemplate {
     name: string;
     workoutIds: string[];
@@ -118,6 +170,7 @@ export interface CreateWorkoutRequest {
     imageUrl?: string;
     imageUrl2?: string;
     createdBy?: string; // Optional: who created this workout (for admin purposes)
+    trackRecords?: boolean; // Enable PR tracking for this workout
 }
 
 export interface CreateWorkoutPlanRequest {

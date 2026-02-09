@@ -8,6 +8,7 @@ import {
     Modal,
     Image,
     useColorScheme,
+    Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getTheme, spacing, radii } from "../theme";
@@ -17,8 +18,9 @@ import { WORKOUT_CATEGORIES as CATEGORIES } from "../constants/workoutCategories
 interface WorkoutImportPreviewProps {
     visible: boolean;
     workout: WorkoutImport | null;
-    onConfirm: (category: string) => void;
+    onConfirm: (category: string, isGlobal: boolean) => void;
     onCancel: () => void;
+    isAdmin?: boolean;
 }
 
 const CATEGORY_ICONS: Record<WorkoutCategory, keyof typeof Ionicons.glyphMap> = {
@@ -44,6 +46,7 @@ export const WorkoutImportPreview: React.FC<WorkoutImportPreviewProps> = ({
     workout,
     onConfirm,
     onCancel,
+    isAdmin = false,
 }) => {
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
@@ -52,6 +55,7 @@ export const WorkoutImportPreview: React.FC<WorkoutImportPreviewProps> = ({
     const [selectedCategory, setSelectedCategory] = useState<string>(
         workout?.category || WORKOUT_CATEGORY_OPTIONS[0].value
     );
+    const [makePublic, setMakePublic] = useState(false);
 
     if (!workout) return null;
 
@@ -193,6 +197,28 @@ export const WorkoutImportPreview: React.FC<WorkoutImportPreviewProps> = ({
                             })}
                         </View>
                     </View>
+
+                    {/* Make Public Toggle - Admin Only */}
+                    {isAdmin && (
+                        <View style={styles.publicToggleSection}>
+                            <View style={styles.publicToggleRow}>
+                                <View style={styles.publicToggleTextContainer}>
+                                    <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>
+                                        Make Public
+                                    </Text>
+                                    <Text style={[styles.sectionSubtext, { color: theme.colors.subtext, marginBottom: 0 }]}>
+                                        This workout will appear for all users
+                                    </Text>
+                                </View>
+                                <Switch
+                                    value={makePublic}
+                                    onValueChange={setMakePublic}
+                                    trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+                                    thumbColor="#FFFFFF"
+                                />
+                            </View>
+                        </View>
+                    )}
                 </ScrollView>
 
                 {/* Action Buttons */}
@@ -217,7 +243,7 @@ export const WorkoutImportPreview: React.FC<WorkoutImportPreviewProps> = ({
 
                     <TouchableOpacity
                         style={[styles.confirmButton, { backgroundColor: theme.colors.accent }]}
-                        onPress={() => onConfirm(selectedCategory)}
+                        onPress={() => onConfirm(selectedCategory, makePublic)}
                         activeOpacity={0.8}
                     >
                         <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
@@ -337,6 +363,19 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "600",
         textAlign: "center",
+    },
+    publicToggleSection: {
+        marginTop: spacing.lg,
+        marginBottom: spacing.md,
+    },
+    publicToggleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    publicToggleTextContainer: {
+        flex: 1,
+        marginRight: spacing.md,
     },
     actionButtons: {
         flexDirection: "row",

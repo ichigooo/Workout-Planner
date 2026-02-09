@@ -12,6 +12,7 @@ import {
     Modal,
     FlatList,
     Image,
+    Switch,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { imageAssetToDataUrl } from "../utils/image";
@@ -50,6 +51,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
     const [intensity, setIntensity] = useState(workout?.intensity || "");
     const [imageUrl, setImageUrl] = useState(workout?.imageUrl || "");
     const [imageUrl2, setImageUrl2] = useState(workout?.imageUrl2 || "");
+    const [trackRecords, setTrackRecords] = useState(workout?.trackRecords || false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
 
     // workoutType is derived from category (and initial workout), no effect needed
@@ -84,7 +86,8 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
             intensity,
             imageUrl: imageUrl || undefined,
             imageUrl2: imageUrl2 || undefined,
-            createdBy: workout?.createdBy || undefined, // Optional: who created this workout
+            createdBy: workout?.createdBy || undefined,
+            trackRecords,
         };
 
         onSubmit(workoutData);
@@ -338,6 +341,23 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
                     </View>
                 </View>
 
+                <View style={styles.inputGroup}>
+                    <View style={styles.toggleRow}>
+                        <View style={styles.toggleLabelContainer}>
+                            <Text style={styles.label}>Track Personal Records</Text>
+                            <Text style={styles.toggleDescription}>
+                                Enable PR tracking to log and compare your best performances
+                            </Text>
+                        </View>
+                        <Switch
+                            value={trackRecords}
+                            onValueChange={setTrackRecords}
+                            trackColor={{ false: "#ddd", true: "#007AFF" }}
+                            thumbColor="#fff"
+                        />
+                    </View>
+                </View>
+
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
                         <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -573,5 +593,19 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#666",
         lineHeight: 20,
+    },
+    toggleRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    toggleLabelContainer: {
+        flex: 1,
+        marginRight: 12,
+    },
+    toggleDescription: {
+        fontSize: 13,
+        color: "#666",
+        marginTop: 4,
     },
 });

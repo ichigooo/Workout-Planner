@@ -8,11 +8,15 @@ let currentUserIdMemory: string | null = null;
 let currentPlanIdMemory: string | null = null;
 
 /**
- * Loads the stored user ID from AsyncStorage
+ * Loads the stored user ID from AsyncStorage and syncs to memory
  */
 export async function loadStoredUserId(): Promise<string | null> {
     try {
         const userId = await AsyncStorage.getItem(USER_ID_STORAGE_KEY);
+        // Sync to memory so getCurrentUserId() works immediately after
+        if (userId) {
+            currentUserIdMemory = userId;
+        }
         return userId;
     } catch (error) {
         console.error("[session] Failed to load stored userId:", error);
@@ -47,6 +51,17 @@ export function getCurrentUserId(): string | null {
     return currentUserIdMemory;
 }
 
+/**
+ * Gets the current user ID, loading from storage if memory is empty.
+ * Use this when you need to ensure you have the userId.
+ */
+export async function ensureCurrentUserId(): Promise<string | null> {
+    if (currentUserIdMemory) {
+        return currentUserIdMemory;
+    }
+    return loadStoredUserId();
+}
+
 export function setCurrentPlanId(planId: string | null) {
     currentPlanIdMemory = planId;
 }
@@ -56,9 +71,10 @@ export function getCurrentPlanId(): string | null {
 }
 
 export async function getCurrentUser(): Promise<User | null> {
-    if (!currentUserIdMemory) return null;
+    const userId = await ensureCurrentUserId();
+    if (!userId) return null;
     try {
-        const user = await apiService.getUserProfile(currentUserIdMemory);
+        const user = await apiService.getUserProfile(userId);
         return user;
     } catch {
         return null;

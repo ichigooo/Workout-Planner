@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const { createClient } = require("@supabase/supabase-js");
+const { createId } = require("@paralleldrive/cuid2");
 
 // Load environment variables
 dotenv.config();
@@ -113,7 +114,7 @@ function mapUserRow(row) {
         birthday: row.birthday,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
-        isAdmin: row.isAdmin,
+        isAdmin: row.isAdmin ?? row.is_admin ?? false,
     };
 }
 
@@ -159,6 +160,48 @@ async function ensureUserExistsOrRespond(userId, res) {
         console.error("Unexpected error verifying user existence:", err);
         res.status(500).json({ error: "Failed to verify user" });
         return false;
+    }
+}
+
+/**
+ * requireAdmin
+ * Simple admin check middleware for personal use.
+ * Checks if the userId in the request has isAdmin=true in the database.
+ */
+async function requireAdmin(req, res, next) {
+    try {
+        // Get userId from body or query params
+        const userId = req.body?.userId || req.query?.userId;
+
+        if (!userId) {
+            return res.status(400).json({
+                error: "userId is required"
+            });
+        }
+
+        // Check if user is admin
+        const { data, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", userId)
+            .single();
+
+        if (error) {
+            console.error("Error checking admin status:", error);
+            return res.status(500).json({ error: "Failed to verify admin status" });
+        }
+
+        const adminFlag = data?.isAdmin ?? data?.is_admin ?? false;
+        if (!adminFlag) {
+            return res.status(403).json({
+                error: "Admin privileges required"
+            });
+        }
+
+        next();
+    } catch (error) {
+        console.error("Admin check error:", error);
+        res.status(500).json({ error: "Failed to verify admin status" });
     }
 }
 
@@ -370,6 +413,7 @@ function mapWorkoutRow(row) {
         imageUrl2: row.imageUrl2 ?? null,
         isGlobal: row.isGlobal !== undefined ? row.isGlobal : true,
         createdBy: row.createdBy ?? null,
+        trackRecords: row.trackRecords ?? false,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
@@ -406,6 +450,32 @@ function mapPersonalRecordRow(row) {
         value: row.value,
         createdAt: row.createdAt ?? row.created_at,
         updatedAt: row.updatedAt ?? row.updated_at,
+    };
+}
+
+function mapPREntryRow(row) {
+    if (!row) return row;
+    return {
+        id: row.id,
+        userId: row.userId,
+        workoutId: row.workoutId,
+        reps: row.reps,
+        weight: row.weight,
+        dateAchieved: row.dateAchieved,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+    };
+}
+
+function mapRepConfigRow(row) {
+    if (!row) return row;
+    return {
+        id: row.id,
+        userId: row.userId,
+        workoutId: row.workoutId,
+        customReps: row.customReps ?? [],
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
     };
 }
 
@@ -820,7 +890,7 @@ app.get("/api/workouts/:id", async (req, res) => {
     }
 });
 
-app.put("/api/workouts/:id", async (req, res) => {
+app.put("/api/workouts/:id", requireAdmin, async (req, res) => {
     try {
         const body = req.body || {};
         // Auto-detect workout type based on category
@@ -870,6 +940,7 @@ app.put("/api/workouts/:id", async (req, res) => {
             intensity: body.intensity,
             imageUrl: computedImageUrl,
             imageUrl2: computedImageUrl2,
+            trackRecords: body.trackRecords ?? false,
             // Note: is_global and created_by are not updated here to maintain data integrity
             updatedAt: new Date().toISOString(),
         };
@@ -889,7 +960,7 @@ app.put("/api/workouts/:id", async (req, res) => {
     }
 });
 
-app.delete("/api/workouts/:id", async (req, res) => {
+app.delete("/api/workouts/:id", requireAdmin, async (req, res) => {
     try {
         const { error } = await supabase.from("workouts").delete().eq("id", req.params.id);
 
@@ -995,6 +1066,314 @@ app.delete("/api/workouts/:id/personal-record", async (req, res) => {
     } catch (error) {
         console.error("Error deleting personal record:", error);
         res.status(500).json({ error: "Failed to delete personal record" });
+    }
+});
+
+// ==================== PR Entry Endpoints (new structured PR tracking) ====================
+
+// Get all PR entries for a workout (full history)
+app.get("/api/workouts/:workoutId/pr-entries", async (req, res) => {
+    const { workoutId } = req.params;
+    const userId = req.query.userId;
+    if (!userId) {
+        return res.status(400).json({ error: "userId query parameter is required" });
+    }
+
+    try {
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
+        const { data: entries, error } = await supabase
+            .from("personal_record_entries")
+            .select("*")
+            .eq("workoutId", workoutId)
+            .eq("userId", userId)
+            .order("dateAchieved", { ascending: false });
+
+        if (error) throw error;
+        res.json((entries || []).map(mapPREntryRow));
+    } catch (error) {
+        console.error("Error fetching PR entries:", error);
+        res.status(500).json({ error: "Failed to fetch PR entries" });
+    }
+});
+
+// Get current best PR for each rep count
+app.get("/api/workouts/:workoutId/pr-entries/current", async (req, res) => {
+    const { workoutId } = req.params;
+    const userId = req.query.userId;
+    if (!userId) {
+        return res.status(400).json({ error: "userId query parameter is required" });
+    }
+
+    try {
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
+        // Get all entries for this workout and user
+        const { data: entries, error } = await supabase
+            .from("personal_record_entries")
+            .select("*")
+            .eq("workoutId", workoutId)
+            .eq("userId", userId);
+
+        if (error) throw error;
+
+        // Group by reps and find the best (max weight) for each
+        const repGroups = {};
+        for (const entry of entries || []) {
+            if (!repGroups[entry.reps] || entry.weight > repGroups[entry.reps].weight) {
+                repGroups[entry.reps] = entry;
+            }
+        }
+
+        const currentBest = Object.values(repGroups).map((entry) => ({
+            reps: entry.reps,
+            weight: entry.weight,
+            dateAchieved: entry.dateAchieved,
+            entryId: entry.id,
+        }));
+
+        res.json(currentBest);
+    } catch (error) {
+        console.error("Error fetching current PRs:", error);
+        res.status(500).json({ error: "Failed to fetch current PRs" });
+    }
+});
+
+// Create a new PR entry
+app.post("/api/workouts/:workoutId/pr-entries", async (req, res) => {
+    const { workoutId } = req.params;
+    const { userId, reps, weight, dateAchieved } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+    }
+    if (typeof reps !== "number" || reps < 1 || reps > 20) {
+        return res.status(400).json({ error: "reps must be a number between 1 and 20" });
+    }
+    if (typeof weight !== "number" || weight <= 0) {
+        return res.status(400).json({ error: "weight must be a positive number" });
+    }
+
+    try {
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
+        // Find the current best for this rep count
+        const { data: existingEntries, error: fetchError } = await supabase
+            .from("personal_record_entries")
+            .select("*")
+            .eq("workoutId", workoutId)
+            .eq("userId", userId)
+            .eq("reps", reps)
+            .order("weight", { ascending: false })
+            .limit(1);
+
+        if (fetchError) throw fetchError;
+
+        const previousBest = existingEntries?.[0] || null;
+        const isNewRecord = !previousBest || weight > previousBest.weight;
+
+        // Create the new entry
+        const now = new Date().toISOString();
+        const { data: entry, error: insertError } = await supabase
+            .from("personal_record_entries")
+            .insert([{
+                id: createId(),
+                userId,
+                workoutId,
+                reps,
+                weight,
+                dateAchieved: dateAchieved ? new Date(dateAchieved).toISOString() : now,
+                createdAt: now,
+                updatedAt: now,
+            }])
+            .select()
+            .single();
+
+        if (insertError) throw insertError;
+
+        res.status(201).json({
+            entry: mapPREntryRow(entry),
+            isNewRecord,
+            previousBest: previousBest
+                ? { weight: previousBest.weight, dateAchieved: previousBest.dateAchieved }
+                : null,
+        });
+    } catch (error) {
+        console.error("Error creating PR entry:", error);
+        res.status(500).json({ error: "Failed to create PR entry" });
+    }
+});
+
+// Delete a specific PR entry
+app.delete("/api/workouts/:workoutId/pr-entries/:entryId", async (req, res) => {
+    const { workoutId, entryId } = req.params;
+    const userId = req.query.userId || req.body?.userId;
+
+    if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+    }
+
+    try {
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
+        const { error } = await supabase
+            .from("personal_record_entries")
+            .delete()
+            .eq("id", entryId)
+            .eq("workoutId", workoutId)
+            .eq("userId", userId);
+
+        if (error) throw error;
+        res.status(204).send();
+    } catch (error) {
+        console.error("Error deleting PR entry:", error);
+        res.status(500).json({ error: "Failed to delete PR entry" });
+    }
+});
+
+// Get user's custom rep config for a workout
+app.get("/api/workouts/:workoutId/rep-config", async (req, res) => {
+    const { workoutId } = req.params;
+    const userId = req.query.userId;
+
+    if (!userId) {
+        return res.status(400).json({ error: "userId query parameter is required" });
+    }
+
+    try {
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
+        const { data: config, error } = await supabase
+            .from("user_workout_rep_configs")
+            .select("*")
+            .eq("userId", userId)
+            .eq("workoutId", workoutId)
+            .maybeSingle();
+
+        if (error) throw error;
+        res.json(config ? mapRepConfigRow(config) : { customReps: [] });
+    } catch (error) {
+        console.error("Error fetching rep config:", error);
+        res.status(500).json({ error: "Failed to fetch rep config" });
+    }
+});
+
+// Update user's custom rep config for a workout
+app.put("/api/workouts/:workoutId/rep-config", async (req, res) => {
+    const { workoutId } = req.params;
+    const { userId, customReps } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+    }
+    if (!Array.isArray(customReps) || customReps.length > 2) {
+        return res.status(400).json({ error: "customReps must be an array with max 2 items" });
+    }
+    if (customReps.some((r) => typeof r !== "number" || r < 1 || r > 20)) {
+        return res.status(400).json({ error: "Each rep count must be a number between 1 and 20" });
+    }
+
+    try {
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
+        // Check if config already exists
+        const { data: existingConfig } = await supabase
+            .from("user_workout_rep_configs")
+            .select("id")
+            .eq("userId", userId)
+            .eq("workoutId", workoutId)
+            .single();
+
+        const configId = existingConfig?.id || createId();
+        const now = new Date().toISOString();
+        const { data: config, error } = await supabase
+            .from("user_workout_rep_configs")
+            .upsert([{ id: configId, userId, workoutId, customReps, createdAt: now, updatedAt: now }], { onConflict: "userId,workoutId" })
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.json(mapRepConfigRow(config));
+    } catch (error) {
+        console.error("Error updating rep config:", error);
+        res.status(500).json({ error: "Failed to update rep config" });
+    }
+});
+
+// Get all PRs for a user across all tracked workouts (for My PRs page)
+app.get("/api/users/:userId/all-prs", async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const ok = await ensureUserExistsOrRespond(userId, res);
+        if (!ok) return;
+
+        // Get all workouts with trackRecords = true
+        const { data: trackedWorkouts, error: workoutsError } = await supabase
+            .from("workouts")
+            .select("id, title, category, imageUrl")
+            .eq("trackRecords", true);
+
+        if (workoutsError) throw workoutsError;
+
+        // Get all PR entries for this user
+        const { data: allEntries, error: entriesError } = await supabase
+            .from("personal_record_entries")
+            .select("*")
+            .eq("userId", userId);
+
+        if (entriesError) throw entriesError;
+
+        // Get user's custom rep configs
+        const { data: repConfigs, error: configsError } = await supabase
+            .from("user_workout_rep_configs")
+            .select("*")
+            .eq("userId", userId);
+
+        if (configsError) throw configsError;
+
+        // Build the response
+        const result = (trackedWorkouts || []).map((workout) => {
+            const entries = (allEntries || []).filter((e) => e.workoutId === workout.id);
+            const config = (repConfigs || []).find((c) => c.workoutId === workout.id);
+
+            // Group by reps and find best for each
+            const repGroups = {};
+            for (const entry of entries) {
+                if (!repGroups[entry.reps] || entry.weight > repGroups[entry.reps].weight) {
+                    repGroups[entry.reps] = entry;
+                }
+            }
+
+            const currentRecords = Object.values(repGroups).map((entry) => ({
+                reps: entry.reps,
+                weight: entry.weight,
+                dateAchieved: entry.dateAchieved,
+                entryId: entry.id,
+            }));
+
+            return {
+                workout: {
+                    id: workout.id,
+                    title: workout.title,
+                    category: workout.category,
+                    imageUrl: workout.imageUrl,
+                },
+                currentRecords,
+                customReps: config?.customReps ?? [],
+            };
+        });
+
+        res.json({ workouts: result });
+    } catch (error) {
+        console.error("Error fetching all PRs:", error);
+        res.status(500).json({ error: "Failed to fetch all PRs" });
     }
 });
 
@@ -1513,6 +1892,20 @@ app.post("/api/workout-imports", async (req, res) => {
             }
         }
 
+        // Check admin status if isGlobal is requested
+        let isGlobal = false;
+        if (body.isGlobal === true) {
+            const { data: userData, error: userError } = await supabase
+                .from("users")
+                .select("isAdmin")
+                .eq("id", userId)
+                .single();
+            if (userError || !userData?.isAdmin) {
+                return res.status(403).json({ error: "Only admins can create public imports" });
+            }
+            isGlobal = true;
+        }
+
         const insertPayload = {
             user_id: userId,
             source_url: sourceUrl,
@@ -1523,7 +1916,7 @@ app.post("/api/workout-imports", async (req, res) => {
             thumbnail_url: body.thumbnailUrl ?? null,
             html: body.html ?? null,
             metadata: metadataPayload,
-            is_global: body.isGlobal === true,
+            is_global: isGlobal,
         };
 
         const { data, error } = await supabase
@@ -1570,6 +1963,20 @@ app.post("/api/workout-imports/instagram", async (req, res) => {
                 .json({ error: "Unable to fetch Instagram metadata for that URL." });
         }
 
+        // Check admin status if isGlobal is requested
+        let isGlobal = false;
+        if (body.isGlobal === true) {
+            const { data: userData, error: userError } = await supabase
+                .from("users")
+                .select("isAdmin")
+                .eq("id", userId)
+                .single();
+            if (userError || !userData?.isAdmin) {
+                return res.status(403).json({ error: "Only admins can create public imports" });
+            }
+            isGlobal = true;
+        }
+
         const insertPayload = {
             user_id: userId,
             source_url: metadata.normalizedUrl || url,
@@ -1580,7 +1987,7 @@ app.post("/api/workout-imports/instagram", async (req, res) => {
             thumbnail_url: metadata.thumbnailUrl ?? null,
             html: metadata.html ?? null,
             metadata,
-            is_global: false,
+            is_global: isGlobal,
         };
 
         const { data, error } = await supabase
@@ -1621,17 +2028,31 @@ app.post("/api/workout-imports/youtube", async (req, res) => {
                 .json({ error: "Unable to fetch YouTube metadata for that URL." });
         }
 
+        // Check admin status if isGlobal is requested
+        let isGlobal = false;
+        if (body.isGlobal === true) {
+            const { data: userData, error: userError } = await supabase
+                .from("users")
+                .select("isAdmin")
+                .eq("id", userId)
+                .single();
+            if (userError || !userData?.isAdmin) {
+                return res.status(403).json({ error: "Only admins can create public imports" });
+            }
+            isGlobal = true;
+        }
+
         const insertPayload = {
             user_id: userId,
             source_url: metadata.normalizedUrl || url,
             source_platform: "youtube",
             title: metadata.title ?? null,
-            category: body.category ?? "custom",
+            category: body.category ?? null,
             description: metadata.description ?? null,
             thumbnail_url: metadata.thumbnailUrl ?? null,
             html: metadata.html ?? null,
             metadata,
-            is_global: false,
+            is_global: isGlobal,
         };
 
         const { data, error } = await supabase
@@ -1657,7 +2078,7 @@ app.get("/api/users/:userId/workout-imports", async (req, res) => {
         const { data, error } = await supabase
             .from("workout_imports")
             .select("*")
-            .eq("user_id", userId)
+            .or(`user_id.eq.${userId},is_global.eq.true`)
             .order("created_at", { ascending: false });
         if (error) throw error;
 
@@ -1673,6 +2094,45 @@ app.get("/api/users/:userId/workout-imports", async (req, res) => {
 app.delete("/api/workout-imports/:id", async (req, res) => {
     try {
         const { id } = req.params;
+        const userId = req.body?.userId || req.query?.userId;
+
+        if (!userId) {
+            return res.status(400).json({ error: "userId is required" });
+        }
+
+        // Fetch the import to check ownership and global status
+        const { data: importData, error: fetchError } = await supabase
+            .from("workout_imports")
+            .select("user_id, is_global")
+            .eq("id", id)
+            .single();
+
+        if (fetchError || !importData) {
+            return res.status(404).json({ error: "Import not found" });
+        }
+
+        const isOwner = importData.user_id === userId;
+        const isGlobal = importData.is_global === true;
+
+        if (isGlobal) {
+            // Global imports: only owner admin can delete
+            if (!isOwner) {
+                return res.status(403).json({ error: "Cannot delete public imports you don't own" });
+            }
+            const { data: userData } = await supabase
+                .from("users")
+                .select("isAdmin")
+                .eq("id", userId)
+                .single();
+            if (!userData?.isAdmin) {
+                return res.status(403).json({ error: "Admin privileges required" });
+            }
+        } else {
+            // Personal imports: only owner can delete
+            if (!isOwner) {
+                return res.status(403).json({ error: "Cannot delete imports you don't own" });
+            }
+        }
 
         const { error } = await supabase.from("workout_imports").delete().eq("id", id);
 
@@ -1792,8 +2252,9 @@ app.post("/api/users", async (req, res) => {
     }
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server - listen on 0.0.0.0 to allow connections from network devices
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Health check: http://localhost:${PORT}/health`);
+    console.log(`Network access: http://192.168.86.27:${PORT}/health`);
 });

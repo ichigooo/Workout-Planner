@@ -12,6 +12,7 @@
     "license": "ISC",
     "description": "",
     "dependencies": {
+        "@paralleldrive/cuid2": "^3.3.0",
         "@prisma/client": "^6.15.0",
         "@supabase/supabase-js": "^2.57.0",
         "cors": "^2.8.5",

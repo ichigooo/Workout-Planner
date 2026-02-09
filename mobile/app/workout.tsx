@@ -176,21 +176,27 @@ export default function WorkoutScreen() {
 
     const showingCustom = category === "Custom";
 
+    // Separate personal imports (user's own, non-global) from public imports (global)
+    const personalImports = customWorkouts.filter(
+        (w) => !w.isGlobal && w.userId === currentUserId
+    );
+
     // Filter regular workouts by category
     const filteredRegularWorkouts = category && !showingCustom
         ? workouts.filter((w) => w.category === category)
         : workouts;
 
     // Filter custom workouts by category (if not showing "Custom" tab)
+    // For category tabs: include matching imports (personal AND public)
     const filteredCustomWorkouts = category && !showingCustom
         ? customWorkouts.filter((w) => w.category === category)
         : customWorkouts;
 
     // Combine regular workouts with custom workouts for category views
-    // In "Custom" tab, only show custom workouts
-    // In "All" or specific category tabs, show both regular + matching custom workouts
+    // In "Custom" tab, only show personal imports (not public ones)
+    // In "All" or specific category tabs, show both regular + matching custom workouts (including public)
     const listData = showingCustom
-        ? customWorkouts
+        ? personalImports
         : [...filteredRegularWorkouts, ...filteredCustomWorkouts];
 
     const listLoading = showingCustom ? customLoading : loading;
@@ -212,6 +218,11 @@ export default function WorkoutScreen() {
     }, [category, categoriesWithAll.length]);
 
     const handleDeleteCustomWorkout = (workoutId: string) => {
+        if (!currentUserId) {
+            Alert.alert("Error", "Please sign in to delete workouts.");
+            return;
+        }
+
         Alert.alert(
             "Delete Workout",
             "Are you sure you want to delete this workout? This action cannot be undone.",
@@ -222,15 +233,14 @@ export default function WorkoutScreen() {
                     style: "destructive",
                     onPress: async () => {
                         try {
-                            await apiService.deleteWorkoutImport(workoutId);
+                            await apiService.deleteWorkoutImport(workoutId, currentUserId);
                             // Refresh the custom workouts list
-                            if (currentUserId) {
-                                const imports = await apiService.getWorkoutImports(currentUserId);
-                                setCustomWorkouts(imports);
-                            }
-                        } catch (error) {
+                            const imports = await apiService.getWorkoutImports(currentUserId);
+                            setCustomWorkouts(imports);
+                        } catch (error: any) {
                             console.error("Failed to delete workout:", error);
-                            Alert.alert("Error", "Failed to delete workout. Please try again.");
+                            const message = error?.message || "Failed to delete workout. Please try again.";
+                            Alert.alert("Error", message);
                         }
                     },
                 },
@@ -240,10 +250,20 @@ export default function WorkoutScreen() {
 
     const renderCustomCard = (item: WorkoutImport) => {
         const mapped = convertImportToWorkout(item);
+
+        // Determine if user can delete this import
+        // Personal imports: only owner can delete
+        // Global imports: only owner AND must be admin
+        const isOwner = item.userId === currentUserId;
+        const canDelete = isOwner && (!item.isGlobal || isAdmin);
+
+        // Only show "Custom" tag for personal imports, not public ones
+        const isPersonalImport = !item.isGlobal && isOwner;
+
         return (
             <EnhancedWorkoutCard
                 workout={mapped}
-                isCustom
+                isCustom={isPersonalImport}
                 onPress={() =>
                     router.push({
                         pathname: "/import-workout/custom",
@@ -253,7 +273,7 @@ export default function WorkoutScreen() {
                         },
                     })
                 }
-                onDelete={() => handleDeleteCustomWorkout(item.id)}
+                onDelete={canDelete ? () => handleDeleteCustomWorkout(item.id) : undefined}
                 showQuickActions={false}
             />
         );

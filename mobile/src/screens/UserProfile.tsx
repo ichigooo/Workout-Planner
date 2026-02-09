@@ -357,6 +357,29 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                             )}
                         </View>
 
+                        {/* My Personal Records Link */}
+                        <TouchableOpacity
+                            style={[
+                                styles.prLinkButton,
+                                {
+                                    backgroundColor: theme.colors.surface,
+                                    borderColor: theme.colors.border,
+                                },
+                            ]}
+                            onPress={() => router.push("/my-prs")}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.prLinkContent}>
+                                <Text style={[styles.prLinkText, { color: theme.colors.text }]}>
+                                    My Personal Records
+                                </Text>
+                                <Text style={[styles.prLinkSubtext, { color: theme.colors.subtext }]}>
+                                    View all your PRs and progress
+                                </Text>
+                            </View>
+                            <Text style={[styles.prLinkArrow, { color: theme.colors.subtext }]}>→</Text>
+                        </TouchableOpacity>
+
                         <TouchableOpacity
                             style={[
                                 styles.saveButton,
@@ -648,5 +671,31 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontFamily: "Inter_500Medium",
         color: "#FFFFFF",
+    },
+    prLinkButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginHorizontal: 16,
+        marginBottom: 20,
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    prLinkContent: {
+        flex: 1,
+    },
+    prLinkText: {
+        fontSize: 16,
+        fontFamily: "Inter_600SemiBold",
+    },
+    prLinkSubtext: {
+        fontSize: 13,
+        fontFamily: "Inter_400Regular",
+        marginTop: 4,
+    },
+    prLinkArrow: {
+        fontSize: 20,
+        marginLeft: 12,
     },
 });

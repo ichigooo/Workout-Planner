@@ -10,12 +10,12 @@ import {
     Alert,
     Modal,
     Dimensions,
-    TextInput,
     KeyboardAvoidingView,
     Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Workout, CreateWorkoutRequest, WorkoutPersonalRecord } from "../types";
+import { Workout, CreateWorkoutRequest } from "../types";
+import { PRSection } from "./personal-records";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
 import { getCurrentPlanId, getCurrentUserId, getCurrentUser } from "../state/session";
@@ -56,12 +56,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
         () => [workout.imageUrl, workout.imageUrl2].filter(Boolean) as string[],
         [workout.imageUrl, workout.imageUrl2],
     );
-    const [personalRecord, setPersonalRecord] = useState<WorkoutPersonalRecord | null>(null);
-    const [personalRecordValue, setPersonalRecordValue] = useState("");
-    const [recordLoading, setRecordLoading] = useState(false);
-    const [recordSaving, setRecordSaving] = useState(false);
     const [recordUserId, setRecordUserId] = useState<string | null>(() => getCurrentUserId());
-    const [isEditingRecord, setIsEditingRecord] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -69,15 +64,28 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
             try {
                 // Try to get current user from session first
                 const current = await getCurrentUser();
+                console.log("[WorkoutDetail] getCurrentUser returned:", current);
                 if (!mounted) return;
                 if (current) {
+                    console.log("[WorkoutDetail] isAdmin from current user:", current.isAdmin);
                     setIsCurrentUserAdmin(Boolean(current.isAdmin));
                     return;
                 }
                 // Fallback: if only an id is available, fetch it
-                const userId = getCurrentUserId();
+                let userId = getCurrentUserId();
+                console.log("[WorkoutDetail] getCurrentUserId returned:", userId);
+
+                // If memory is empty, try loading from storage
+                if (!userId) {
+                    const { loadStoredUserId } = await import("../state/session");
+                    userId = await loadStoredUserId();
+                    console.log("[WorkoutDetail] loadStoredUserId returned:", userId);
+                }
+
                 if (userId) {
                     const u = await apiService.getUserProfile(userId);
+                    console.log("[WorkoutDetail] getUserProfile returned:", u);
+                    console.log("[WorkoutDetail] isAdmin from profile:", u?.isAdmin);
                     if (!mounted) return;
                     setIsCurrentUserAdmin(Boolean(u?.isAdmin));
                 }
@@ -95,34 +103,6 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
         setRecordUserId(getCurrentUserId());
     }, []);
 
-    useEffect(() => {
-        const userId = recordUserId;
-        if (!userId) {
-            setPersonalRecord(null);
-            setPersonalRecordValue("");
-            return;
-        }
-        let cancelled = false;
-        setRecordLoading(true);
-        apiService
-            .getPersonalRecord(workout.id, userId)
-            .then((record) => {
-                if (cancelled) return;
-                setPersonalRecord(record);
-                setPersonalRecordValue(record?.value ?? "");
-                setIsEditingRecord(false);
-            })
-            .catch((error) => {
-                if (cancelled) return;
-                console.error("Failed to load personal record", error);
-            })
-            .finally(() => {
-                if (!cancelled) setRecordLoading(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [workout.id, recordUserId]);
 
     useEffect(() => {
         setActiveImageIndex(0);
@@ -136,57 +116,6 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
         setShowMenu(false);
         // open inline edit modal
         setShowEditModal(true);
-    };
-
-    const handleSavePersonalRecord = async () => {
-        const userId = recordUserId || getCurrentUserId();
-        if (!userId) {
-            Alert.alert("Unavailable", "Please sign in to save a personal record.");
-            return;
-        }
-        try {
-            setRecordSaving(true);
-            const trimmed = personalRecordValue.trim();
-            if (!trimmed) {
-                await apiService.deletePersonalRecord(workout.id, userId);
-                setPersonalRecord(null);
-                setPersonalRecordValue("");
-                setIsEditingRecord(false);
-                Alert.alert("Removed", "Personal record cleared.");
-            } else {
-                const updated = await apiService.upsertPersonalRecord(workout.id, userId, trimmed);
-                setPersonalRecord(updated);
-                setPersonalRecordValue(updated.value);
-                setIsEditingRecord(false);
-                Alert.alert("Saved", "Personal record updated.");
-            }
-        } catch (error) {
-            console.error("Failed to save personal record", error);
-            Alert.alert("Error", "Unable to save your personal record right now.");
-        } finally {
-            setRecordSaving(false);
-        }
-    };
-
-    const handleClearPersonalRecord = async () => {
-        const userId = recordUserId || getCurrentUserId();
-        if (!userId) {
-            Alert.alert("Unavailable", "Please sign in first.");
-            return;
-        }
-        try {
-            setRecordSaving(true);
-            await apiService.deletePersonalRecord(workout.id, userId);
-            setPersonalRecord(null);
-            setPersonalRecordValue("");
-            setIsEditingRecord(false);
-            Alert.alert("Removed", "Personal record cleared.");
-        } catch (error) {
-            console.error("Failed to clear personal record", error);
-            Alert.alert("Error", "Unable to clear your personal record right now.");
-        } finally {
-            setRecordSaving(false);
-        }
     };
 
     const handleDeletePress = () => {
@@ -500,149 +429,10 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                 </View>
                             </View>
 
-                            <View style={styles.section}>
-                                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                                    My personal record
-                                </Text>
-                                {personalRecord && !isEditingRecord ? (
-                                    <>
-                                        <Text
-                                            style={[
-                                                styles.personalRecordValue,
-                                                { color: theme.colors.text },
-                                            ]}
-                                        >
-                                            {personalRecord.value}
-                                        </Text>
-                                        <View style={styles.recordActions}>
-                                            <TouchableOpacity
-                                                style={[
-                                                    styles.recordButton,
-                                                    styles.recordButtonSecondary,
-                                                    {
-                                                        borderColor: theme.colors.border,
-                                                        flex: undefined,
-                                                    },
-                                                ]}
-                                                onPress={() => setIsEditingRecord(true)}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.recordButtonSecondaryText,
-                                                        { color: theme.colors.text },
-                                                    ]}
-                                                >
-                                                    Update
-                                                </Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[
-                                                    styles.recordButton,
-                                                    styles.recordButtonSecondary,
-                                                    {
-                                                        borderColor: theme.colors.border,
-                                                        flex: undefined,
-                                                    },
-                                                ]}
-                                                onPress={handleClearPersonalRecord}
-                                                disabled={recordSaving}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.recordButtonSecondaryText,
-                                                        { color: theme.colors.text },
-                                                    ]}
-                                                >
-                                                    Clear
-                                                </Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </>
-                                ) : (
-                                    <>
-                                        <TextInput
-                                            style={[
-                                                styles.personalRecordInput,
-                                                {
-                                                    borderColor: theme.colors.border,
-                                                    color: theme.colors.text,
-                                                    backgroundColor: theme.colors.surface,
-                                                },
-                                            ]}
-                                            placeholder="e.g., 25 lb"
-                                            placeholderTextColor={theme.colors.subtext}
-                                            value={personalRecordValue}
-                                            onChangeText={setPersonalRecordValue}
-                                            editable={!recordSaving && Boolean(recordUserId)}
-                                        />
-                                        <Text
-                                            style={[
-                                                styles.personalRecordHint,
-                                                { color: theme.colors.subtext },
-                                            ]}
-                                        >
-                                            {recordLoading
-                                                ? "Loading your record..."
-                                                : "Track your best set, rep, or time so you always know what to beat."}
-                                        </Text>
-                                        <View style={styles.recordActions}>
-                                            <TouchableOpacity
-                                                style={[
-                                                    styles.recordButton,
-                                                    styles.recordButtonSecondary,
-                                                    { borderColor: theme.colors.border },
-                                                ]}
-                                                onPress={handleSavePersonalRecord}
-                                                disabled={recordSaving || !recordUserId}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.recordButtonSecondaryText,
-                                                        { color: theme.colors.text },
-                                                    ]}
-                                                >
-                                                    {recordSaving ? "Saving..." : "Save record"}
-                                                </Text>
-                                            </TouchableOpacity>
-                                            {personalRecord ? (
-                                                <TouchableOpacity
-                                                    style={[
-                                                        styles.recordButton,
-                                                        styles.recordButtonSecondary,
-                                                        { borderColor: theme.colors.border },
-                                                    ]}
-                                                    onPress={() => {
-                                                        setIsEditingRecord(false);
-                                                        setPersonalRecordValue(
-                                                            personalRecord?.value ?? "",
-                                                        );
-                                                    }}
-                                                    disabled={recordSaving}
-                                                >
-                                                    <Text
-                                                        style={[
-                                                            styles.recordButtonSecondaryText,
-                                                            { color: theme.colors.text },
-                                                        ]}
-                                                    >
-                                                        Cancel
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            ) : null}
-                                        </View>
-                                    </>
-                                )}
-                                {!recordUserId && (
-                                    <Text
-                                        style={[
-                                            styles.personalRecordHint,
-                                            { color: theme.colors.subtext },
-                                        ]}
-                                    >
-                                        Sign in to save personal records.
-                                    </Text>
-                                )}
-                            </View>
+                            {/* Personal Records Section - only show for tracked workouts */}
+                            {workout.trackRecords && (
+                                <PRSection workout={workout} userId={recordUserId} />
+                            )}
                         </View>
                     </ScrollView>
                 </KeyboardAvoidingView>

@@ -506,6 +506,245 @@ npx prisma migrate dev --name add_new_table
 
 ---
 
+## CRITICAL: Prisma Schema vs Supabase Client
+
+This project uses a **hybrid approach**:
+- **Prisma** for schema definition and migrations (creates/modifies tables)
+- **Supabase JS client** for runtime queries in `server.js`
+
+This creates important gotchas you MUST understand.
+
+---
+
+### Column Naming: camelCase in Prisma = camelCase in Database
+
+When Prisma creates tables, it uses the **exact field names** from the schema:
+
+```prisma
+model PersonalRecordEntry {
+    id           String   @id @default(cuid())
+    userId       String      // Creates column named "userId" (camelCase)
+    workoutId    String      // Creates column named "workoutId" (camelCase)
+    dateAchieved DateTime    // Creates column named "dateAchieved" (camelCase)
+}
+```
+
+When querying with Supabase client, use the **same camelCase names**:
+
+```javascript
+// CORRECT - matches Prisma schema field names
+const { data } = await supabase
+    .from("personal_record_entries")
+    .select("*")
+    .eq("userId", userId)      // camelCase
+    .eq("workoutId", workoutId); // camelCase
+
+// WRONG - snake_case won't match
+.eq("user_id", userId)   // Won't find the column!
+```
+
+### Exception: `@map` Directive
+
+If Prisma uses `@map`, use the mapped name in Supabase queries:
+
+```prisma
+model PlanItem {
+    scheduledDate DateTime @map("scheduled_date")  // Column is "scheduled_date"
+}
+```
+
+```javascript
+// Use the @map name, not the field name
+.gte("scheduled_date", startDate)  // CORRECT
+.gte("scheduledDate", startDate)   // WRONG
+```
+
+---
+
+### ID Generation: Prisma Defaults Don't Work with Supabase Client
+
+Prisma's `@default(cuid())` only works when using **Prisma Client**. When inserting via Supabase client directly, you must generate IDs manually.
+
+**Problem:**
+```prisma
+model PersonalRecordEntry {
+    id String @id @default(cuid())  // Prisma would auto-generate
+}
+```
+
+```javascript
+// This FAILS with Supabase client - id will be null
+const { data, error } = await supabase
+    .from("personal_record_entries")
+    .insert([{ userId, workoutId, reps, weight }])  // No id!
+    .select();
+// Error: null value in column "id" violates not-null constraint
+```
+
+**Solution: Generate ID manually**
+
+1. Install cuid2:
+```bash
+npm install @paralleldrive/cuid2
+```
+
+2. Import and use:
+```javascript
+const { createId } = require("@paralleldrive/cuid2");
+
+const { data, error } = await supabase
+    .from("personal_record_entries")
+    .insert([{
+        id: createId(),  // Generate ID manually!
+        userId,
+        workoutId,
+        reps,
+        weight,
+    }])
+    .select();
+```
+
+---
+
+### Timestamp Fields: Also Must Be Set Manually
+
+Same issue applies to `@default(now())` and `@updatedAt`:
+
+```prisma
+model PersonalRecordEntry {
+    createdAt DateTime @default(now())   // Prisma would auto-set
+    updatedAt DateTime @updatedAt        // Prisma would auto-update
+}
+```
+
+**Solution: Set timestamps manually**
+
+```javascript
+const now = new Date().toISOString();
+
+const { data, error } = await supabase
+    .from("personal_record_entries")
+    .insert([{
+        id: createId(),
+        userId,
+        workoutId,
+        reps,
+        weight,
+        dateAchieved: now,
+        createdAt: now,   // Set manually!
+        updatedAt: now,   // Set manually!
+    }])
+    .select();
+```
+
+---
+
+### Complete Example: New Table with Supabase Client
+
+**1. Prisma Schema:**
+```prisma
+model PersonalRecordEntry {
+    id           String   @id @default(cuid())
+    userId       String
+    workoutId    String
+    reps         Int
+    weight       Float
+    dateAchieved DateTime @default(now())
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    workout Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+    @@index([userId, workoutId, reps])
+    @@map("personal_record_entries")  // Table name in DB
+}
+```
+
+**2. Server.js Insert:**
+```javascript
+const { createId } = require("@paralleldrive/cuid2");
+
+app.post("/api/workouts/:workoutId/pr-entries", async (req, res) => {
+    const { workoutId } = req.params;
+    const { userId, reps, weight, dateAchieved } = req.body;
+
+    const now = new Date().toISOString();
+
+    const { data: entry, error } = await supabase
+        .from("personal_record_entries")
+        .insert([{
+            id: createId(),                    // Generate ID
+            userId,                            // camelCase matches schema
+            workoutId,                         // camelCase matches schema
+            reps,
+            weight,
+            dateAchieved: dateAchieved || now,
+            createdAt: now,                    // Set timestamp
+            updatedAt: now,                    // Set timestamp
+        }])
+        .select()
+        .single();
+
+    if (error) throw error;
+    res.status(201).json(entry);
+});
+```
+
+**3. Server.js Query:**
+```javascript
+const { data } = await supabase
+    .from("personal_record_entries")
+    .select("*")
+    .eq("userId", userId)       // camelCase
+    .eq("workoutId", workoutId) // camelCase
+    .order("weight", { ascending: false });
+```
+
+---
+
+### Quick Reference: What to Check
+
+| Prisma Feature | Works with Supabase Client? | Solution |
+|----------------|----------------------------|----------|
+| `@id @default(cuid())` | NO | Use `createId()` from `@paralleldrive/cuid2` |
+| `@id @default(uuid())` | NO | Use `crypto.randomUUID()` or `uuid` package |
+| `@default(now())` | NO | Use `new Date().toISOString()` |
+| `@updatedAt` | NO | Set manually on insert/update |
+| `@@map("table_name")` | YES | Use mapped table name in `.from()` |
+| `@map("column_name")` | YES | Use mapped column name in `.eq()`, `.select()` |
+| Field names (no @map) | YES | Use exact camelCase field names |
+| `@relation` | Partial | Use Supabase join syntax, not Prisma includes |
+
+---
+
+### Debugging Tips
+
+**Error: "null value in column X violates not-null constraint"**
+- You forgot to provide a required field that Prisma would auto-generate
+- Check: `id`, `createdAt`, `updatedAt`
+
+**Error: "column X does not exist"**
+- Column name mismatch (snake_case vs camelCase)
+- Check the Prisma schema for `@map` directives
+- Run `npx prisma db push` if table/column is new
+
+**Query returns empty but data exists:**
+- Wrong column name in `.eq()` filter
+- Check: Are you using camelCase consistently?
+
+**To inspect actual column names:**
+```bash
+# In Prisma Studio
+cd backend && npx prisma studio
+
+# Or query information_schema
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'personal_record_entries';
+```
+
+---
+
 ## Related Documentation
 
 - [04-adding-server-request.md](./04-adding-server-request.md) - Using database in API routes

@@ -53,6 +53,12 @@ export default function CustomImportScreen() {
     };
 
     const handleDeletePress = () => {
+        const userId = getCurrentUserId();
+        if (!userId) {
+            Alert.alert("Error", "Please sign in to delete workouts.");
+            return;
+        }
+
         setShowMenu(false);
         Alert.alert(
             "Delete Workout",
@@ -65,7 +71,7 @@ export default function CustomImportScreen() {
                     onPress: async () => {
                         try {
                             if (data?.id) {
-                                await apiService.deleteWorkoutImport(data.id);
+                                await apiService.deleteWorkoutImport(data.id, userId);
                                 Alert.alert("Success", "Workout deleted successfully", [
                                     {
                                         text: "OK",
@@ -73,9 +79,10 @@ export default function CustomImportScreen() {
                                     },
                                 ]);
                             }
-                        } catch (error) {
+                        } catch (error: any) {
                             console.error("Failed to delete workout:", error);
-                            Alert.alert("Error", "Failed to delete workout. Please try again.");
+                            const message = error?.message || "Failed to delete workout. Please try again.";
+                            Alert.alert("Error", message);
                         }
                     },
                 },
@@ -257,9 +264,11 @@ export default function CustomImportScreen() {
                                     {(data.sourcePlatform || "Custom").toUpperCase()}
                                 </Text>
                             </View>
-                            <View style={[styles.customBadge, { backgroundColor: "#F0C2C2" }]}>
-                                <Text style={styles.customBadgeText}>IMPORTED</Text>
-                            </View>
+                            {!data.isGlobal && (
+                                <View style={[styles.customBadge, { backgroundColor: "#F0C2C2" }]}>
+                                    <Text style={styles.customBadgeText}>IMPORTED</Text>
+                                </View>
+                            )}
                         </View>
 
                         {/* Title */}

@@ -112,6 +112,7 @@ export default function ImportWorkoutScreen() {
         tiktok: { url: "", result: null, error: null, loading: false },
     });
     const [currentUserId, setCurrentUserIdState] = useState<string | null>(() => getCurrentUserId());
+    const [isAdmin, setIsAdmin] = useState(false);
 
     // Animation values
     const inputHeightAnim = useRef(new Animated.Value(0)).current;
@@ -126,6 +127,25 @@ export default function ImportWorkoutScreen() {
                 setCurrentUserIdState(storedId);
             }
         });
+    }, [currentUserId]);
+
+    // Fetch admin status
+    useEffect(() => {
+        if (!currentUserId) return;
+        let mounted = true;
+        (async () => {
+            try {
+                const user = await apiService.getUserProfile(currentUserId);
+                if (mounted) {
+                    setIsAdmin(Boolean(user?.isAdmin));
+                }
+            } catch {
+                // default to false
+            }
+        })();
+        return () => {
+            mounted = false;
+        };
     }, [currentUserId]);
 
     // Animate input field when platform is selected/deselected
@@ -242,7 +262,7 @@ export default function ImportWorkoutScreen() {
         }
     };
 
-    const handleConfirmImport = async (category: string) => {
+    const handleConfirmImport = async (category: string, makePublic: boolean) => {
         if (!previewWorkout || !currentUserId) {
             console.log("[ImportWorkout] Missing previewWorkout or currentUserId", {
                 previewWorkout,
@@ -251,7 +271,7 @@ export default function ImportWorkoutScreen() {
             return;
         }
 
-        console.log("[ImportWorkout] Confirming import with category:", category);
+        console.log("[ImportWorkout] Confirming import with category:", category, "isGlobal:", makePublic);
         console.log("[ImportWorkout] Preview workout:", previewWorkout);
 
         try {
@@ -268,12 +288,14 @@ export default function ImportWorkoutScreen() {
                     userId: currentUserId,
                     url: previewWorkout.sourceUrl,
                     category: category,
+                    isGlobal: makePublic,
                 });
             } else if (platform?.includes("instagram")) {
                 finalWorkout = await apiService.importWorkoutFromInstagram({
                     userId: currentUserId,
                     url: previewWorkout.sourceUrl,
                     category: category,
+                    isGlobal: makePublic,
                 });
             } else {
                 // Generic import
@@ -281,6 +303,7 @@ export default function ImportWorkoutScreen() {
                     userId: currentUserId,
                     url: previewWorkout.sourceUrl,
                     category: category,
+                    isGlobal: makePublic,
                 });
             }
 
@@ -689,6 +712,7 @@ export default function ImportWorkoutScreen() {
                 workout={previewWorkout}
                 onConfirm={handleConfirmImport}
                 onCancel={handleCancelPreview}
+                isAdmin={isAdmin}
             />
         </View>
     );

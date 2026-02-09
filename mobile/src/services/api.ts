@@ -11,6 +11,12 @@ import {
     WorkoutPlanTemplate,
     WorkoutDayTemplate,
     WorkoutImport,
+    PersonalRecordEntry,
+    CurrentPR,
+    CreatePREntryRequest,
+    CreatePREntryResponse,
+    UserWorkoutRepConfig,
+    AllPRsResponse,
 } from "../types";
 import { getLocalIp } from "../utils/getlocalIP";
 
@@ -20,13 +26,18 @@ const CLOUD_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 const USE_CLOUD = (RAW_USE_CLOUD ?? "true").toLowerCase() === "true";
 
-// Only try local IP if we explicitly say "don’t use cloud".
+// Only try local IP if we explicitly say "don't use cloud".
 const detectedLocalIp = USE_CLOUD ? null : getLocalIp();
 console.log("[api] RAW_USE_CLOUD =", RAW_USE_CLOUD);
 console.log("[api] USE_CLOUD =", USE_CLOUD);
 console.log("[api] detectedLocalIp", detectedLocalIp);
 
-const LOCAL_BASE_URL = detectedLocalIp ? `http://${detectedLocalIp}:3001/api` : null;
+// Build local URL - handle both ngrok URLs (which include domain) and local IPs
+const LOCAL_BASE_URL = detectedLocalIp
+    ? detectedLocalIp.includes('.') && !detectedLocalIp.match(/^\d+\.\d+\.\d+\.\d+$/)
+        ? `https://${detectedLocalIp}/api` // ngrok or other domain
+        : `http://${detectedLocalIp}:3001/api` // local IP
+    : null;
 
 // Pick a base URL without ever throwing at module load.
 const API_BASE_URL = USE_CLOUD ? CLOUD_BASE_URL : LOCAL_BASE_URL || "";
@@ -50,12 +61,13 @@ if (!API_BASE_URL) {
 class ApiService {
     private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
         // Log each request for debugging (Metro/console)
-        console.log(`[REQUEST][api] ${options?.method ?? "GET"} ${API_BASE_URL}${endpoint}`);
+        const fullUrl = `${API_BASE_URL}${endpoint}`;
+        console.log(`[REQUEST][api] ${options?.method ?? "GET"} ${fullUrl}`);
         if (options?.body) {
             console.log(`[REQUEST][api] Body:`, options.body);
         }
 
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const response = await fetch(fullUrl, {
             headers: {
                 "Content-Type": "application/json",
                 ...options?.headers,
@@ -119,9 +131,20 @@ class ApiService {
     }
 
     async updateWorkout(id: string, workout: Partial<Workout>): Promise<Workout> {
+        // Import session to get current userId for admin check
+        const { ensureCurrentUserId } = await import("../state/session");
+        const userId = await ensureCurrentUserId();
+
+        if (!userId) {
+            throw new Error("User not logged in");
+        }
+
         const result = await this.request<Workout>(`/workouts/${id}`, {
             method: "PUT",
-            body: JSON.stringify(workout),
+            body: JSON.stringify({
+                ...workout,
+                userId, // Add userId for admin check
+            }),
         });
         // Invalidate workouts cache since we updated a workout
         const { planItemsCache } = await import("./planItemsCache");
@@ -130,7 +153,15 @@ class ApiService {
     }
 
     async deleteWorkout(id: string): Promise<void> {
-        await this.request<void>(`/workouts/${id}`, {
+        // Import session to get current userId for admin check
+        const { ensureCurrentUserId } = await import("../state/session");
+        const userId = await ensureCurrentUserId();
+
+        if (!userId) {
+            throw new Error("User not logged in");
+        }
+
+        await this.request<void>(`/workouts/${id}?userId=${userId}`, {
             method: "DELETE",
         });
         // Invalidate workouts cache since we deleted a workout
@@ -167,6 +198,63 @@ class ApiService {
             method: "DELETE",
             body: JSON.stringify({ userId }),
         });
+    }
+
+    // PR Entry endpoints (new structured PR tracking)
+    async getPREntries(workoutId: string, userId: string): Promise<PersonalRecordEntry[]> {
+        return this.request<PersonalRecordEntry[]>(
+            `/workouts/${encodeURIComponent(workoutId)}/pr-entries?userId=${encodeURIComponent(userId)}`,
+        );
+    }
+
+    async getCurrentPRs(workoutId: string, userId: string): Promise<CurrentPR[]> {
+        return this.request<CurrentPR[]>(
+            `/workouts/${encodeURIComponent(workoutId)}/pr-entries/current?userId=${encodeURIComponent(userId)}`,
+        );
+    }
+
+    async createPREntry(
+        workoutId: string,
+        data: CreatePREntryRequest,
+    ): Promise<CreatePREntryResponse> {
+        return this.request<CreatePREntryResponse>(
+            `/workouts/${encodeURIComponent(workoutId)}/pr-entries`,
+            {
+                method: "POST",
+                body: JSON.stringify(data),
+            },
+        );
+    }
+
+    async deletePREntry(workoutId: string, entryId: string, userId: string): Promise<void> {
+        await this.request<void>(
+            `/workouts/${encodeURIComponent(workoutId)}/pr-entries/${encodeURIComponent(entryId)}?userId=${encodeURIComponent(userId)}`,
+            { method: "DELETE" },
+        );
+    }
+
+    async getRepConfig(workoutId: string, userId: string): Promise<UserWorkoutRepConfig> {
+        return this.request<UserWorkoutRepConfig>(
+            `/workouts/${encodeURIComponent(workoutId)}/rep-config?userId=${encodeURIComponent(userId)}`,
+        );
+    }
+
+    async updateRepConfig(
+        workoutId: string,
+        userId: string,
+        customReps: number[],
+    ): Promise<UserWorkoutRepConfig> {
+        return this.request<UserWorkoutRepConfig>(
+            `/workouts/${encodeURIComponent(workoutId)}/rep-config`,
+            {
+                method: "PUT",
+                body: JSON.stringify({ userId, customReps }),
+            },
+        );
+    }
+
+    async getAllPRs(userId: string): Promise<AllPRsResponse> {
+        return this.request<AllPRsResponse>(`/users/${encodeURIComponent(userId)}/all-prs`);
     }
 
     // Workout Plan endpoints
@@ -350,6 +438,7 @@ class ApiService {
         userId: string;
         url: string;
         category?: string | null;
+        isGlobal?: boolean;
     }): Promise<WorkoutImport> {
         return this.request<WorkoutImport>("/workout-imports/instagram", {
             method: "POST",
@@ -361,6 +450,7 @@ class ApiService {
         userId: string;
         url: string;
         category?: string | null;
+        isGlobal?: boolean;
     }): Promise<WorkoutImport> {
         return this.request<WorkoutImport>("/workout-imports/youtube", {
             method: "POST",
@@ -384,10 +474,13 @@ class ApiService {
         });
     }
 
-    async deleteWorkoutImport(id: string): Promise<void> {
-        await this.request<void>(`/workout-imports/${encodeURIComponent(id)}`, {
-            method: "DELETE",
-        });
+    async deleteWorkoutImport(id: string, userId: string): Promise<void> {
+        await this.request<void>(
+            `/workout-imports/${encodeURIComponent(id)}?userId=${encodeURIComponent(userId)}`,
+            {
+                method: "DELETE",
+            },
+        );
     }
 }
 
