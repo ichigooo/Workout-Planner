@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const { createClient } = require("@supabase/supabase-js");
-const { createId } = require("@paralleldrive/cuid2");
+const { v4: uuidv4 } = require("uuid");
 
 // Load environment variables
 dotenv.config();
@@ -1180,7 +1180,7 @@ app.post("/api/workouts/:workoutId/pr-entries", async (req, res) => {
         const { data: entry, error: insertError } = await supabase
             .from("personal_record_entries")
             .insert([{
-                id: createId(),
+                id: uuidv4(),
                 userId,
                 workoutId,
                 reps,
@@ -1290,7 +1290,7 @@ app.put("/api/workouts/:workoutId/rep-config", async (req, res) => {
             .eq("workoutId", workoutId)
             .single();
 
-        const configId = existingConfig?.id || createId();
+        const configId = existingConfig?.id || uuidv4();
         const now = new Date().toISOString();
         const { data: config, error } = await supabase
             .from("user_workout_rep_configs")
