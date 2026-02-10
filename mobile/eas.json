@@ -7,7 +7,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://workoutplannerservice-1sgeenl7v-nanas-projects-294a362f.vercel.app/api",
+        "EXPO_PUBLIC_API_BASE_URL": "https://workoutplannerservice.vercel.app/api",
         "EXPO_PUBLIC_SUPABASE_URL": "https://fhihhkkcauotipxqqpii.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoaWhoa2tjYXVvdGlweHFxcGlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5NjAyODEsImV4cCI6MjA3NzMyMDI4MX0.Jl3UjKfZkLsSTbYZ3V8XSNhjcYHQq58TZjQuSJqwwug",
         "EXPO_PUBLIC_USE_CLOUD": "false",
@@ -17,7 +17,7 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://workoutplannerservice-1sgeenl7v-nanas-projects-294a362f.vercel.app/api",
+        "EXPO_PUBLIC_API_BASE_URL": "https://workoutplannerservice.vercel.app/api",
         "EXPO_PUBLIC_SUPABASE_URL": "https://fhihhkkcauotipxqqpii.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoaWhoa2tjYXVvdGlweHFxcGlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5NjAyODEsImV4cCI6MjA3NzMyMDI4MX0.Jl3UjKfZkLsSTbYZ3V8XSNhjcYHQq58TZjQuSJqwwug",
         "EXPO_PUBLIC_USE_CLOUD": "true",
@@ -26,7 +26,7 @@
     },
     "production": {
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://workoutplannerservice-1sgeenl7v-nanas-projects-294a362f.vercel.app/api",
+        "EXPO_PUBLIC_API_BASE_URL": "https://workoutplannerservice.vercel.app/api",
         "EXPO_PUBLIC_SUPABASE_URL": "https://fhihhkkcauotipxqqpii.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoaWhoa2tjYXVvdGlweHFxcGlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5NjAyODEsImV4cCI6MjA3NzMyMDI4MX0.Jl3UjKfZkLsSTbYZ3V8XSNhjcYHQq58TZjQuSJqwwug",
         "EXPO_PUBLIC_USE_CLOUD": "true",

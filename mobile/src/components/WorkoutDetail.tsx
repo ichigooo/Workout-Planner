@@ -242,7 +242,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                 styles.heroImage,
                                                 { width: windowWidth, height: heroHeight },
                                             ]}
-                                            resizeMode="cover"
+                                            resizeMode="contain"
                                         />
                                     ))}
                                 </ScrollView>
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
     heroContainer: {
         width: "100%",
         position: "relative",
-        backgroundColor: "#111827",
+        backgroundColor: "#FFFFFF",
         marginBottom: 16,
     },
     heroImage: {

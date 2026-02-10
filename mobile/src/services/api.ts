@@ -375,6 +375,18 @@ class ApiService {
         planItemsCache.invalidate();
     }
 
+    /**
+     * Clear all plan items from a workout plan (bulk delete)
+     */
+    async clearPlanItems(planId: string): Promise<void> {
+        await this.request<void>(`/workout-plans/${planId}/plan-items`, {
+            method: "DELETE",
+        });
+        // Invalidate cache since we removed items
+        const { planItemsCache } = await import("./planItemsCache");
+        planItemsCache.invalidate();
+    }
+
     // Workout Plan Template methods
     async getWorkoutPlanTemplates(): Promise<WorkoutPlanTemplate[]> {
         return this.request<WorkoutPlanTemplate[]>("/workout-plan-templates");

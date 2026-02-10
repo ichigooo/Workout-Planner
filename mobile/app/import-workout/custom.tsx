@@ -204,9 +204,7 @@ export default function CustomImportScreen() {
                             ✕
                         </Text>
                     </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: theme.colors.subtext }]}>
-                        Imported Workout
-                    </Text>
+                    <View style={styles.headerSpacer} />
                     <TouchableOpacity
                         onPress={() => setShowMenu(true)}
                         style={styles.closeButton}
@@ -479,6 +477,9 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 16,
         fontWeight: "500",
+    },
+    headerSpacer: {
+        flex: 1,
     },
     content: {
         flex: 1,

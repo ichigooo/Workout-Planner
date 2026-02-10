@@ -349,6 +349,13 @@ export const Home: React.FC<HomeProps> = ({
     const todaysWorkoutList = weekWorkouts[todayISO] || [];
     const isRestDay = selectedDate === todayISO && todaysWorkoutList.length === 0;
 
+    // Calculate total workouts for the week to determine if schedule is minimal
+    const totalWeekWorkouts = Object.values(weekWorkouts).reduce(
+        (sum, dayWorkouts) => sum + dayWorkouts.length,
+        0,
+    );
+    const hasMinimalSchedule = totalWeekWorkouts < 2;
+
     const displayDate = isRestDay
         ? todayISO
         : weekWorkouts[selectedDate] && weekWorkouts[selectedDate].length > 0
@@ -502,15 +509,48 @@ export const Home: React.FC<HomeProps> = ({
                         </Text>
 
                         {isRestDay ? (
-                            <View style={styles.restDayRow}>
-                                <Text style={[styles.restDayText, { color: theme.colors.text }]}>
-                                    Rest day
-                                </Text>
+                            <View style={{ gap: 12 }}>
                                 <Text
-                                    style={[styles.restDaySubtext, { color: theme.colors.subtext }]}
+                                    style={[styles.noWorkoutText, { color: theme.colors.subtext }]}
                                 >
-                                    Take today to recover—tonight’s stretch counts as progress too.
+                                    No workout today
                                 </Text>
+                                {hasMinimalSchedule && (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.browsePlansCTA,
+                                            {
+                                                backgroundColor: theme.colors.accent + "12",
+                                            },
+                                        ]}
+                                        onPress={() => router.push("/plan")}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View
+                                            style={[
+                                                styles.ctaIconContainer,
+                                                { backgroundColor: theme.colors.accent },
+                                            ]}
+                                        >
+                                            <Ionicons name="calendar" size={18} color="#fff" />
+                                        </View>
+                                        <View style={styles.ctaTextContainer}>
+                                            <Text
+                                                style={[
+                                                    styles.ctaTitle,
+                                                    { color: theme.colors.text },
+                                                ]}
+                                            >
+                                                Browse training plans
+                                            </Text>
+                                        </View>
+                                        <Ionicons
+                                            name="chevron-forward"
+                                            size={18}
+                                            color={theme.colors.subtext}
+                                        />
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         ) : weekWorkouts[displayDate] && weekWorkouts[displayDate].length > 0 ? (
                             <View style={{ gap: 12 }}>
@@ -596,21 +636,48 @@ export const Home: React.FC<HomeProps> = ({
                                 ))}
                             </View>
                         ) : (
-                            <View
-                                style={[
-                                    styles.todaysCard,
-                                    {
-                                        backgroundColor: theme.colors.surface,
-                                        borderColor: theme.colors.border,
-                                    },
-                                ]}
-                            >
-                                <Text style={[styles.todaysTitle, { color: theme.colors.text }]}>
+                            <View style={{ gap: 12 }}>
+                                <Text
+                                    style={[styles.noWorkoutText, { color: theme.colors.subtext }]}
+                                >
                                     No workout scheduled
                                 </Text>
-                                <Text style={[styles.todaysDesc, { color: theme.colors.subtext }]}>
-                                    Check back later or add a workout from the library.
-                                </Text>
+                                {hasMinimalSchedule && (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.browsePlansCTA,
+                                            {
+                                                backgroundColor: theme.colors.accent + "12",
+                                            },
+                                        ]}
+                                        onPress={() => router.push("/plan")}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View
+                                            style={[
+                                                styles.ctaIconContainer,
+                                                { backgroundColor: theme.colors.accent },
+                                            ]}
+                                        >
+                                            <Ionicons name="calendar" size={18} color="#fff" />
+                                        </View>
+                                        <View style={styles.ctaTextContainer}>
+                                            <Text
+                                                style={[
+                                                    styles.ctaTitle,
+                                                    { color: theme.colors.text },
+                                                ]}
+                                            >
+                                                Browse training plans
+                                            </Text>
+                                        </View>
+                                        <Ionicons
+                                            name="chevron-forward"
+                                            size={18}
+                                            color={theme.colors.subtext}
+                                        />
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         )}
                     </View>
@@ -872,6 +939,35 @@ const styles = StyleSheet.create({
     },
     todaysDesc: {
         fontSize: 14,
+    },
+    noWorkoutText: {
+        fontSize: 15,
+        fontWeight: "500",
+    },
+    browsePlansCTA: {
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 12,
+        borderRadius: 10,
+        gap: 10,
+    },
+    ctaIconContainer: {
+        width: 36,
+        height: 36,
+        borderRadius: 8,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    ctaTextContainer: {
+        flex: 1,
+        gap: 2,
+    },
+    ctaTitle: {
+        fontSize: 15,
+        fontWeight: "600",
+    },
+    ctaSubtext: {
+        fontSize: 13,
     },
     restDayRow: {
         alignItems: "flex-start",

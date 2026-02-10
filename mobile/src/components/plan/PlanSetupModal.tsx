@@ -13,8 +13,13 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColorScheme } from "react-native";
 import { getTheme } from "@/src/theme";
-import type { WorkoutPlanTemplate } from "@/src/types";
-import { createUserPlanFromTemplate } from "./planScheduling";
+import type { WorkoutPlanTemplate, Workout } from "@/src/types";
+import {
+    createUserPlanFromTemplate,
+    generatePlanItemsFromTemplate,
+    GeneratedPlanItem,
+} from "./planScheduling";
+import { planItemsCache } from "@/src/services/planItemsCache";
 
 type PlanSetupModalProps = {
     visible: boolean;
@@ -25,7 +30,12 @@ type PlanSetupModalProps = {
     onPlanCreated?: () => void;
 };
 
-type Step = 1 | 2;
+type Step = 1 | 2 | 3;
+
+type PreviewItem = {
+    date: string;
+    workoutTitle: string;
+};
 
 const DAY_OPTIONS = [
     { label: "M", value: "mon" },
@@ -87,6 +97,28 @@ export const PlanSetupModal: React.FC<PlanSetupModalProps> = ({
     const [showPicker, setShowPicker] = useState(Platform.OS === "ios");
     const [submitting, setSubmitting] = useState(false);
     const [clearExistingPlan, setClearExistingPlan] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [previewItems, setPreviewItems] = useState<PreviewItem[]>([]);
+    const [workoutLookup, setWorkoutLookup] = useState<Record<string, Workout>>({});
+
+    // Load workouts for preview lookup
+    useEffect(() => {
+        const loadWorkouts = async () => {
+            try {
+                const workouts = await planItemsCache.getWorkouts();
+                const lookup: Record<string, Workout> = {};
+                workouts.forEach((w) => {
+                    lookup[w.id] = w;
+                });
+                setWorkoutLookup(lookup);
+            } catch (err) {
+                console.error("[PlanSetupModal] Failed to load workouts:", err);
+            }
+        };
+        if (visible) {
+            loadWorkouts();
+        }
+    }, [visible]);
 
     useEffect(() => {
         if (!visible) {
@@ -99,6 +131,8 @@ export const PlanSetupModal: React.FC<PlanSetupModalProps> = ({
             setShowPicker(Platform.OS === "ios");
             setSubmitting(false);
             setClearExistingPlan(false);
+            setError(null);
+            setPreviewItems([]);
         }
     }, [visible, weeklyDays]);
 
@@ -120,18 +154,47 @@ export const PlanSetupModal: React.FC<PlanSetupModalProps> = ({
     };
 
     const handleContinue = () => setStep(2);
-    const handleBack = () => setStep(1);
+    const handleBack = () => setStep((prev) => (prev > 1 ? ((prev - 1) as Step) : 1));
+
+    const handleShowPreview = () => {
+        if (!template) return;
+
+        const generated = generatePlanItemsFromTemplate({
+            template,
+            startDate,
+            workoutDays: selectedDays,
+        });
+
+        // Build preview items with workout titles
+        const items: PreviewItem[] = generated.map((item) => ({
+            date: item.scheduledDate,
+            workoutTitle: workoutLookup[item.workoutId]?.title || "Unknown workout",
+        }));
+
+        setPreviewItems(items);
+        setStep(3);
+    };
 
     const handleCreatePlan = async () => {
         try {
             setSubmitting(true);
-            await createUserPlanFromTemplate({
+            setError(null);
+
+            const result = await createUserPlanFromTemplate({
                 template,
+                templateId,
                 startDate,
                 workoutDays: selectedDays,
                 clearExistingPlan,
             });
-            onPlanCreated?.();
+
+            if (result.success) {
+                onPlanCreated?.();
+            } else {
+                setError(result.error || "Failed to create plan");
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "An unexpected error occurred");
         } finally {
             setSubmitting(false);
         }
@@ -208,7 +271,7 @@ export const PlanSetupModal: React.FC<PlanSetupModalProps> = ({
                                         Close
                                     </Text>
                                 </TouchableOpacity>
-                                {step === 2 ? (
+                                {step > 1 ? (
                                     <TouchableOpacity onPress={handleBack} hitSlop={8}>
                                         <Text
                                             style={[
@@ -280,7 +343,7 @@ export const PlanSetupModal: React.FC<PlanSetupModalProps> = ({
                                         <Text style={styles.primaryButtonText}>Continue</Text>
                                     </TouchableOpacity>
                                 </View>
-                            ) : (
+                            ) : step === 2 ? (
                                 <View style={styles.stepContent}>
                                     <Text style={[styles.title, { color: theme.colors.text }]}>
                                         Which days do you train each week?
@@ -373,18 +436,155 @@ export const PlanSetupModal: React.FC<PlanSetupModalProps> = ({
                                             styles.primaryButton,
                                             {
                                                 backgroundColor:
-                                                    selectedDays.length === 0 || submitting
+                                                    selectedDays.length === 0
                                                         ? isDark
                                                             ? "rgba(255,255,255,0.18)"
                                                             : "rgba(0,0,0,0.08)"
                                                         : theme.colors.accent,
                                             },
                                         ]}
-                                        disabled={selectedDays.length === 0 || submitting}
+                                        disabled={selectedDays.length === 0}
+                                        onPress={handleShowPreview}
+                                    >
+                                        <Text style={styles.primaryButtonText}>Preview plan</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                <View style={styles.stepContent}>
+                                    <Text style={[styles.title, { color: theme.colors.text }]}>
+                                        Review your plan
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.subtitle,
+                                            {
+                                                color: isDark
+                                                    ? "rgba(255,255,255,0.8)"
+                                                    : "rgba(0,0,0,0.65)",
+                                            },
+                                        ]}
+                                    >
+                                        {previewItems.length} workouts will be added to your
+                                        calendar.
+                                    </Text>
+
+                                    <View
+                                        style={[
+                                            styles.previewList,
+                                            {
+                                                borderColor: isDark
+                                                    ? "rgba(255,255,255,0.16)"
+                                                    : "rgba(0,0,0,0.08)",
+                                            },
+                                        ]}
+                                    >
+                                        {previewItems.slice(0, 10).map((item, idx) => (
+                                            <View
+                                                key={`${item.date}-${idx}`}
+                                                style={[
+                                                    styles.previewRow,
+                                                    idx < Math.min(previewItems.length, 10) - 1 && {
+                                                        borderBottomWidth: StyleSheet.hairlineWidth,
+                                                        borderBottomColor: isDark
+                                                            ? "rgba(255,255,255,0.1)"
+                                                            : "rgba(0,0,0,0.06)",
+                                                    },
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.previewDate,
+                                                        { color: theme.colors.textSecondary },
+                                                    ]}
+                                                >
+                                                    {new Date(item.date).toLocaleDateString(
+                                                        undefined,
+                                                        {
+                                                            weekday: "short",
+                                                            month: "short",
+                                                            day: "numeric",
+                                                        },
+                                                    )}
+                                                </Text>
+                                                <Text
+                                                    style={[
+                                                        styles.previewWorkout,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                    numberOfLines={1}
+                                                >
+                                                    {item.workoutTitle}
+                                                </Text>
+                                            </View>
+                                        ))}
+                                        {previewItems.length > 10 && (
+                                            <View style={styles.previewMore}>
+                                                <Text
+                                                    style={[
+                                                        styles.previewMoreText,
+                                                        { color: theme.colors.textSecondary },
+                                                    ]}
+                                                >
+                                                    +{previewItems.length - 10} more workouts
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+
+                                    <TouchableOpacity
+                                        activeOpacity={0.8}
+                                        onPress={() => setClearExistingPlan((prev) => !prev)}
+                                        style={styles.checkboxRow}
+                                    >
+                                        <View
+                                            style={[
+                                                styles.checkboxBox,
+                                                {
+                                                    borderColor: isDark
+                                                        ? "rgba(255,255,255,0.4)"
+                                                        : "rgba(0,0,0,0.25)",
+                                                    backgroundColor: clearExistingPlan
+                                                        ? theme.colors.accent
+                                                        : "transparent",
+                                                },
+                                            ]}
+                                        >
+                                            {clearExistingPlan ? (
+                                                <Text style={styles.checkboxCheck}>✓</Text>
+                                            ) : null}
+                                        </View>
+                                        <Text
+                                            style={[
+                                                styles.checkboxLabel,
+                                                { color: theme.colors.text },
+                                            ]}
+                                        >
+                                            Clear my current training plan first
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    {error ? (
+                                        <View style={styles.errorContainer}>
+                                            <Text style={styles.errorText}>{error}</Text>
+                                        </View>
+                                    ) : null}
+
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.primaryButton,
+                                            {
+                                                backgroundColor: submitting
+                                                    ? isDark
+                                                        ? "rgba(255,255,255,0.18)"
+                                                        : "rgba(0,0,0,0.08)"
+                                                    : theme.colors.accent,
+                                            },
+                                        ]}
+                                        disabled={submitting}
                                         onPress={handleCreatePlan}
                                     >
                                         <Text style={styles.primaryButtonText}>
-                                            {submitting ? "Creating..." : "Create my plan"}
+                                            {submitting ? "Creating..." : "Confirm and create"}
                                         </Text>
                                     </TouchableOpacity>
                                 </View>
@@ -527,5 +727,46 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontWeight: "700",
         fontSize: 16,
+    },
+    errorContainer: {
+        backgroundColor: "rgba(211, 47, 47, 0.1)",
+        borderRadius: 12,
+        padding: 12,
+        marginTop: 12,
+    },
+    errorText: {
+        color: "#D32F2F",
+        fontSize: 14,
+        textAlign: "center",
+    },
+    previewList: {
+        borderRadius: 16,
+        borderWidth: StyleSheet.hairlineWidth,
+        overflow: "hidden",
+    },
+    previewRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        gap: 12,
+    },
+    previewDate: {
+        fontSize: 13,
+        width: 90,
+    },
+    previewWorkout: {
+        flex: 1,
+        fontSize: 14,
+        fontWeight: "500",
+    },
+    previewMore: {
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        alignItems: "center",
+    },
+    previewMoreText: {
+        fontSize: 13,
+        fontStyle: "italic",
     },
 });

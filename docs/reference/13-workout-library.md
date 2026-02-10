@@ -96,7 +96,26 @@ The main screen for browsing all workouts with category filtering.
 **Category Tabs**:
 - **All**: Shows all global workouts + all imports (personal and public)
 - **Custom**: Shows only the user's personal imports (not public imports)
-- **Category tabs** (e.g., "Cardio", "Strength"): Shows global workouts + matching imports filtered by category
+- **Category tabs** (e.g., "Cardio", "Mobility"): Shows global workouts + matching imports filtered by category
+
+**Category Tab Generation**:
+
+Category tabs are dynamically generated from BOTH regular workouts AND custom imports:
+
+```typescript
+const categoriesWithAll = React.useMemo(() => {
+    // Include categories from both regular workouts and custom imports
+    const regularCategories = workouts.map((w) => w.category);
+    const customCategories = customWorkouts
+        .map((w) => w.category)
+        .filter((c): c is string => c !== null && c !== undefined);
+    const allCategories = Array.from(new Set([...regularCategories, ...customCategories]));
+    const base = orderCategoriesWithClimbingAtEnd(allCategories);
+    return ["All", "Custom", ...base];
+}, [workouts, customWorkouts]);
+```
+
+This ensures that if you have public imports with a category like "Mobility" that has no regular workouts, the "Mobility" tab will still appear.
 
 **Data Loading**:
 
@@ -351,6 +370,52 @@ export interface WorkoutImport {
 - [ ] Admin owner can delete public import
 - [ ] Non-admin cannot delete public import
 - [ ] Non-owner admin cannot delete public import
+
+## Troubleshooting
+
+### Imports not showing in category tabs
+
+**Symptom**: Public imports exist in the database but don't appear in the app.
+
+**Possible causes**:
+
+1. **Category mismatch**: The import's category doesn't match any existing tab. Check that the category name in `workout_imports.category` matches exactly (case-sensitive).
+
+2. **API not returning global imports**: Verify the backend query uses `.or()` to fetch both user imports and global imports:
+   ```javascript
+   .or(`user_id.eq.${userId},is_global.eq.true`)
+   ```
+
+3. **Frontend filtering issue**: Use debug logging to trace data flow:
+   ```typescript
+   console.log("customWorkouts count:", customWorkouts.length);
+   console.log("filteredCustomWorkouts count:", filteredCustomWorkouts.length);
+   console.log("listData count:", listData.length);
+   console.log("category:", category);
+   ```
+
+### Backend update accidentally clearing fields
+
+**Symptom**: Updating a record clears fields that weren't included in the request.
+
+**Cause**: Using default values for optional fields in the update object.
+
+**Bad pattern**:
+```javascript
+const update = {
+    title: body.title,
+    trackRecords: body.trackRecords ?? false,  // Clears to false if not provided!
+};
+```
+
+**Good pattern**: Only include fields that were explicitly provided:
+```javascript
+const update = {
+    title: body.title,
+    // Only update trackRecords if explicitly provided in request
+    ...(body.trackRecords !== undefined && { trackRecords: body.trackRecords }),
+};
+```
 
 ## Related Documentation
 
