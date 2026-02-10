@@ -1,4 +1,7 @@
 import type { WorkoutPlanTemplate } from "@/src/types";
+import { apiService } from "@/src/services/api";
+import { ensureCurrentUserId, getCurrentPlanId } from "@/src/state/session";
+import { planItemsCache } from "@/src/services/planItemsCache";
 
 export type GeneratedPlanItem = {
     workoutId: string;
@@ -11,9 +14,16 @@ type GeneratePlanItemsArgs = {
     workoutDays: string[];
 };
 
-type CreatePlanArgs = GeneratePlanItemsArgs & {
+type CreatePlanArgs = Omit<GeneratePlanItemsArgs, "template"> & {
+    template?: WorkoutPlanTemplate;
     templateId?: string;
     clearExistingPlan: boolean;
+};
+
+export type CreatePlanResult = {
+    success: boolean;
+    itemsCreated: number;
+    error?: string;
 };
 
 const DAY_ORDER = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
@@ -103,22 +113,99 @@ export const createUserPlanFromTemplate = async ({
     startDate,
     workoutDays,
     clearExistingPlan,
-}: CreatePlanArgs) => {
+}: CreatePlanArgs): Promise<CreatePlanResult> => {
     if (!template) {
-        console.warn("[PlanSetupModal] No template provided for plan creation");
-        return;
+        return { success: false, itemsCreated: 0, error: "No template provided" };
     }
 
+    // Step 1: Get required IDs
+    const userId = await ensureCurrentUserId();
+    if (!userId) {
+        return { success: false, itemsCreated: 0, error: "User not logged in" };
+    }
+
+    let planId = getCurrentPlanId();
+    if (!planId) {
+        // Try to fetch the plan ID if not in memory
+        try {
+            planId = await apiService.getWorkoutPlanId(userId);
+        } catch (err) {
+            console.error("[createUserPlanFromTemplate] Failed to get plan ID:", err);
+            return { success: false, itemsCreated: 0, error: "Could not find workout plan" };
+        }
+    }
+
+    // Step 2: Generate plan items from template
     const planItems = generatePlanItemsFromTemplate({ template, startDate, workoutDays });
 
-    console.log("Prepared plan items:", planItems);
-    console.log("Clear current plan first:", clearExistingPlan);
-    console.log("Template metadata:", {
-        templateId: templateId ?? template.id,
-        numWeeks: template.numWeeks,
-        daysPerWeek: template.daysPerWeek,
-    });
+    if (planItems.length === 0) {
+        return { success: false, itemsCreated: 0, error: "Template generated no plan items" };
+    }
 
-    // TODO: Replace with Supabase mutation
-    return new Promise<void>((resolve) => setTimeout(resolve, 800));
+    console.log("[createUserPlanFromTemplate] Generated items:", planItems.length);
+    console.log("[createUserPlanFromTemplate] Clear existing:", clearExistingPlan);
+
+    try {
+        // Step 3: Clear existing plan if requested
+        if (clearExistingPlan) {
+            await apiService.clearPlanItems(planId);
+            console.log("[createUserPlanFromTemplate] Cleared existing plan items");
+        }
+
+        // Step 4: Group items by workoutId for efficient bulk insert
+        const itemsByWorkout = planItems.reduce<Record<string, string[]>>((acc, item) => {
+            if (!acc[item.workoutId]) {
+                acc[item.workoutId] = [];
+            }
+            acc[item.workoutId].push(item.scheduledDate);
+            return acc;
+        }, {});
+
+        // Step 5: Insert all items in parallel (one API call per unique workout)
+        const workoutEntries = Object.entries(itemsByWorkout);
+        const insertPromises = workoutEntries.map(([workoutId, dates]) =>
+            apiService.addWorkoutToPlanOnDates(planId!, { workoutId, dates }),
+        );
+
+        const results = await Promise.allSettled(insertPromises);
+
+        // Step 6: Check for failures
+        const failures = results.filter((r) => r.status === "rejected");
+        if (failures.length > 0) {
+            const successCount = results.filter((r) => r.status === "fulfilled").length;
+            console.error("[createUserPlanFromTemplate] Some inserts failed:", failures);
+
+            // Invalidate cache even on partial success
+            planItemsCache.invalidate();
+
+            if (successCount === 0) {
+                return {
+                    success: false,
+                    itemsCreated: 0,
+                    error: "Failed to add workouts to plan",
+                };
+            }
+
+            return {
+                success: true, // Partial success
+                itemsCreated: successCount,
+                error: `Added ${successCount} of ${workoutEntries.length} workout groups`,
+            };
+        }
+
+        // Step 7: Invalidate cache on success
+        planItemsCache.invalidate();
+
+        return {
+            success: true,
+            itemsCreated: planItems.length,
+        };
+    } catch (error) {
+        console.error("[createUserPlanFromTemplate] Error:", error);
+        return {
+            success: false,
+            itemsCreated: 0,
+            error: error instanceof Error ? error.message : "Unknown error occurred",
+        };
+    }
 };

@@ -1766,6 +1766,34 @@ app.delete("/api/plan-items/:id", async (req, res) => {
     }
 });
 
+// Bulk delete all plan items for a workout plan
+app.delete("/api/workout-plans/:id/plan-items", async (req, res) => {
+    try {
+        const planId = req.params.id;
+
+        // Verify plan exists first
+        const { data: plan, error: planError } = await supabase
+            .from("workout_plans")
+            .select("id")
+            .eq("id", planId)
+            .maybeSingle();
+
+        if (planError) throw planError;
+        if (!plan) {
+            return res.status(404).json({ error: "Workout plan not found" });
+        }
+
+        // Delete all plan items for this plan
+        const { error } = await supabase.from("plan_items").delete().eq("workoutPlanId", planId);
+
+        if (error) throw error;
+        res.status(204).send();
+    } catch (error) {
+        console.error("Error bulk deleting plan items:", error);
+        res.status(500).json({ error: "Failed to clear plan items" });
+    }
+});
+
 // Workout Plan Template routes
 app.get("/api/workout-plan-templates", async (req, res) => {
     try {
