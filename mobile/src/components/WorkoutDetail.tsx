@@ -14,7 +14,7 @@ import {
     Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Workout, CreateWorkoutRequest } from "../types";
+import { Workout, CreateWorkoutRequest, PercentagePreset } from "../types";
 import { PRSection } from "./personal-records";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
@@ -23,6 +23,7 @@ import { WorkoutForm } from "./WorkoutForm";
 import { planItemsCache } from "../services/planItemsCache";
 import { useRouter } from "expo-router";
 import { AddToPlanBottomSheet } from "./AddToPlanBottomSheet";
+import { PresetSelector } from "./PresetSelector";
 
 interface WorkoutDetailProps {
     workout: Workout;
@@ -50,6 +51,10 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     const [planId, setPlanId] = useState<string | null>(null);
     const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
+    // Preset toggle state for percentage_1rm workouts
+    const [activePreset, setActivePreset] = useState<PercentagePreset>(
+        workout.defaultPreset || "hypertrophy"
+    );
     const windowWidth = Dimensions.get("window").width;
     const heroHeight = Math.round(windowWidth * 0.75);
     const heroImages = useMemo(
@@ -343,6 +348,68 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                 </Text>
                                             </View>
                                         </>
+                                    ) : workout.intensityModel === "percentage_1rm" ? (
+                                        <View style={styles.presetSliderSection}>
+                                            <PresetSelector
+                                                selected={activePreset}
+                                                onSelect={setActivePreset}
+                                            />
+                                        </View>
+                                    ) : workout.intensityModel === "sets_time" ? (
+                                        <>
+                                            <View
+                                                style={[
+                                                    styles.detailPill,
+                                                    {
+                                                        backgroundColor: theme.colors.surface,
+                                                        borderColor: theme.colors.border,
+                                                    },
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillLabel,
+                                                        { color: theme.colors.subtext },
+                                                    ]}
+                                                >
+                                                    Sets
+                                                </Text>
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillValue,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                >
+                                                    {workout.sets}
+                                                </Text>
+                                            </View>
+                                            <View
+                                                style={[
+                                                    styles.detailPill,
+                                                    {
+                                                        backgroundColor: theme.colors.surface,
+                                                        borderColor: theme.colors.border,
+                                                    },
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillLabel,
+                                                        { color: theme.colors.subtext },
+                                                    ]}
+                                                >
+                                                    Duration
+                                                </Text>
+                                                <Text
+                                                    style={[
+                                                        styles.detailPillValue,
+                                                        { color: theme.colors.text },
+                                                    ]}
+                                                >
+                                                    {workout.durationPerSet}s
+                                                </Text>
+                                            </View>
+                                        </>
                                     ) : (
                                         <>
                                             <View
@@ -397,33 +464,35 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                     {workout.reps}
                                                 </Text>
                                             </View>
-                                            <View
-                                                style={[
-                                                    styles.detailPill,
-                                                    {
-                                                        backgroundColor: theme.colors.surface,
-                                                        borderColor: theme.colors.border,
-                                                    },
-                                                ]}
-                                            >
-                                                <Text
+                                            {workout.intensity && (
+                                                <View
                                                     style={[
-                                                        styles.detailPillLabel,
-                                                        { color: theme.colors.subtext },
+                                                        styles.detailPill,
+                                                        {
+                                                            backgroundColor: theme.colors.surface,
+                                                            borderColor: theme.colors.border,
+                                                        },
                                                     ]}
                                                 >
-                                                    Intensity
-                                                </Text>
-                                                <Text
-                                                    style={[
-                                                        styles.detailPillValue,
-                                                        { color: theme.colors.text },
-                                                    ]}
-                                                    numberOfLines={1}
-                                                >
-                                                    {workout.intensity}
-                                                </Text>
-                                            </View>
+                                                    <Text
+                                                        style={[
+                                                            styles.detailPillLabel,
+                                                            { color: theme.colors.subtext },
+                                                        ]}
+                                                    >
+                                                        Intensity
+                                                    </Text>
+                                                    <Text
+                                                        style={[
+                                                            styles.detailPillValue,
+                                                            { color: theme.colors.text },
+                                                        ]}
+                                                        numberOfLines={1}
+                                                    >
+                                                        {workout.intensity}
+                                                    </Text>
+                                                </View>
+                                            )}
                                         </>
                                     )}
                                 </View>
@@ -1026,5 +1095,34 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: "700",
         letterSpacing: 0.5,
+    },
+    presetToggleContainer: {
+        flexDirection: "row",
+        gap: 8,
+        marginBottom: 12,
+        width: "100%",
+    },
+    presetToggleButton: {
+        flex: 1,
+        paddingVertical: 10,
+        paddingHorizontal: 8,
+        borderRadius: 8,
+        borderWidth: 1,
+        alignItems: "center",
+    },
+    presetToggleText: {
+        fontSize: 12,
+        fontWeight: "600",
+    },
+    presetSliderSection: {
+        width: "100%",
+    },
+    setsPillCompact: {
+        alignSelf: "center",
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        borderWidth: StyleSheet.hairlineWidth,
+        marginTop: 8,
     },
 });

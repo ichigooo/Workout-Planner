@@ -46,6 +46,9 @@ model Workout {
   updatedAt                DateTime                @updatedAt
   imageUrl2                String?                 @map("imageUrl2")
   trackRecords             Boolean                 @default(false)
+  intensityModel           String                  @default("legacy")
+  defaultPreset            String?
+  durationPerSet           Int?
   planItems                PlanItem[]
   workoutLogs              WorkoutLog[]
   workout_personal_records WorkoutPersonalRecord[]

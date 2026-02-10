@@ -174,6 +174,7 @@ export default function WorkoutScreen() {
         imageUrl2: undefined,
         isGlobal: false,
         createdBy: undefined,
+        intensityModel: "legacy",
         createdAt: item.createdAt || new Date().toISOString(),
         updatedAt: item.updatedAt || item.createdAt || new Date().toISOString(),
     });

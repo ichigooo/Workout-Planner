@@ -414,6 +414,9 @@ function mapWorkoutRow(row) {
         isGlobal: row.isGlobal !== undefined ? row.isGlobal : true,
         createdBy: row.createdBy ?? null,
         trackRecords: row.trackRecords ?? false,
+        intensityModel: row.intensityModel ?? "legacy",
+        defaultPreset: row.defaultPreset ?? null,
+        durationPerSet: row.durationPerSet ?? null,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
@@ -855,6 +858,9 @@ app.post("/api/workouts", async (req, res) => {
             imageUrl2: imageUrl2,
             isGlobal: true, // All workouts are global by default
             createdBy: body.createdBy ?? null, // Optional: who created this workout
+            intensityModel: body.intensityModel ?? "legacy",
+            defaultPreset: body.defaultPreset ?? null,
+            durationPerSet: body.durationPerSet ?? null,
         };
 
         // Ensure timestamps are provided to match DB NOT NULL constraints
@@ -942,6 +948,10 @@ app.put("/api/workouts/:id", requireAdmin, async (req, res) => {
             imageUrl2: computedImageUrl2,
             // Only update trackRecords if explicitly provided in request
             ...(body.trackRecords !== undefined && { trackRecords: body.trackRecords }),
+            // Intensity model fields
+            ...(body.intensityModel !== undefined && { intensityModel: body.intensityModel }),
+            ...(body.defaultPreset !== undefined && { defaultPreset: body.defaultPreset }),
+            ...(body.durationPerSet !== undefined && { durationPerSet: body.durationPerSet }),
             // Note: is_global and created_by are not updated here to maintain data integrity
             updatedAt: new Date().toISOString(),
         };

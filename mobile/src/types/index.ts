@@ -22,6 +22,40 @@ export type WorkoutCategory =
 
 export type WorkoutType = "strength" | "cardio";
 
+export type IntensityModel = "legacy" | "percentage_1rm" | "sets_reps" | "sets_time";
+export type PercentagePreset = "high" | "medium" | "hypertrophy";
+
+export interface PresetConfig {
+    label: string;
+    reps: number;
+    percentage: number;
+    description: string;
+}
+
+export const PERCENTAGE_PRESETS: Record<PercentagePreset, PresetConfig> = {
+    high: {
+        label: "High Intensity",
+        reps: 1,
+        percentage: 95,
+        description: "1 rep @ 95% 1RM",
+    },
+    medium: {
+        label: "Medium Intensity",
+        reps: 5,
+        percentage: 85,
+        description: "5 reps @ 85% 1RM",
+    },
+    hypertrophy: {
+        label: "Hypertrophy",
+        reps: 8,
+        percentage: 80,
+        description: "8 reps @ 80% 1RM",
+    },
+};
+
+// All percentage_1rm workouts show 3 sets as the recommended value
+export const PERCENTAGE_1RM_SETS = 3;
+
 export interface Workout {
     id: string;
     title: string;
@@ -37,6 +71,9 @@ export interface Workout {
     isGlobal: boolean; // Global workout library - shared across all users
     createdBy?: string; // Optional: who created this workout (for admin purposes)
     trackRecords?: boolean; // Enable PR tracking for this workout
+    intensityModel: IntensityModel; // Intensity model type
+    defaultPreset?: PercentagePreset; // Default preset for percentage_1rm model
+    durationPerSet?: number; // Duration per set in seconds (for sets_time model)
     createdAt: string;
     updatedAt: string;
 }
@@ -171,6 +208,9 @@ export interface CreateWorkoutRequest {
     imageUrl2?: string;
     createdBy?: string; // Optional: who created this workout (for admin purposes)
     trackRecords?: boolean; // Enable PR tracking for this workout
+    intensityModel?: IntensityModel; // Intensity model type (defaults to "legacy")
+    defaultPreset?: PercentagePreset; // Default preset for percentage_1rm model
+    durationPerSet?: number; // Duration per set in seconds (for sets_time model)
 }
 
 export interface CreateWorkoutPlanRequest {
