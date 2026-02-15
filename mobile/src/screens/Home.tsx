@@ -634,6 +634,25 @@ export const Home: React.FC<HomeProps> = ({
                                         </View>
                                     </TouchableOpacity>
                                 ))}
+                                {displayDate === todayISO && (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.startWorkoutButton,
+                                            { backgroundColor: theme.colors.accent },
+                                        ]}
+                                        onPress={() =>
+                                            router.push(
+                                                `/workout-session?workoutIds=${weekWorkouts[displayDate].map((w) => w.id).join(",")}`,
+                                            )
+                                        }
+                                        activeOpacity={0.85}
+                                    >
+                                        <Ionicons name="play" size={20} color="#FFFFFF" />
+                                        <Text style={styles.startWorkoutButtonText}>
+                                            Start Today's Workout
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         ) : (
                             <View style={{ gap: 12 }}>
@@ -1077,6 +1096,21 @@ const styles = StyleSheet.create({
     categoryTileIcon: {
         width: 40,
         height: 40,
+    },
+    startWorkoutButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        paddingVertical: 16,
+        borderRadius: 20,
+        marginTop: 4,
+        minHeight: 56,
+    },
+    startWorkoutButtonText: {
+        fontFamily: "DMSans_600SemiBold",
+        fontSize: 16,
+        color: "#FFFFFF",
     },
 });
 

@@ -126,6 +126,8 @@ export default function CustomImportScreen() {
                 imageUrl: data.thumbnailUrl || undefined,
                 workoutType: "cardio", // Default, can be adjusted based on category
                 createdBy: userId,
+                sourceUrl: data.sourceUrl || undefined,
+                sourcePlatform: data.sourcePlatform || undefined,
             };
 
             const createdWorkout = await apiService.createWorkout(workoutRequest);

@@ -141,17 +141,29 @@ curl -i http://localhost:3001/api/health
 ```bash
 # from /mobile
 pnpm i
-pnpm start             # or: npx expo start --dev-client --host tunnel
 ```
 
-If using **Dev Client** (recommended):
+There are two ways to run the mobile app locally:
+
+**Option A – Dev Client build (recommended for full native features):**
+
+Use this if you have a custom dev client installed via TestFlight or EAS Build.
 
 ```bash
-eas build --profile development --platform ios  # first time / when native deps change
-npx expo start --dev-client --host tunnel       # run every day
+npx expo start --dev-client
 ```
 
-> Ensure `EXPO_PUBLIC_API_BASE_URL` points to your local or tunnel address, e.g. `http://<LAN_IP>:3001/api` or `https://<ngrok-subdomain>.ngrok.io/api`.
+First-time setup: build the dev client once with `eas build --profile development --platform ios`. Rebuild only when native dependencies change.
+
+**Option B – Expo Go (quick prototyping, no native build needed):**
+
+```bash
+npx expo start --tunnel
+```
+
+Log in to the same Expo account on the CLI (`npx expo login`) and in the Expo Go app. Your project will appear on the Expo Go home screen. The `--tunnel` flag is required — local network mode does not work reliably.
+
+> **Note:** Some native modules (e.g. custom native code) won't work in Expo Go. Use the dev client for full compatibility.
 
 ---
 

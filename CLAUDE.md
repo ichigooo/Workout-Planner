@@ -60,11 +60,16 @@ Complete design system: [mobile/assets/Trainichi-Design-Guidelines-Warm.html](mo
 ## Quick Start
 
 ```bash
-# Mobile app (with dev client and tunnel for testing on Expo)
-cd mobile && npm install && npx expo start --dev-client --host tunnel
-
 # Backend
 cd backend && npm install && npm run dev
+
+# Mobile app – Dev Client (recommended, requires TestFlight/EAS build installed)
+cd mobile && npm install && npx expo start --dev-client
+
+# Mobile app – Expo Go (quick prototyping, no native build needed)
+cd mobile && npm install && npx expo start --tunnel
 ```
+
+For Expo Go: log in with `npx expo login` and sign in to the same account in the Expo Go app. The `--tunnel` flag is required.
 
 Refer to detailed docs for implementation guidance.

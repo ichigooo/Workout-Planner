@@ -74,6 +74,8 @@ export interface Workout {
     intensityModel: IntensityModel; // Intensity model type
     defaultPreset?: PercentagePreset; // Default preset for percentage_1rm model
     durationPerSet?: number; // Duration per set in seconds (for sets_time model)
+    sourceUrl?: string; // Original source URL for imported workouts
+    sourcePlatform?: string; // Platform name (e.g. "YouTube", "Instagram")
     createdAt: string;
     updatedAt: string;
 }
@@ -211,6 +213,8 @@ export interface CreateWorkoutRequest {
     intensityModel?: IntensityModel; // Intensity model type (defaults to "legacy")
     defaultPreset?: PercentagePreset; // Default preset for percentage_1rm model
     durationPerSet?: number; // Duration per set in seconds (for sets_time model)
+    sourceUrl?: string; // Original source URL for imported workouts
+    sourcePlatform?: string; // Platform name (e.g. "YouTube", "Instagram")
 }
 
 export interface CreateWorkoutPlanRequest {

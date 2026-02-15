@@ -861,6 +861,8 @@ app.post("/api/workouts", async (req, res) => {
             intensityModel: body.intensityModel ?? "legacy",
             defaultPreset: body.defaultPreset ?? null,
             durationPerSet: body.durationPerSet ?? null,
+            sourceUrl: body.sourceUrl ?? null,
+            sourcePlatform: body.sourcePlatform ?? null,
         };
 
         // Ensure timestamps are provided to match DB NOT NULL constraints
@@ -2288,6 +2290,45 @@ app.post("/api/users", async (req, res) => {
     } catch (error) {
         console.error("Error creating user:", error);
         res.status(500).json({ error: "Failed to create user" });
+    }
+});
+
+// ─── Workout Logs ────────────────────────────────────────────────────
+app.post("/api/workout-logs/batch", async (req, res) => {
+    console.log("[POST /api/workout-logs/batch] received request");
+    try {
+        const { logs } = req.body || {};
+        if (!Array.isArray(logs) || logs.length === 0) {
+            return res.status(400).json({ error: "logs array is required" });
+        }
+
+        const now = new Date().toISOString();
+        const rows = logs.map((l) => ({
+            workoutId: l.workoutId,
+            userId: l.userId,
+            date: l.date || now,
+            sets: l.sets ?? null,
+            reps: l.reps ?? null,
+            duration: l.duration ?? null,
+            weight: l.weight ?? null,
+            rpe: l.rpe ?? null,
+            pace: l.pace ?? null,
+            heartRate: l.heartRate ?? null,
+            notes: l.notes ?? null,
+            createdAt: now,
+            updatedAt: now,
+        }));
+
+        const { data, error } = await supabase
+            .from("workout_logs")
+            .insert(rows)
+            .select();
+
+        if (error) throw error;
+        res.status(201).json(data);
+    } catch (error) {
+        console.error("Error creating batch workout logs:", error);
+        res.status(500).json({ error: "Failed to create workout logs" });
     }
 });
 

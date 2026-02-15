@@ -30,11 +30,6 @@ export const API_BASE_URL = IS_DEVELOPMENT
     : "https://<your-vercel-app>.vercel.app/api"; // cloud
 ```
 
-Tips
-
-- For device testing on the same Wi‑Fi, replace `<your-lan-ip>` with your Mac’s IP (e.g., `ipconfig getifaddr en0`).
-- If your device can’t reach your LAN IP, use Expo tunnel for Metro; the API must still be reachable directly.
-
 ## Install dependencies
 
 ```bash
@@ -42,36 +37,55 @@ cd mobile
 npm install
 ```
 
-## First-time: create an iOS dev client (one-time unless native changes)
+## Running the app locally
+
+There are two ways to run the mobile app during development:
+
+### Option A – Dev Client (recommended)
+
+Use this if you have a custom dev client installed via TestFlight or EAS Build. This supports all native modules.
+
+**First-time setup** — build the dev client once:
 
 ```bash
 eas build --profile development --platform ios
 ```
 
-When the build completes, install the dev client on your iPhone via QR code or the link from EAS. You only need to rebuild the dev client when you add native modules or change SDKs.
+Install the dev client on your iPhone via QR code or the link from EAS. You only need to rebuild when native dependencies change.
 
-## Daily development workflow
-
-1. Start Metro bundler
+**Daily workflow:**
 
 ```bash
-npx expo start --dev-client --host tunnel
+npx expo start --dev-client
 ```
 
-2. Open the app on your device (the dev client). It will connect to Metro and load your JS bundle.
+Open the Trainichi dev client app on your device — it will connect to Metro and load your JS bundle.
 
-Notes
+### Option B – Expo Go (quick prototyping)
 
-- Use `--host tunnel` if LAN discovery fails.
-- Press `r` in the Metro terminal to reload, `m` to toggle menu.
+Use this for quick iteration without needing a native build. Some native modules won't work in Expo Go.
+
+**Setup:**
+
+1. Install Expo Go from the App Store
+2. Log in on the CLI: `npx expo login`
+3. Log in to the same Expo account in the Expo Go app
+
+**Daily workflow:**
+
+```bash
+npx expo start --tunnel
+```
+
+Your project will appear on the Expo Go home screen. Tap to open.
+
+> The `--tunnel` flag is required — local network mode does not work reliably.
 
 ## Android development (optional)
 
-If you prefer Android:
-
 ```bash
 eas build --profile development --platform android
-npx expo start --dev-client --host tunnel
+npx expo start --dev-client
 ```
 
 Install the resulting APK/AAB on your Android device or emulator, then open the app.
@@ -84,37 +98,40 @@ Rebuild if ANY of the following occurs:
 - SDK version changes
 - `app.json` native config changes
 
-Commands
-
 ```bash
 eas build --profile development --platform ios
-npx expo start --dev-client --host tunnel
 ```
 
 ## Useful commands
 
 ```bash
-# Start Metro for the dev client
-npx expo start --dev-client --host tunnel
+# Dev Client
+npx expo start --dev-client
+
+# Expo Go
+npx expo start --tunnel
 
 # Clean install
 rm -rf node_modules && npm install
 
-# Check device can reach local API (replace IP)
-curl -sS http://<your-lan-ip>:3001/health | jq .
+# Metro shortcuts: r = reload, m = toggle menu
 ```
 
 ## Troubleshooting
 
-- Device cannot connect to Metro
-    - Use `--host tunnel` (firewall/NAT often blocks LAN)
-    - Ensure phone and computer are on the same Wi‑Fi
+- **Device cannot connect to Metro**
+    - Use `--tunnel` flag (firewall/NAT often blocks LAN)
+    - Ensure phone and computer are on the same Wi-Fi
 
-- API calls fail on device but work in the simulator
+- **Expo Go: project not appearing**
+    - Ensure you're logged in to the same Expo account on both CLI and the app
+    - Make sure you're using `--tunnel` flag
+
+- **API calls fail on device but work in the simulator**
     - Verify `API_BASE_URL` points to a reachable host from the device (LAN IP or cloud URL)
-    - Confirm your server’s CORS settings allow the mobile app (current server uses permissive CORS)
+    - Confirm your server's CORS settings allow the mobile app (current server uses permissive CORS)
 
-- Images not saving
+- **Images not saving**
     - Ensure images are converted to base64 data URLs before sending (we use `imageAssetToDataUrl`)
     - For workouts, the server uploads to the `workouts` storage bucket and stores the public URL
 
@@ -130,7 +147,7 @@ eas build --profile production --platform ios
 eas build --profile production --platform android
 ```
 
-Follow the prompts for signing credentials if you haven’t set them up.
+Follow the prompts for signing credentials if you haven't set them up.
 
 ## Backend smoke tests (cloud)
 
@@ -140,57 +157,6 @@ curl -sS https://<your-vercel-app>.vercel.app/api/workouts | jq .
 ```
 
 If you see errors in cloud but not locally, verify the Vercel environment variables (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and any others you rely on) and redeploy.
-
-🧪 iOS Development Build Workflow (EAS + Expo)
-
-This project uses Expo EAS Build for development and testing on iOS devices.
-
-1️⃣ First-Time Setup — Create the Dev Client
-eas build --profile development --platform ios
-
-Builds a development client (.ipa) for your iPhone.
-
-After the build finishes, install the app on your device using the QR code or link from Expo.
-
-This only needs to be done once — unless you later add new native modules.
-
-2️⃣ Daily Development — Run the App Locally
-
-Once the dev client is installed, start the Metro bundler:
-
-npx expo start --dev-client --host tunnel
-
-Ensure your Mac and iPhone are on the same Wi-Fi.
-
-Use --host tunnel if your device cannot connect via LAN.
-
-Then open the app on your iPhone — it will automatically connect to Metro.
-
-💡 You do not need to rebuild on EAS every time.
-Just start Metro and open the app.
-
-3️⃣ When Native Code Changes
-
-If you:
-
-Add a new Expo package that contains native code
-
-Update SDK version or change native config in app.json
-
-Rebuild your dev client:
-
-eas build --profile development --platform ios
-npx expo start --dev-client --host tunnel
-
-Reinstall the new build, then continue development as usual.
-
-✅ Typical Daily Flow
-
-# Start Metro bundler
-
-npx expo start --dev-client --host tunnel
-
-# Then open the app on iPhone
 
 ## Uploading to TestFlight
 
@@ -287,5 +253,4 @@ eas submit --platform ios
 
 # Alternative: Build and submit in one command (requires --auto-submit flag in eas.json)
 eas build --profile production --platform ios --auto-submit
-```    
- 
+```

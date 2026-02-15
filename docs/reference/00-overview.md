@@ -85,14 +85,6 @@ See [02-design-system.md](./02-design-system.md) for detailed design guidelines.
 
 ## Environment Setup
 
-### Mobile App
-
-```bash
-cd mobile
-npm install
-npx expo start
-```
-
 ### Backend Server
 
 ```bash
@@ -101,6 +93,25 @@ npm install
 cp .env.example .env  # Configure credentials
 npm run dev
 ```
+
+### Mobile App
+
+```bash
+cd mobile
+npm install
+```
+
+**Dev Client** (recommended – requires TestFlight/EAS build installed):
+```bash
+npx expo start --dev-client
+```
+
+**Expo Go** (quick prototyping, no native build needed):
+```bash
+npx expo start --tunnel
+```
+
+For Expo Go: log in with `npx expo login` and sign in to the same account in the Expo Go app. The `--tunnel` flag is required — local network mode does not work reliably.
 
 ### Required Environment Variables
 

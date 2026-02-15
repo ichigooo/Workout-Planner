@@ -132,6 +132,23 @@ function RootLayoutNav() {
                 />
 
                 <Stack.Screen
+                    name="workout-session"
+                    options={{
+                        headerShown: false,
+                        gestureEnabled: false,
+                        animation: "slide_from_bottom",
+                    }}
+                />
+                <Stack.Screen
+                    name="workout-summary"
+                    options={{
+                        headerShown: false,
+                        gestureEnabled: false,
+                        animation: "fade",
+                    }}
+                />
+
+                <Stack.Screen
                     name="modal"
                     options={{ presentation: "modal", gestureEnabled: true }}
                 />

@@ -49,6 +49,8 @@ model Workout {
   intensityModel           String                  @default("legacy")
   defaultPreset            String?
   durationPerSet           Int?
+  sourceUrl                String?
+  sourcePlatform           String?
   planItems                PlanItem[]
   workoutLogs              WorkoutLog[]
   workout_personal_records WorkoutPersonalRecord[]

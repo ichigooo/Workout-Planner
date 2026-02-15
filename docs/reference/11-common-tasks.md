@@ -7,13 +7,14 @@
 ## Quick Commands
 
 ```bash
-# Start development
-cd mobile && npm start          # Expo dev server
-cd backend && npm run dev       # Backend server
+# Start backend
+cd backend && npm run dev       # Backend server on http://localhost:3001
 
-# Run on devices
-npm run ios                     # iOS simulator
-npm run android                 # Android emulator
+# Start mobile – Dev Client (recommended, requires TestFlight/EAS build)
+cd mobile && npx expo start --dev-client
+
+# Start mobile – Expo Go (quick prototyping, no native build needed)
+cd mobile && npx expo start --tunnel
 
 # Testing
 cd mobile && npm test           # Mobile tests
@@ -23,6 +24,8 @@ cd backend && npm test          # Backend tests
 cd backend && npx prisma studio # Visual DB browser
 npx prisma migrate dev          # Run migrations
 ```
+
+> **Expo Go note:** Log in with `npx expo login` and sign in to the same account in the Expo Go app. The `--tunnel` flag is required — local network mode does not work reliably.
 
 ---
 
@@ -42,23 +45,16 @@ npx prisma migrate dev          # Run migrations
    EXPO_PUBLIC_SUPABASE_ANON_KEY="your-dev-anon-key"
    ```
 
-3. **Update local IP** (`mobile/src/utils/getlocalIP.ts`):
-   ```bash
-   # Get your current IP
-   ipconfig getifaddr en0
-
-   # Update CURRENT_IP in getlocalIP.ts to match
-   ```
-
 **Start:**
 ```bash
 # Terminal 1 - Backend
 cd backend
 npm run dev
 
-# Terminal 2 - Mobile
+# Terminal 2 - Mobile (pick one)
 cd mobile
-npx expo start --dev-client --host tunnel
+npx expo start --dev-client     # Dev Client
+npx expo start --tunnel         # Expo Go
 ```
 
 ### Running Against Production Database
@@ -80,7 +76,8 @@ npx expo start --dev-client --host tunnel
 ```bash
 # Only need mobile - uses deployed backend
 cd mobile
-npx expo start --dev-client --host tunnel
+npx expo start --dev-client     # Dev Client
+npx expo start --tunnel         # Expo Go
 ```
 
 **Quick Reference:**

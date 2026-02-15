@@ -17,6 +17,7 @@ import {
     CreatePREntryResponse,
     UserWorkoutRepConfig,
     AllPRsResponse,
+    WorkoutLog,
 } from "../types";
 import { getLocalIp } from "../utils/getlocalIP";
 
@@ -493,6 +494,15 @@ class ApiService {
                 method: "DELETE",
             },
         );
+    }
+
+    async createWorkoutLogsBatch(
+        logs: Array<Omit<WorkoutLog, "id" | "createdAt" | "updatedAt">>,
+    ): Promise<WorkoutLog[]> {
+        return this.request<WorkoutLog[]>("/workout-logs/batch", {
+            method: "POST",
+            body: JSON.stringify({ logs }),
+        });
     }
 }
 

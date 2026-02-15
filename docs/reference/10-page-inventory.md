@@ -30,6 +30,8 @@ Trainichi uses **Expo Router v4** file-based routing. This document lists every 
 ├── /import-workout
 ├── /import-workout/custom?id=xxx
 ├── /plan/[id]
+├── /workout-session?workoutIds=xxx,yyy
+├── /workout-summary
 └── /modal
 ```
 
@@ -272,6 +274,53 @@ Trainichi uses **Expo Router v4** file-based routing. This document lists every 
 
 ---
 
+### Workout Session
+
+| Property | Value |
+|----------|-------|
+| File | `app/workout-session.tsx` |
+| Route | `/workout-session?workoutIds=id1,id2,id3` |
+| Purpose | Instagram-story-style guided workout execution |
+
+**Features:**
+- Story-style segmented progress bar (warmup + one segment per exercise)
+- Warmup slide with YouTube Shorts warm-up video suggestions
+- Exercise slides with image, category badge, title, sets/reps/intensity details
+- Active set tracking — tap "Complete Set" to advance through sets
+- Rest timer overlay between sets (60s strength, 30s timed sets, 0 cardio)
+- Auto-cycling dual images with fade transition (3s interval) when workout has two images
+- IG-style tap zones (left 25% = go back, right 25% = complete set) and swipe gestures
+- "Watch on YouTube" / "View Source" pill for imported workouts with `sourceUrl`
+- Hardware back button and close button with "End Workout?" confirmation
+- Saves workout logs to backend via `POST /api/workout-logs/batch` on completion
+- Navigates to workout summary after all exercises are complete
+- Dark theme (#1A1A1A background, #2C2925 info area)
+
+**State Machine Phases:**
+- `warmup` → `exercise` → `rest` → `exercise` → ... → `completed`
+
+**Entry Point:**
+- Home screen "Start Today's Workout" button (passes comma-separated workout IDs)
+
+---
+
+### Workout Summary
+
+| Property | Value |
+|----------|-------|
+| File | `app/workout-summary.tsx` |
+| Route | `/workout-summary?totalTime=ms&exerciseCount=n&logs=json` |
+| Purpose | Post-workout completion summary |
+
+**Features:**
+- Success icon with "Workout Complete" header
+- Stats cards: Exercises count, Total sets, Duration
+- Exercise list with checkmarks and per-exercise details (sets, reps, duration)
+- "Done" button navigates to `/(tabs)` via `router.replace()`
+- Receives data via URL params (totalTime in ms, exerciseCount, JSON-encoded logs)
+
+---
+
 ### User Profile
 
 | Property | Value |
@@ -396,10 +445,10 @@ Trainichi uses **Expo Router v4** file-based routing. This document lists every 
 |----------|-------|
 | Auth Screens | 4 |
 | Tab Screens | 4 |
-| Detail Screens | 6 |
+| Detail Screens | 8 |
 | Modals/Sheets | 4 |
 | Layouts | 3 |
-| **Total** | **21** |
+| **Total** | **23** |
 
 ---
 
@@ -428,6 +477,28 @@ Plan Tab → Plan Detail → Plan Setup Modal → Calendar
 ### Import Flow
 ```
 Workout Library → Import Workout → Custom Import Detail → Add to Plan
+```
+
+### Workout Session Flow
+```
+Home ("Start Today's Workout") → Workout Session → Workout Summary → (tabs) Home
+```
+
+**Detailed:**
+```
+Home
+  │
+  └── "Start Today's Workout" → /workout-session?workoutIds=id1,id2,id3 [push]
+                                      │
+                                      ├── Warmup Slide (skip or watch videos)
+                                      │
+                                      ├── Exercise 1 (set 1 → rest → set 2 → rest → ... → set N)
+                                      ├── Exercise 2 (set 1 → rest → ... → set N)
+                                      ├── ...
+                                      │
+                                      └── All exercises done → /workout-summary [replace]
+                                                                    │
+                                                                    └── "Done" → /(tabs) [replace]
 ```
 
 ---

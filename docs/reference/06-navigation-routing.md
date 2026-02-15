@@ -34,6 +34,8 @@ app/
 │   └── custom.tsx           # "/import-workout/custom"
 ├── plan/
 │   └── [id].tsx             # "/plan/xxx" - Dynamic route
+├── workout-session.tsx      # "/workout-session?workoutIds=xxx"
+├── workout-summary.tsx      # "/workout-summary"
 ├── modal.tsx                # "/modal" - Modal presentation
 └── +not-found.tsx           # 404 page
 ```
@@ -414,8 +416,39 @@ Landing (index.tsx)
     ├── Library → /workout?category=xxx [push]
     │              └── Back → Library
     │
-    └── Plan → /plan/[id] [push]
-                    └── Back → Plan
+    ├── Plan → /plan/[id] [push]
+    │              └── Back → Plan
+    │
+    └── Home → /workout-session?workoutIds=... [push]
+                    │
+                    ├── Warmup → Exercise slides → Rest timers
+                    │
+                    └── All done → /workout-summary [replace]
+                                        └── "Done" → /(tabs) [replace]
+```
+
+### Workout Session Screen Options
+
+```typescript
+// Slides up from bottom, no swipe-back gesture
+<Stack.Screen
+    name="workout-session"
+    options={{
+        headerShown: false,
+        gestureEnabled: false,       // Prevent accidental swipe-back
+        animation: "slide_from_bottom",
+    }}
+/>
+
+// Summary fades in, also no swipe-back
+<Stack.Screen
+    name="workout-summary"
+    options={{
+        headerShown: false,
+        gestureEnabled: false,
+        animation: "fade",
+    }}
+/>
 ```
 
 ---

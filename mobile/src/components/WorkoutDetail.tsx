@@ -579,11 +579,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                             onCancel={() => setShowEditModal(false)}
                             onSubmit={async (payload: CreateWorkoutRequest) => {
                                 try {
-                                    // call API to update workout
                                     await apiService.updateWorkout(workout.id, payload);
-                                    // refresh workout details by fetching again
                                     const refreshed = await apiService.getWorkout(workout.id);
-                                    // notify parent with updated workout so it can refresh UI state
                                     onEdit(refreshed);
                                     setShowEditModal(false);
                                     // Optionally update UI immediately (not wired here)
