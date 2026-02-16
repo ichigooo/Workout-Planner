@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiService } from "../services/api";
 import { User } from "../types";
+import { initAdminMode } from "./adminMode";
 
 const USER_ID_STORAGE_KEY = "@workout_planner:userId";
 
@@ -45,6 +46,7 @@ export async function setCurrentUserId(userId: string | null): Promise<void> {
  */
 export async function clearCurrentUserId(): Promise<void> {
     await setCurrentUserId(null);
+    await initAdminMode(false);
 }
 
 export function getCurrentUserId(): string | null {
@@ -75,6 +77,7 @@ export async function getCurrentUser(): Promise<User | null> {
     if (!userId) return null;
     try {
         const user = await apiService.getUserProfile(userId);
+        await initAdminMode(user.isAdmin);
         return user;
     } catch {
         return null;

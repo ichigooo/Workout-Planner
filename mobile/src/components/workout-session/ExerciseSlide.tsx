@@ -1,17 +1,17 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
     View,
     Text,
     TouchableOpacity,
     StyleSheet,
     Image,
-    Animated,
     Dimensions,
     Linking,
     useColorScheme,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { getTheme, spacing, radii, typography } from "../../theme";
 import {
     Workout,
@@ -21,14 +21,58 @@ import {
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CYCLE_INTERVAL = 3000;
-const FADE_DURATION = 500;
 
 interface ExerciseSlideProps {
     workout: Workout;
-    currentSet: number; // 1-based
+    completedSets: number;
     totalSets: number;
     onCompleteSet: () => void;
 }
+
+// ─── Set Indicator ──────────────────────────────────────────────────
+
+const SET_CIRCLE_SIZE = 14;
+const SET_CIRCLE_GAP = 10;
+
+const SetIndicator: React.FC<{
+    completedSets: number;
+    totalSets: number;
+    accentColor: string;
+}> = ({ completedSets, totalSets, accentColor }) => (
+    <View style={setIndicatorStyles.container}>
+        {Array.from({ length: totalSets }).map((_, i) => (
+            <View
+                key={i}
+                style={[
+                    setIndicatorStyles.circle,
+                    i < completedSets
+                        ? { backgroundColor: accentColor }
+                        : setIndicatorStyles.emptyCircle,
+                ]}
+            />
+        ))}
+    </View>
+);
+
+const setIndicatorStyles = StyleSheet.create({
+    container: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: SET_CIRCLE_GAP,
+        marginBottom: 16,
+    },
+    circle: {
+        width: SET_CIRCLE_SIZE,
+        height: SET_CIRCLE_SIZE,
+        borderRadius: SET_CIRCLE_SIZE / 2,
+    },
+    emptyCircle: {
+        backgroundColor: "rgba(255,255,255,0.25)",
+        borderWidth: 1.5,
+        borderColor: "rgba(255,255,255,0.4)",
+    },
+});
 
 function getExerciseDetails(workout: Workout): {
     setsLabel: string;
@@ -79,9 +123,24 @@ function getSourceLabel(platform?: string): { label: string; icon: string } {
     return { label: "View Source", icon: "open-outline" };
 }
 
+/** Extract YouTube video URL from a YouTube thumbnail URL, or return sourceUrl if set. */
+function deriveSourceUrl(workout: Workout): string | null {
+    if (workout.sourceUrl) return workout.sourceUrl;
+    const img = workout.imageUrl || "";
+    const match = img.match(/(?:ytimg\.com|img\.youtube\.com)\/vi\/([^/]+)/);
+    if (match) return `https://www.youtube.com/watch?v=${match[1]}`;
+    return null;
+}
+
+function deriveSourcePlatform(workout: Workout, derivedUrl: string | null): string | undefined {
+    if (workout.sourcePlatform) return workout.sourcePlatform;
+    if (derivedUrl?.includes("youtube.com")) return "youtube";
+    return undefined;
+}
+
 export const ExerciseSlide: React.FC<ExerciseSlideProps> = ({
     workout,
-    currentSet,
+    completedSets,
     totalSets,
     onCompleteSet,
 }) => {
@@ -100,48 +159,40 @@ export const ExerciseSlide: React.FC<ExerciseSlideProps> = ({
 
     const imageHeight = Math.round(SCREEN_WIDTH * 0.75);
 
-    // Auto-cycle animation for dual images
-    const fadeAnim = useRef(new Animated.Value(1)).current;
-
+    // Auto-cycle for dual images
     useEffect(() => {
         if (images.length <= 1) return;
 
         const interval = setInterval(() => {
-            Animated.timing(fadeAnim, {
-                toValue: 0,
-                duration: FADE_DURATION,
-                useNativeDriver: true,
-            }).start(() => {
-                setActiveImageIndex((prev) => (prev + 1) % images.length);
-                Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: FADE_DURATION,
-                    useNativeDriver: true,
-                }).start();
-            });
+            setActiveImageIndex((prev) => (prev + 1) % images.length);
         }, CYCLE_INTERVAL);
 
         return () => clearInterval(interval);
-    }, [images.length, fadeAnim]);
+    }, [images.length]);
 
     // Reset index when workout changes
     useEffect(() => {
         setActiveImageIndex(0);
-        fadeAnim.setValue(1);
     }, [workout.id]);
 
+    const resolvedSourceUrl = useMemo(() => deriveSourceUrl(workout), [workout]);
+    const resolvedPlatform = useMemo(
+        () => deriveSourcePlatform(workout, resolvedSourceUrl),
+        [workout, resolvedSourceUrl],
+    );
+
     const handleSourcePress = async () => {
-        if (workout.sourceUrl) {
+        if (resolvedSourceUrl) {
             try {
-                await Linking.openURL(workout.sourceUrl);
+                await Linking.openURL(resolvedSourceUrl);
             } catch (error) {
                 console.error("Error opening source URL:", error);
             }
         }
     };
 
-    const sourceInfo = workout.sourceUrl
-        ? getSourceLabel(workout.sourcePlatform)
+    const sourceInfo = resolvedSourceUrl
+        ? getSourceLabel(resolvedPlatform)
         : null;
 
     return (
@@ -149,15 +200,12 @@ export const ExerciseSlide: React.FC<ExerciseSlideProps> = ({
             {/* Image area */}
             {images.length > 0 ? (
                 <View style={[styles.imageContainer, { height: imageHeight }]}>
-                    <Animated.Image
+                    <Image
                         source={{ uri: images[activeImageIndex] }}
-                        style={[
-                            {
-                                width: SCREEN_WIDTH,
-                                height: imageHeight,
-                                opacity: fadeAnim,
-                            },
-                        ]}
+                        style={{
+                            width: SCREEN_WIDTH,
+                            height: imageHeight,
+                        }}
                         resizeMode="contain"
                     />
                     {images.length > 1 && (
@@ -263,25 +311,44 @@ export const ExerciseSlide: React.FC<ExerciseSlideProps> = ({
 
                 <View style={styles.spacer} />
 
-                {/* Set counter */}
-                {!isCardio && totalSets > 0 && (
-                    <Text style={styles.setCounter}>
-                        Set {currentSet} of {totalSets}
-                    </Text>
+                {/* Set indicator circles */}
+                {!isCardio && totalSets > 1 && (
+                    <SetIndicator
+                        completedSets={completedSets}
+                        totalSets={totalSets}
+                        accentColor={theme.colors.accent}
+                    />
                 )}
 
                 {/* Complete button */}
                 <TouchableOpacity
                     style={[
                         styles.completeButton,
-                        { backgroundColor: theme.colors.accent },
+                        {
+                            backgroundColor:
+                                completedSets >= totalSets
+                                    ? "rgba(255,255,255,0.15)"
+                                    : theme.colors.accent,
+                        },
                     ]}
-                    onPress={onCompleteSet}
-                    activeOpacity={0.85}
+                    onPress={() => {
+                        if (completedSets < totalSets) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                            onCompleteSet();
+                        }
+                    }}
+                    activeOpacity={completedSets >= totalSets ? 1 : 0.85}
+                    disabled={completedSets >= totalSets}
                 >
-                    <Ionicons name="checkmark" size={22} color="#FFFFFF" />
+                    <Ionicons
+                        name={completedSets >= totalSets ? "checkmark-circle" : "checkmark"}
+                        size={22}
+                        color="#FFFFFF"
+                    />
                     <Text style={styles.completeButtonText}>
-                        {isCardio ? "Complete" : "Complete Set"}
+                        {isCardio
+                            ? completedSets >= totalSets ? "Completed" : "Complete"
+                            : completedSets >= totalSets ? "All Sets Done" : "Complete Set"}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -386,13 +453,6 @@ const styles = StyleSheet.create({
     },
     spacer: {
         flex: 1,
-    },
-    setCounter: {
-        fontFamily: typography.fonts.bodyBold,
-        fontSize: typography.sizes.lg,
-        color: "#FFFFFF",
-        textAlign: "center",
-        marginBottom: 16,
     },
     completeButton: {
         flexDirection: "row",

@@ -16,9 +16,9 @@ import { getTheme } from "@/src/theme";
 import { apiService } from "@/src/services/api";
 import { Workout, CreateWorkoutRequest, WorkoutImport } from "@/src/types";
 import { EnhancedWorkoutCard } from "@/src/components/EnhancedWorkoutCard";
-import { ImportCTACard } from "@/src/components/ImportCTACard";
 import { WorkoutForm } from "@/src/components/WorkoutForm";
-import { getCurrentUser, getCurrentUserId, loadStoredUserId } from "@/src/state/session";
+import { getCurrentUserId, loadStoredUserId } from "@/src/state/session";
+import { useAdminMode } from "@/src/hooks/useAdminMode";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { orderCategoriesWithClimbingAtEnd } from "@/src/utils/categoryOrder";
@@ -33,11 +33,12 @@ export default function WorkoutScreen() {
     const [loading, setLoading] = useState(true);
     const [category, setCategory] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
-    const [isAdmin, setIsAdmin] = useState(false);
+    const { isAdminModeActive } = useAdminMode();
     const [currentUserId, setCurrentUserId] = useState<string | null>(() => getCurrentUserId());
     const [customWorkouts, setCustomWorkouts] = useState<WorkoutImport[]>([]);
     const [customLoading, setCustomLoading] = useState(false);
     const chipListRef = useRef<import("react-native").FlatList<string> | null>(null);
+    const [showMenu, setShowMenu] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -51,34 +52,11 @@ export default function WorkoutScreen() {
         })();
     }, []);
 
-    // Determine admin based on the authenticated/selected current user
+    // Resolve currentUserId from session if not already set
     useEffect(() => {
-        let mounted = true;
-        (async () => {
-            try {
-                // Prefer a resolved current user if available
-                const current = await getCurrentUser();
-                if (!mounted) return;
-                if (current) {
-                    setIsAdmin(Boolean(current.isAdmin));
-                    setCurrentUserId(current.id);
-                    return;
-                }
-                // Fallback: if only an id is available, fetch it
-                const id = getCurrentUserId();
-                if (id) {
-                    setCurrentUserId(id);
-                    const u = await apiService.getUserProfile(id);
-                    if (!mounted) return;
-                    setIsAdmin(Boolean(u?.isAdmin));
-                }
-            } catch {
-                // default false
-            }
-        })();
-        return () => {
-            mounted = false;
-        };
+        if (currentUserId) return;
+        const id = getCurrentUserId();
+        if (id) setCurrentUserId(id);
     }, []);
 
     useEffect(() => {
@@ -260,7 +238,7 @@ export default function WorkoutScreen() {
         // Personal imports: only owner can delete
         // Global imports: only owner AND must be admin
         const isOwner = item.userId === currentUserId;
-        const canDelete = isOwner && (!item.isGlobal || isAdmin);
+        const canDelete = isOwner && (!item.isGlobal || isAdminModeActive);
 
         // Only show "Custom" tag for personal imports, not public ones
         const isPersonalImport = !item.isGlobal && isOwner;
@@ -322,20 +300,13 @@ export default function WorkoutScreen() {
                             ‹ Back
                         </Text>
                     </TouchableOpacity>
-                    {isAdmin ? (
-                        <TouchableOpacity
-                            onPress={() => setShowForm(true)}
-                            style={[styles.addBtn, { borderColor: theme.colors.accent }]}
-                            accessibilityRole="button"
-                            accessibilityLabel="Add workout"
-                        >
-                            <Text style={[styles.addBtnText, { color: theme.colors.accent }]}>
-                                Add
-                            </Text>
-                        </TouchableOpacity>
-                    ) : (
-                        <View style={{ width: 60 }} />
-                    )}
+                    <TouchableOpacity
+                        onPress={() => setShowMenu(true)}
+                        style={styles.menuButton}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <Ionicons name="ellipsis-horizontal" size={22} color={theme.colors.text} />
+                    </TouchableOpacity>
                 </View>
 
                 <View
@@ -426,9 +397,6 @@ export default function WorkoutScreen() {
                     />
                 </View>
 
-                <View style={{ paddingHorizontal: 16 }}>
-                    <ImportCTACard onPress={() => router.push("/import-workout")} />
-                </View>
 
                 {listLoading ? (
                     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -470,6 +438,58 @@ export default function WorkoutScreen() {
                         ListEmptyComponent={renderListEmpty}
                     />
                 )}
+
+                {/* "..." Menu Modal */}
+                <Modal
+                    visible={showMenu}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setShowMenu(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.menuOverlay}
+                        activeOpacity={1}
+                        onPress={() => setShowMenu(false)}
+                    >
+                        <View
+                            style={[
+                                styles.menuContainer,
+                                {
+                                    backgroundColor: theme.colors.surface,
+                                    borderColor: theme.colors.border,
+                                },
+                            ]}
+                        >
+                            <TouchableOpacity
+                                style={[
+                                    styles.menuItem,
+                                    isAdminModeActive && { borderBottomColor: theme.colors.border },
+                                ]}
+                                onPress={() => {
+                                    setShowMenu(false);
+                                    router.push("/import-workout");
+                                }}
+                            >
+                                <Text style={[styles.menuItemText, { color: theme.colors.text }]}>
+                                    Import from Social Media
+                                </Text>
+                            </TouchableOpacity>
+                            {isAdminModeActive && (
+                                <TouchableOpacity
+                                    style={styles.menuItem}
+                                    onPress={() => {
+                                        setShowMenu(false);
+                                        setShowForm(true);
+                                    }}
+                                >
+                                    <Text style={[styles.menuItemText, { color: theme.colors.text }]}>
+                                        Add Workout
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
 
                 {/* Create / Edit Workout */}
                 <Modal visible={showForm} animationType="slide" presentationStyle="pageSheet">
@@ -553,6 +573,38 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 8,
         marginTop: 4,
+    },
+    menuButton: {
+        width: 60,
+        alignItems: "flex-end",
+    },
+    menuOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        justifyContent: "flex-start",
+        alignItems: "flex-end",
+        paddingTop: 60,
+        paddingRight: 16,
+    },
+    menuContainer: {
+        borderRadius: 12,
+        borderWidth: 1,
+        minWidth: 200,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    menuItem: {
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: "transparent",
+    },
+    menuItemText: {
+        fontSize: 16,
+        fontWeight: "500",
     },
     emptyState: {
         paddingVertical: 32,

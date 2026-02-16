@@ -18,7 +18,8 @@ import { Workout, CreateWorkoutRequest, PercentagePreset } from "../types";
 import { PRSection } from "./personal-records";
 import { getTheme } from "../theme";
 import { apiService } from "../services/api";
-import { getCurrentPlanId, getCurrentUserId, getCurrentUser } from "../state/session";
+import { getCurrentPlanId, getCurrentUserId } from "../state/session";
+import { useAdminMode } from "../hooks/useAdminMode";
 import { WorkoutForm } from "./WorkoutForm";
 import { planItemsCache } from "../services/planItemsCache";
 import { useRouter } from "expo-router";
@@ -49,7 +50,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     // Add to plan sheet state
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [planId, setPlanId] = useState<string | null>(null);
-    const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
+    const { isAdminModeActive } = useAdminMode();
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     // Preset toggle state for percentage_1rm workouts
     const [activePreset, setActivePreset] = useState<PercentagePreset>(
@@ -63,46 +64,6 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     );
     const [recordUserId, setRecordUserId] = useState<string | null>(() => getCurrentUserId());
 
-    useEffect(() => {
-        let mounted = true;
-        (async () => {
-            try {
-                // Try to get current user from session first
-                const current = await getCurrentUser();
-                console.log("[WorkoutDetail] getCurrentUser returned:", current);
-                if (!mounted) return;
-                if (current) {
-                    console.log("[WorkoutDetail] isAdmin from current user:", current.isAdmin);
-                    setIsCurrentUserAdmin(Boolean(current.isAdmin));
-                    return;
-                }
-                // Fallback: if only an id is available, fetch it
-                let userId = getCurrentUserId();
-                console.log("[WorkoutDetail] getCurrentUserId returned:", userId);
-
-                // If memory is empty, try loading from storage
-                if (!userId) {
-                    const { loadStoredUserId } = await import("../state/session");
-                    userId = await loadStoredUserId();
-                    console.log("[WorkoutDetail] loadStoredUserId returned:", userId);
-                }
-
-                if (userId) {
-                    const u = await apiService.getUserProfile(userId);
-                    console.log("[WorkoutDetail] getUserProfile returned:", u);
-                    console.log("[WorkoutDetail] isAdmin from profile:", u?.isAdmin);
-                    if (!mounted) return;
-                    setIsCurrentUserAdmin(Boolean(u?.isAdmin));
-                }
-            } catch (error) {
-                console.error("Error checking admin status:", error);
-                setIsCurrentUserAdmin(false);
-            }
-        })();
-        return () => {
-            mounted = false;
-        };
-    }, []);
 
     useEffect(() => {
         setRecordUserId(getCurrentUserId());
@@ -200,7 +161,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                         </Text>
                     </TouchableOpacity>
                     <View style={styles.headerSpacer} />
-                    {isCurrentUserAdmin ? (
+                    {isAdminModeActive ? (
                         <TouchableOpacity
                             onPress={() => setShowMenu(true)}
                             style={styles.menuButton}

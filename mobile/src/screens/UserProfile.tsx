@@ -11,6 +11,7 @@ import {
     Platform,
     useColorScheme,
     KeyboardAvoidingView,
+    Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -25,6 +26,8 @@ import { apiService } from "../services/api";
 import { getTheme } from "../theme";
 import { supabase } from "../lib/supabase";
 import { clearCurrentUserId, setCurrentPlanId } from "../state/session";
+import { useAdminMode } from "../hooks/useAdminMode";
+import { toggleAdminMode, initAdminMode } from "../state/adminMode";
 
 interface UserProfileProps {
     userId: string;
@@ -34,12 +37,12 @@ interface UserProfileProps {
 export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdated }) => {
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
+    const { isAdminModeActive, isDbAdmin } = useAdminMode();
 
     const [_user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const [_isAdmin, setIsAdmin] = useState<boolean>(false);
 
     // Form state
     const [name, setName] = useState("");
@@ -61,7 +64,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
             setEmail(userData.email || "");
             setProfilePhoto(userData.profilePhoto || null);
             setBirthday(userData.birthday ? new Date(userData.birthday) : null);
-            setIsAdmin(userData.isAdmin);
+            await initAdminMode(userData.isAdmin);
         } catch (error) {
             console.error("Error loading user profile:", error);
             Alert.alert("Error", "Failed to load user profile");
@@ -380,6 +383,33 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                             <Text style={[styles.prLinkArrow, { color: theme.colors.subtext }]}>→</Text>
                         </TouchableOpacity>
 
+                        {isDbAdmin && (
+                            <View
+                                style={[
+                                    styles.adminToggleRow,
+                                    {
+                                        backgroundColor: theme.colors.surface,
+                                        borderColor: theme.colors.border,
+                                    },
+                                ]}
+                            >
+                                <View style={styles.adminToggleContent}>
+                                    <Text style={[styles.adminToggleText, { color: theme.colors.text }]}>
+                                        Admin Mode
+                                    </Text>
+                                    <Text style={[styles.adminToggleSubtext, { color: theme.colors.subtext }]}>
+                                        Show admin controls across the app
+                                    </Text>
+                                </View>
+                                <Switch
+                                    value={isAdminModeActive}
+                                    onValueChange={() => toggleAdminMode()}
+                                    trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+                                    thumbColor="#FFFFFF"
+                                />
+                            </View>
+                        )}
+
                         <TouchableOpacity
                             style={[
                                 styles.saveButton,
@@ -483,18 +513,28 @@ const styles = StyleSheet.create({
     screenBackgroundImage: {
         resizeMode: "cover",
     },
-    adminButton: {
-        position: "absolute",
-        top: 44,
-        right: 12,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        zIndex: 10,
+    adminToggleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginHorizontal: 16,
+        marginBottom: 20,
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
     },
-    adminButtonText: {
-        color: "#fff",
-        fontWeight: "700",
+    adminToggleContent: {
+        flex: 1,
+        marginRight: 12,
+    },
+    adminToggleText: {
+        fontSize: 16,
+        fontFamily: "Inter_600SemiBold",
+    },
+    adminToggleSubtext: {
+        fontSize: 13,
+        fontFamily: "Inter_400Regular",
+        marginTop: 4,
     },
     scrollView: {
         flex: 1,

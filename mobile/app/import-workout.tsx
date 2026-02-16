@@ -24,6 +24,7 @@ import {
     loadStoredUserId,
     setCurrentUserId as persistCurrentUserId,
 } from "@/src/state/session";
+import { useAdminMode } from "@/src/hooks/useAdminMode";
 import { WorkoutImport } from "@/src/types";
 import { WorkoutImportPreview } from "@/src/components/WorkoutImportPreview";
 
@@ -112,7 +113,7 @@ export default function ImportWorkoutScreen() {
         tiktok: { url: "", result: null, error: null, loading: false },
     });
     const [currentUserId, setCurrentUserIdState] = useState<string | null>(() => getCurrentUserId());
-    const [isAdmin, setIsAdmin] = useState(false);
+    const { isAdminModeActive } = useAdminMode();
 
     // Animation values
     const inputHeightAnim = useRef(new Animated.Value(0)).current;
@@ -129,24 +130,6 @@ export default function ImportWorkoutScreen() {
         });
     }, [currentUserId]);
 
-    // Fetch admin status
-    useEffect(() => {
-        if (!currentUserId) return;
-        let mounted = true;
-        (async () => {
-            try {
-                const user = await apiService.getUserProfile(currentUserId);
-                if (mounted) {
-                    setIsAdmin(Boolean(user?.isAdmin));
-                }
-            } catch {
-                // default to false
-            }
-        })();
-        return () => {
-            mounted = false;
-        };
-    }, [currentUserId]);
 
     // Animate input field when platform is selected/deselected
     useEffect(() => {
@@ -712,7 +695,7 @@ export default function ImportWorkoutScreen() {
                 workout={previewWorkout}
                 onConfirm={handleConfirmImport}
                 onCancel={handleCancelPreview}
-                isAdmin={isAdmin}
+                isAdmin={isAdminModeActive}
             />
         </View>
     );

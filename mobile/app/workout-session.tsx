@@ -1,11 +1,12 @@
-import React, { useEffect, useReducer, useRef, useCallback } from "react";
+import React, { useEffect, useReducer, useRef, useCallback, useState } from "react";
 import {
     View,
+    Text,
+    Modal,
     Pressable,
     TouchableOpacity,
     StyleSheet,
     Dimensions,
-    Alert,
     BackHandler,
     StatusBar,
 } from "react-native";
@@ -25,17 +26,18 @@ import {
     PERCENTAGE_PRESETS,
     PERCENTAGE_1RM_SETS,
 } from "@/src/types";
+import { spacing, radii, typography, palettes } from "@/src/theme";
 import { StoryProgressBar } from "@/src/components/workout-session/StoryProgressBar";
 import { WarmupSlide } from "@/src/components/workout-session/WarmupSlide";
 import { ExerciseSlide } from "@/src/components/workout-session/ExerciseSlide";
-import { RestTimer } from "@/src/components/workout-session/RestTimer";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TAP_ZONE = SCREEN_WIDTH * 0.3;
+const IMAGE_AREA_HEIGHT = Math.round(SCREEN_WIDTH * 0.75);
 
 // ─── State ───────────────────────────────────────────────────────────
 
-type Phase = "warmup" | "exercise" | "rest" | "completed";
+type Phase = "warmup" | "exercise" | "completed";
 
 interface ExerciseLog {
     workoutId: string;
@@ -48,31 +50,23 @@ interface ExerciseLog {
 interface SessionState {
     phase: Phase;
     currentExerciseIndex: number;
-    currentSet: number; // 1-based
-    totalSets: number;
-    restDuration: number; // seconds
+    exerciseSetProgress: number[]; // exerciseSetProgress[i] = completed sets for exercise i
     startTime: number;
     exerciseLogs: ExerciseLog[];
 }
 
 type Action =
     | { type: "SKIP_WARMUP" }
-    | { type: "COMPLETE_SET"; workout: Workout }
-    | { type: "SKIP_EXERCISE"; workout: Workout }
-    | { type: "REST_COMPLETE" }
-    | { type: "GO_BACK"; workouts: Workout[] }
+    | { type: "INIT_PROGRESS"; workoutCount: number }
+    | { type: "COMPLETE_SET"; exerciseIndex: number; totalSets: number; workout: Workout }
+    | { type: "NAVIGATE_NEXT"; totalExercises: number }
+    | { type: "NAVIGATE_BACK" }
     | { type: "COMPLETE_SESSION" };
 
 function getTotalSets(workout: Workout): number {
     if (workout.workoutType === "cardio") return 1;
     if (workout.intensityModel === "percentage_1rm") return PERCENTAGE_1RM_SETS;
     return workout.sets ?? 1;
-}
-
-function getRestDuration(workout: Workout): number {
-    if (workout.workoutType === "cardio") return 0;
-    if (workout.intensityModel === "sets_time") return 30;
-    return 60;
 }
 
 function getReps(workout: Workout): number | undefined {
@@ -91,9 +85,7 @@ function initState(): SessionState {
     return {
         phase: "warmup",
         currentExerciseIndex: 0,
-        currentSet: 1,
-        totalSets: 0,
-        restDuration: 60,
+        exerciseSetProgress: [],
         startTime: Date.now(),
         exerciseLogs: [],
     };
@@ -104,13 +96,25 @@ function reducer(state: SessionState, action: Action): SessionState {
         case "SKIP_WARMUP":
             return { ...state, phase: "exercise" };
 
-        case "COMPLETE_SET": {
-            const workout = action.workout;
-            const totalSets = getTotalSets(workout);
-            const isLastSet = state.currentSet >= totalSets;
+        case "INIT_PROGRESS":
+            return {
+                ...state,
+                exerciseSetProgress: new Array(action.workoutCount).fill(0),
+            };
 
-            if (isLastSet) {
-                // Log this exercise
+        case "COMPLETE_SET": {
+            const { exerciseIndex, totalSets, workout } = action;
+            const currentCompleted = state.exerciseSetProgress[exerciseIndex] ?? 0;
+
+            // Already fully completed — do nothing
+            if (currentCompleted >= totalSets) return state;
+
+            const newCompleted = currentCompleted + 1;
+            const newProgress = [...state.exerciseSetProgress];
+            newProgress[exerciseIndex] = newCompleted;
+
+            // Last set done → log exercise and auto-advance
+            if (newCompleted >= totalSets) {
                 const log: ExerciseLog = {
                     workoutId: workout.id,
                     title: workout.title,
@@ -118,87 +122,42 @@ function reducer(state: SessionState, action: Action): SessionState {
                     reps: getReps(workout),
                     duration: workout.duration ?? undefined,
                 };
+                // Update existing log if navigated back and re-completed
+                const existingIdx = state.exerciseLogs.findIndex(
+                    (l) => l.workoutId === workout.id,
+                );
+                const newLogs =
+                    existingIdx >= 0
+                        ? state.exerciseLogs.map((l, i) => (i === existingIdx ? log : l))
+                        : [...state.exerciseLogs, log];
+
                 return {
                     ...state,
-                    exerciseLogs: [...state.exerciseLogs, log],
-                    // Move to next exercise (handled by the component via COMPLETE_SESSION or index bump)
+                    exerciseSetProgress: newProgress,
+                    exerciseLogs: newLogs,
                     currentExerciseIndex: state.currentExerciseIndex + 1,
-                    currentSet: 1,
-                    phase: "exercise", // will be checked in component
                 };
             }
 
-            // More sets remaining — start rest
-            const rest = getRestDuration(workout);
-            if (rest > 0) {
-                return {
-                    ...state,
-                    phase: "rest",
-                    restDuration: rest,
-                };
-            }
-            // No rest (cardio), jump to next set
+            // More sets to go
             return {
                 ...state,
-                currentSet: state.currentSet + 1,
+                exerciseSetProgress: newProgress,
             };
         }
 
-        case "SKIP_EXERCISE": {
-            const skipWorkout = action.workout;
-            const setsCompleted = state.currentSet - 1;
-            const newLogs =
-                setsCompleted > 0
-                    ? [
-                          ...state.exerciseLogs,
-                          {
-                              workoutId: skipWorkout.id,
-                              title: skipWorkout.title,
-                              setsCompleted,
-                              reps: getReps(skipWorkout),
-                              duration: skipWorkout.duration ?? undefined,
-                          },
-                      ]
-                    : state.exerciseLogs;
-            return {
-                ...state,
-                exerciseLogs: newLogs,
-                currentExerciseIndex: state.currentExerciseIndex + 1,
-                currentSet: 1,
-                phase: "exercise",
-            };
+        case "NAVIGATE_NEXT": {
+            const nextIndex = state.currentExerciseIndex + 1;
+            return { ...state, currentExerciseIndex: nextIndex };
         }
 
-        case "REST_COMPLETE":
-            return {
-                ...state,
-                phase: "exercise",
-                currentSet: state.currentSet + 1,
-            };
-
-        case "GO_BACK": {
-            if (state.phase === "warmup") return state;
-            if (state.phase === "rest") {
-                // Cancel rest, go back to exercise view
-                return { ...state, phase: "exercise" };
-            }
-            if (state.currentExerciseIndex === 0 && state.currentSet === 1) {
-                // Go back to warmup
+        case "NAVIGATE_BACK": {
+            if (state.currentExerciseIndex === 0) {
                 return { ...state, phase: "warmup" };
             }
-            if (state.currentSet > 1) {
-                // Go back one set
-                return { ...state, currentSet: state.currentSet - 1 };
-            }
-            // Go back to previous exercise
-            const prevIdx = state.currentExerciseIndex - 1;
-            const prevWorkout = action.workouts[prevIdx];
-            const prevTotalSets = prevWorkout ? getTotalSets(prevWorkout) : 1;
             return {
                 ...state,
-                currentExerciseIndex: prevIdx,
-                currentSet: prevTotalSets,
-                exerciseLogs: state.exerciseLogs.slice(0, -1), // remove last log
+                currentExerciseIndex: state.currentExerciseIndex - 1,
             };
         }
 
@@ -221,6 +180,7 @@ export default function WorkoutSessionScreen() {
     const workoutsRef = useRef<Workout[]>([]);
     const [workouts, setWorkouts] = React.useState<Workout[]>([]);
     const [loading, setLoading] = React.useState(true);
+    const [showExitConfirm, setShowExitConfirm] = useState(false);
 
     // Load workouts
     useEffect(() => {
@@ -245,6 +205,7 @@ export default function WorkoutSessionScreen() {
                 }
                 workoutsRef.current = found;
                 setWorkouts(found);
+                dispatch({ type: "INIT_PROGRESS", workoutCount: found.length });
             } catch (error) {
                 console.error("[workout-session] Failed to load workouts:", error);
             } finally {
@@ -253,17 +214,6 @@ export default function WorkoutSessionScreen() {
         };
         load();
     }, [workoutIds]);
-
-    // Set totalSets when exercise changes
-    useEffect(() => {
-        if (
-            state.phase === "exercise" &&
-            workouts.length > 0 &&
-            state.currentExerciseIndex < workouts.length
-        ) {
-            // totalSets is computed on the fly, no state update needed
-        }
-    }, [state.currentExerciseIndex, state.phase, workouts]);
 
     // Handle completion
     useEffect(() => {
@@ -278,9 +228,26 @@ export default function WorkoutSessionScreen() {
 
     const saveAndNavigate = async () => {
         try {
-            if (authUser?.id && state.exerciseLogs.length > 0) {
+            // Collect all exercise logs, including partially-completed ones
+            const allLogs: ExerciseLog[] = [...state.exerciseLogs];
+            const loggedWorkoutIds = new Set(state.exerciseLogs.map((l) => l.workoutId));
+
+            workoutsRef.current.forEach((workout, index) => {
+                const completed = state.exerciseSetProgress[index] ?? 0;
+                if (completed > 0 && !loggedWorkoutIds.has(workout.id)) {
+                    allLogs.push({
+                        workoutId: workout.id,
+                        title: workout.title,
+                        setsCompleted: completed,
+                        reps: getReps(workout),
+                        duration: workout.duration ?? undefined,
+                    });
+                }
+            });
+
+            if (authUser?.id && allLogs.length > 0) {
                 const now = new Date().toISOString();
-                const logs = state.exerciseLogs.map((l) => ({
+                const logs = allLogs.map((l) => ({
                     workoutId: l.workoutId,
                     userId: authUser.id,
                     date: now,
@@ -290,19 +257,19 @@ export default function WorkoutSessionScreen() {
                 }));
                 await apiService.createWorkoutLogsBatch(logs);
             }
+
+            const totalTime = Date.now() - state.startTime;
+            router.replace({
+                pathname: "/workout-summary" as any,
+                params: {
+                    totalTime: String(totalTime),
+                    exerciseCount: String(allLogs.length),
+                    logs: encodeURIComponent(JSON.stringify(allLogs)),
+                },
+            });
         } catch (error) {
             console.error("[workout-session] Failed to save logs:", error);
         }
-
-        const totalTime = Date.now() - state.startTime;
-        router.replace({
-            pathname: "/workout-summary" as any,
-            params: {
-                totalTime: String(totalTime),
-                exerciseCount: String(state.exerciseLogs.length),
-                logs: encodeURIComponent(JSON.stringify(state.exerciseLogs)),
-            },
-        });
     };
 
     // Hardware back button confirmation
@@ -314,39 +281,50 @@ export default function WorkoutSessionScreen() {
         return () => handler.remove();
     }, []);
 
-    const confirmExit = () => {
-        Alert.alert(
-            "End Workout?",
-            "Your progress will be lost.",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "End Workout",
-                    style: "destructive",
-                    onPress: () => router.back(),
-                },
-            ],
-        );
-    };
+    const confirmExit = useCallback(() => {
+        setShowExitConfirm(true);
+    }, []);
+
+    const handleDismissExit = useCallback(() => {
+        setShowExitConfirm(false);
+    }, []);
+
+    const handleConfirmExit = useCallback(() => {
+        setShowExitConfirm(false);
+        router.back();
+    }, [router]);
 
     // ─── Gestures ────────────────────────────────────────────────────
 
     const handleTapRight = useCallback(() => {
         if (state.phase === "warmup") {
             dispatch({ type: "SKIP_WARMUP" });
-        } else if (state.phase === "exercise" || state.phase === "rest") {
+        } else if (state.phase === "exercise") {
             const workout = workoutsRef.current[state.currentExerciseIndex];
-            if (workout) {
-                dispatch({ type: "COMPLETE_SET", workout });
+            if (!workout) return;
+            const total = getTotalSets(workout);
+            const completed = state.exerciseSetProgress[state.currentExerciseIndex] ?? 0;
+            if (completed < total) {
+                // Sets remain → complete next set
+                dispatch({
+                    type: "COMPLETE_SET",
+                    exerciseIndex: state.currentExerciseIndex,
+                    totalSets: total,
+                    workout,
+                });
+            } else {
+                // All sets done → next exercise
+                dispatch({
+                    type: "NAVIGATE_NEXT",
+                    totalExercises: workoutsRef.current.length,
+                });
             }
         }
-    }, [state.phase, state.currentExerciseIndex]);
+    }, [state.phase, state.currentExerciseIndex, state.exerciseSetProgress]);
 
     const handleTapLeft = useCallback(() => {
-        if (state.phase === "rest") {
-            dispatch({ type: "GO_BACK", workouts: workoutsRef.current });
-        } else if (state.phase === "exercise") {
-            dispatch({ type: "GO_BACK", workouts: workoutsRef.current });
+        if (state.phase === "exercise") {
+            dispatch({ type: "NAVIGATE_BACK" });
         } else if (state.phase === "warmup") {
             confirmExit();
         }
@@ -357,8 +335,15 @@ export default function WorkoutSessionScreen() {
         .runOnJS(true)
         .onEnd((e) => {
             if (e.translationX < -50) {
-                // Swipe left = advance
-                handleTapRight();
+                // Swipe left = always skip to next exercise
+                if (state.phase === "warmup") {
+                    dispatch({ type: "SKIP_WARMUP" });
+                } else if (state.phase === "exercise") {
+                    dispatch({
+                        type: "NAVIGATE_NEXT",
+                        totalExercises: workoutsRef.current.length,
+                    });
+                }
             } else if (e.translationX > 50) {
                 // Swipe right = go back
                 handleTapLeft();
@@ -374,16 +359,11 @@ export default function WorkoutSessionScreen() {
     let segmentProgress = 0;
     if (state.phase === "warmup") {
         segmentProgress = 0;
-    } else if (
-        state.currentExerciseIndex < workouts.length
-    ) {
+    } else if (state.currentExerciseIndex < workouts.length) {
         const w = workouts[state.currentExerciseIndex];
         const total = getTotalSets(w);
-        segmentProgress = (state.currentSet - 1) / total;
-        if (state.phase === "rest") {
-            // During rest, the current set was just completed
-            segmentProgress = state.currentSet / total;
-        }
+        const completed = state.exerciseSetProgress[state.currentExerciseIndex] ?? 0;
+        segmentProgress = completed / total;
     }
 
     // ─── Render ──────────────────────────────────────────────────────
@@ -441,41 +421,23 @@ export default function WorkoutSessionScreen() {
                         />
                     )}
 
-                    {(state.phase === "exercise" || state.phase === "rest") &&
+                    {state.phase === "exercise" &&
                         currentWorkout && (
                             <GestureDetector gesture={panGesture}>
                                 <View style={{ flex: 1 }}>
                                     <ExerciseSlide
                                         workout={currentWorkout}
-                                        currentSet={state.currentSet}
+                                        completedSets={state.exerciseSetProgress[state.currentExerciseIndex] ?? 0}
                                         totalSets={getTotalSets(currentWorkout)}
                                         onCompleteSet={() =>
                                             dispatch({
                                                 type: "COMPLETE_SET",
+                                                exerciseIndex: state.currentExerciseIndex,
+                                                totalSets: getTotalSets(currentWorkout),
                                                 workout: currentWorkout,
                                             })
                                         }
                                     />
-                                    {state.phase === "rest" && (
-                                        <RestTimer
-                                            duration={state.restDuration}
-                                            onRestComplete={() =>
-                                                dispatch({
-                                                    type: "REST_COMPLETE",
-                                                })
-                                            }
-                                            onSkip={() =>
-                                                dispatch({
-                                                    type: "REST_COMPLETE",
-                                                })
-                                            }
-                                            nextSetNumber={state.currentSet + 1}
-                                            totalSets={getTotalSets(
-                                                currentWorkout,
-                                            )}
-                                        />
-                                    )}
-
                                     {/* Tap zones — left/right edges for IG-style navigation */}
                                     <Pressable
                                         style={styles.tapZoneLeft}
@@ -489,6 +451,53 @@ export default function WorkoutSessionScreen() {
                             </GestureDetector>
                         )}
                 </View>
+
+                {/* Exit Confirmation Modal */}
+                <Modal
+                    visible={showExitConfirm}
+                    animationType="fade"
+                    transparent={true}
+                    onRequestClose={handleDismissExit}
+                >
+                    <Pressable style={exitStyles.overlay} onPress={handleDismissExit}>
+                        <Pressable
+                            style={exitStyles.card}
+                            onPress={(e) => e.stopPropagation()}
+                        >
+                            <View style={exitStyles.iconContainer}>
+                                <Ionicons
+                                    name="warning-outline"
+                                    size={32}
+                                    color={palettes.light.danger}
+                                />
+                            </View>
+
+                            <Text style={exitStyles.title}>End Workout?</Text>
+
+                            <Text style={exitStyles.body}>
+                                Your progress will be lost.
+                            </Text>
+
+                            <View style={exitStyles.buttonRow}>
+                                <TouchableOpacity
+                                    style={exitStyles.cancelButton}
+                                    onPress={handleDismissExit}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={exitStyles.cancelButtonText}>Cancel</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={exitStyles.endButton}
+                                    onPress={handleConfirmExit}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={exitStyles.endButtonText}>End Workout</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </Pressable>
+                    </Pressable>
+                </Modal>
             </View>
         </GestureHandlerRootView>
     );
@@ -526,14 +535,98 @@ const styles = StyleSheet.create({
         position: "absolute",
         left: 0,
         top: 0,
-        bottom: 100, // avoid overlapping the Complete Set button
+        height: IMAGE_AREA_HEIGHT,
         width: "25%",
     },
     tapZoneRight: {
         position: "absolute",
         right: 0,
         top: 0,
-        bottom: 100,
+        height: IMAGE_AREA_HEIGHT,
         width: "25%",
+    },
+});
+
+const exitStyles = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: spacing.lg,
+    },
+    card: {
+        backgroundColor: palettes.light.bg,
+        borderRadius: radii.lg,
+        paddingTop: spacing.lg,
+        paddingBottom: spacing.md,
+        paddingHorizontal: spacing.md,
+        width: "100%",
+        maxWidth: 320,
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 24,
+        elevation: 10,
+    },
+    iconContainer: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: "rgba(196, 119, 106, 0.12)",
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: spacing.sm,
+    },
+    title: {
+        fontFamily: typography.fonts.headlineSemibold,
+        fontSize: typography.sizes.lg,
+        color: palettes.light.text,
+        marginBottom: spacing.xs,
+        textAlign: "center",
+    },
+    body: {
+        fontFamily: typography.fonts.body,
+        fontSize: typography.sizes.sm,
+        color: palettes.light.textTertiary,
+        textAlign: "center",
+        marginBottom: spacing.md,
+        lineHeight: 20,
+    },
+    buttonRow: {
+        flexDirection: "row",
+        gap: spacing.sm,
+        width: "100%",
+    },
+    cancelButton: {
+        flex: 1,
+        borderRadius: radii.sm,
+        borderWidth: 1.5,
+        borderColor: palettes.light.border,
+        backgroundColor: palettes.light.surface,
+        paddingVertical: spacing.sm,
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: 48,
+    },
+    cancelButtonText: {
+        fontFamily: typography.fonts.bodyMedium,
+        fontSize: typography.sizes.md,
+        color: palettes.light.text,
+    },
+    endButton: {
+        flex: 1,
+        borderRadius: radii.sm,
+        backgroundColor: palettes.light.danger,
+        paddingVertical: spacing.sm,
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: 48,
+    },
+    endButtonText: {
+        fontFamily: typography.fonts.bodyMedium,
+        fontSize: typography.sizes.md,
+        color: "#FFFFFF",
     },
 });
