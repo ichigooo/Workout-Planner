@@ -1,7 +1,7 @@
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { useColorScheme } from "react-native";
+import { StyleSheet, useColorScheme } from "react-native";
 import { getTheme } from "@/src/theme";
 
 function TabBarIcon(props: { name: React.ComponentProps<typeof Ionicons>["name"]; color: string }) {
@@ -16,11 +16,14 @@ export default function TabLayout() {
         <Tabs
             screenOptions={{
                 tabBarActiveTintColor: theme.colors.accent,
-                tabBarInactiveTintColor: theme.colors.subtext,
+                tabBarInactiveTintColor: theme.colors.textTertiary,
                 headerShown: false,
                 tabBarStyle: {
-                    backgroundColor: theme.colors.surface,
-                    borderTopColor: theme.colors.border,
+                    position: "absolute",
+                    backgroundColor: "rgba(240, 235, 227, 0.85)",
+                    borderTopColor: "rgba(209, 201, 188, 0.4)",
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    elevation: 0,
                 },
             }}
         >

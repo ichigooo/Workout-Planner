@@ -341,19 +341,19 @@ const styles = StyleSheet.create({
         textAlign: "center",
         marginTop: 50,
         fontSize: 16,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
     },
     section: {
         padding: 16,
     },
     sectionTitle: {
         fontSize: 18,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
         marginBottom: 4,
     },
     sectionSubtitle: {
         fontSize: 14,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
         marginBottom: 16,
     },
     workoutSelector: {
@@ -369,12 +369,12 @@ const styles = StyleSheet.create({
     },
     workoutOptionTitle: {
         fontSize: 14,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
         marginBottom: 2,
     },
     workoutOptionDetails: {
         fontSize: 12,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
     },
     draggableList: {
         maxHeight: 400,
@@ -408,12 +408,12 @@ const styles = StyleSheet.create({
     },
     workoutTitle: {
         fontSize: 16,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
         marginBottom: 2,
     },
     workoutDetails: {
         fontSize: 14,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
     },
     removeButton: {
         width: 24,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     },
     daysLabel: {
         fontSize: 14,
-        fontFamily: "Inter_500Medium",
+        fontFamily: "DMSans_500Medium",
         marginBottom: 8,
     },
     daysRow: {
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     },
     dayButtonText: {
         fontSize: 12,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
     },
     emptyState: {
         padding: 32,
@@ -459,12 +459,12 @@ const styles = StyleSheet.create({
     },
     emptyStateText: {
         fontSize: 16,
-        fontFamily: "Inter_500Medium",
+        fontFamily: "DMSans_500Medium",
         marginBottom: 4,
     },
     emptyStateSubtext: {
         fontSize: 14,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
     },
     saveButton: {
         margin: 16,
@@ -476,6 +476,6 @@ const styles = StyleSheet.create({
     saveButtonText: {
         color: "#FFFFFF",
         fontSize: 16,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
     },
 });

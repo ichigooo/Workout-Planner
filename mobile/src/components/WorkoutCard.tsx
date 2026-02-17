@@ -50,8 +50,8 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
             style={[
                 styles.card,
                 {
-                    backgroundColor: theme.colors.surface,
-                    borderColor: theme.colors.border,
+                    backgroundColor: theme.colors.glassWhite,
+                    borderColor: theme.colors.glassBorder,
                     ...theme.shadows.card,
                 },
             ]}
@@ -64,7 +64,9 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
                             style={[
                                 styles.categoryBadge,
                                 {
-                                    backgroundColor: theme.colors.accent,
+                                    backgroundColor: theme.colors.accent + "20",
+                                    borderWidth: 1,
+                                    borderColor: theme.colors.accent + "40",
                                     borderRadius: radii.full,
                                 },
                             ]}
@@ -73,7 +75,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
                                 style={[
                                     styles.categoryText,
                                     {
-                                        color: "#FFFFFF",
+                                        color: theme.colors.accent,
                                         fontFamily: typography.fonts.bodySemibold,
                                         fontSize: typography.sizes.xs,
                                     },
@@ -123,8 +125,8 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
                         styles.title,
                         {
                             color: theme.colors.text,
-                            fontFamily: typography.fonts.bodySemiBold,
-                            fontSize: typography.sizes.lg,
+                            fontFamily: typography.fonts.headline,
+                            fontSize: 18,
                         },
                     ]}
                 >

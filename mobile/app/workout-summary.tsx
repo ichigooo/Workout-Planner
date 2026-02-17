@@ -92,8 +92,8 @@ export default function WorkoutSummaryScreen() {
                         style={[
                             styles.statCard,
                             {
-                                backgroundColor: theme.colors.surface,
-                                borderColor: theme.colors.border,
+                                backgroundColor: theme.colors.glassWhite,
+                                borderColor: theme.colors.glassBorder,
                             },
                         ]}
                     >
@@ -125,8 +125,8 @@ export default function WorkoutSummaryScreen() {
                         style={[
                             styles.statCard,
                             {
-                                backgroundColor: theme.colors.surface,
-                                borderColor: theme.colors.border,
+                                backgroundColor: theme.colors.glassWhite,
+                                borderColor: theme.colors.glassBorder,
                             },
                         ]}
                     >
@@ -158,8 +158,8 @@ export default function WorkoutSummaryScreen() {
                         style={[
                             styles.statCard,
                             {
-                                backgroundColor: theme.colors.surface,
-                                borderColor: theme.colors.border,
+                                backgroundColor: theme.colors.glassWhite,
+                                borderColor: theme.colors.glassBorder,
                             },
                         ]}
                     >
@@ -198,7 +198,7 @@ export default function WorkoutSummaryScreen() {
                                 styles.sectionTitle,
                                 {
                                     color: theme.colors.text,
-                                    fontFamily: typography.fonts.bodyBold,
+                                    fontFamily: typography.fonts.headline,
                                 },
                             ]}
                         >
@@ -210,8 +210,8 @@ export default function WorkoutSummaryScreen() {
                                 style={[
                                     styles.exerciseRow,
                                     {
-                                        backgroundColor: theme.colors.surface,
-                                        borderColor: theme.colors.border,
+                                        backgroundColor: theme.colors.glassWhite,
+                                        borderColor: theme.colors.glassBorder,
                                     },
                                 ]}
                             >
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     sectionTitle: {
-        fontSize: typography.sizes.md,
+        fontSize: typography.sizes.lg,
         marginBottom: 12,
     },
     exerciseList: {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
         fontSize: typography.sizes.sm,
     },
     doneButton: {
-        borderRadius: radii.lg,
+        borderRadius: radii.full,
         paddingVertical: 16,
         alignItems: "center",
         minHeight: 56,

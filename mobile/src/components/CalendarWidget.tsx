@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Modal, useColorScheme } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { getTheme } from "../theme";
+import { getTheme, radii, typography, spacing } from "../theme";
 
 interface CalendarWidgetProps {
     selectedDate: string;
@@ -52,9 +52,9 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
         disabledArrowColor: theme.colors.subtext,
         monthTextColor: theme.colors.text,
         indicatorColor: theme.colors.accent,
-        textDayFontFamily: "Inter_400Regular",
-        textMonthFontFamily: "Inter_600SemiBold",
-        textDayHeaderFontFamily: "Inter_400Regular",
+        textDayFontFamily: "DMSans_400Regular",
+        textMonthFontFamily: "DMSans_600SemiBold",
+        textDayHeaderFontFamily: "DMSans_400Regular",
         textDayFontWeight: "400",
         textMonthFontWeight: "600",
         textDayHeaderFontWeight: "500",
@@ -94,7 +94,7 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
                 animationType="slide"
                 onRequestClose={() => setShowCalendar(false)}
             >
-                <View style={styles.modalOverlay}>
+                <View style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}>
                     <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
                         <View
                             style={[styles.modalHeader, { borderBottomColor: theme.colors.border }]}
@@ -149,20 +149,19 @@ const styles = StyleSheet.create({
     },
     dateText: {
         fontSize: 16,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
     },
     calendarIcon: {
         fontSize: 18,
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
         justifyContent: "center",
         alignItems: "center",
     },
     modalContent: {
         margin: 20,
-        borderRadius: 16,
+        borderRadius: radii.lg,
         overflow: "hidden",
         maxWidth: 400,
         width: "90%",
@@ -176,7 +175,7 @@ const styles = StyleSheet.create({
     },
     modalTitle: {
         fontSize: 18,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
     },
     closeButton: {
         width: 32,

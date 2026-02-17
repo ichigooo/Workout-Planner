@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getTheme, spacing, radii } from "@/src/theme";
+import { getTheme, spacing, radii, typography } from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { apiService } from "@/src/services/api";
 import {
@@ -376,7 +376,7 @@ export default function ImportWorkoutScreen() {
                     <Text style={[styles.sectionHeader, { color: theme.colors.text }]}>
                         Choose your source
                     </Text>
-                    <Text style={[styles.sectionSubtext, { color: theme.colors.subtext }]}>
+                    <Text style={[styles.sectionSubtext, { color: theme.colors.textTertiary }]}>
                         Select where you found the workout
                     </Text>
 
@@ -391,10 +391,12 @@ export default function ImportWorkoutScreen() {
                                     style={[
                                         styles.platformCard,
                                         {
-                                            backgroundColor: theme.colors.surface,
+                                            backgroundColor: isSelected
+                                                ? theme.colors.glassWhite
+                                                : theme.colors.glassWhite,
                                             borderColor: isSelected
                                                 ? theme.colors.accent
-                                                : theme.colors.border,
+                                                : theme.colors.glassBorder,
                                             borderWidth: isSelected ? 2 : 1,
                                         },
                                         isSelected && styles.platformCardSelected,
@@ -409,7 +411,7 @@ export default function ImportWorkoutScreen() {
                                                 {
                                                     backgroundColor: isSelected
                                                         ? `${platform.color}15`
-                                                        : theme.colors.border,
+                                                        : theme.colors.surface,
                                                 },
                                             ]}
                                         >
@@ -432,7 +434,7 @@ export default function ImportWorkoutScreen() {
                                                 <Text
                                                     style={[
                                                         styles.comingSoonBadge,
-                                                        { color: theme.colors.subtext },
+                                                        { color: theme.colors.textTertiary },
                                                     ]}
                                                 >
                                                     Coming soon
@@ -536,14 +538,14 @@ export default function ImportWorkoutScreen() {
                                             borderColor: selectedState?.error
                                                 ? theme.colors.danger
                                                 : isUrlValid
-                                                ? "#4CAF50"
-                                                : theme.colors.border,
-                                            backgroundColor: theme.colors.surface,
+                                                ? theme.colors.success
+                                                : theme.colors.glassBorder,
+                                            backgroundColor: theme.colors.glassWhite,
                                             color: theme.colors.text,
                                         },
                                     ]}
                                     placeholder={selectedPlatform.placeholder}
-                                    placeholderTextColor={theme.colors.subtext}
+                                    placeholderTextColor={theme.colors.textTertiary}
                                     value={selectedState?.url || ""}
                                     onChangeText={(text) =>
                                         updateImportState(selectedPlatform.id, {
@@ -563,19 +565,19 @@ export default function ImportWorkoutScreen() {
                                         <Ionicons
                                             name="close-circle"
                                             size={20}
-                                            color={theme.colors.subtext}
+                                            color={theme.colors.textTertiary}
                                         />
                                     </TouchableOpacity>
                                 ) : null}
                                 {isUrlValid && (
                                     <View style={styles.validIcon}>
-                                        <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                                        <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
                                     </View>
                                 )}
                             </View>
 
                             {/* Example Format */}
-                            <Text style={[styles.exampleText, { color: theme.colors.subtext }]}>
+                            <Text style={[styles.exampleText, { color: theme.colors.textTertiary }]}>
                                 Example: {selectedPlatform.exampleUrl}
                             </Text>
 
@@ -622,8 +624,8 @@ export default function ImportWorkoutScreen() {
                                     style={[
                                         styles.previewCard,
                                         {
-                                            borderColor: theme.colors.accent,
-                                            backgroundColor: theme.colors.surface,
+                                            borderColor: theme.colors.glassBorder,
+                                            backgroundColor: theme.colors.glassWhite,
                                         },
                                     ]}
                                 >
@@ -631,12 +633,12 @@ export default function ImportWorkoutScreen() {
                                         <Ionicons
                                             name="checkmark-circle"
                                             size={20}
-                                            color="#4CAF50"
+                                            color={theme.colors.success}
                                         />
                                         <Text
                                             style={[
                                                 styles.previewHeaderText,
-                                                { color: "#4CAF50" },
+                                                { color: theme.colors.success },
                                             ]}
                                         >
                                             Successfully imported!
@@ -662,7 +664,7 @@ export default function ImportWorkoutScreen() {
                                             <Text
                                                 style={[
                                                     styles.previewDescription,
-                                                    { color: theme.colors.subtext },
+                                                    { color: theme.colors.textTertiary },
                                                 ]}
                                                 numberOfLines={3}
                                             >
@@ -724,11 +726,11 @@ const styles = StyleSheet.create({
     },
     backText: {
         fontSize: 16,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
     },
     title: {
-        fontSize: 20,
-        fontWeight: "700",
+        fontSize: typography.sizes.lg,
+        fontFamily: typography.fonts.headline,
         letterSpacing: 0.3,
     },
     content: {
@@ -737,13 +739,14 @@ const styles = StyleSheet.create({
         paddingTop: spacing.xl,
     },
     sectionHeader: {
-        fontSize: 22,
-        fontWeight: "700",
+        fontSize: typography.sizes.lg,
+        fontFamily: typography.fonts.headline,
         marginBottom: spacing.xs,
         letterSpacing: 0.3,
     },
     sectionSubtext: {
         fontSize: 15,
+        fontFamily: typography.fonts.body,
         marginBottom: spacing.lg,
     },
     platformCards: {
@@ -781,11 +784,12 @@ const styles = StyleSheet.create({
     },
     platformName: {
         fontSize: 18,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
         letterSpacing: 0.2,
     },
     comingSoonBadge: {
         fontSize: 12,
+        fontFamily: typography.fonts.body,
         marginTop: spacing.xxs,
         fontStyle: "italic",
     },
@@ -800,7 +804,7 @@ const styles = StyleSheet.create({
     },
     helpButtonText: {
         fontSize: 14,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
     },
     instructionsPanel: {
         borderRadius: radii.md,
@@ -833,7 +837,7 @@ const styles = StyleSheet.create({
     },
     inputLabel: {
         fontSize: 15,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
         marginBottom: spacing.xs,
     },
     inputContainer: {
@@ -876,7 +880,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     importButton: {
-        borderRadius: radii.xl,
+        borderRadius: 9999,
         paddingVertical: spacing.md,
         alignItems: "center",
         justifyContent: "center",
@@ -890,7 +894,7 @@ const styles = StyleSheet.create({
     importButtonText: {
         color: "#fff",
         fontSize: 17,
-        fontWeight: "700",
+        fontFamily: typography.fonts.bodyBold,
         letterSpacing: 0.5,
     },
     loadingContainer: {
@@ -916,7 +920,7 @@ const styles = StyleSheet.create({
     },
     previewHeaderText: {
         fontSize: 15,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
     },
     previewContent: {
         flexDirection: "row",
@@ -933,7 +937,7 @@ const styles = StyleSheet.create({
     },
     previewTitle: {
         fontSize: 16,
-        fontWeight: "700",
+        fontFamily: typography.fonts.bodyBold,
         marginBottom: spacing.xxs,
     },
     previewDescription: {

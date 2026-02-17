@@ -12,7 +12,7 @@ import {
     Linking,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { getTheme } from "@/src/theme";
+import { getTheme, typography } from "@/src/theme";
 import { apiService } from "@/src/services/api";
 import { Workout, CreateWorkoutRequest, WorkoutImport } from "@/src/types";
 import { EnhancedWorkoutCard } from "@/src/components/EnhancedWorkoutCard";
@@ -272,7 +272,7 @@ export default function WorkoutScreen() {
                 <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
                     No workouts found
                 </Text>
-                <Text style={[styles.emptyText, { color: theme.colors.subtext }]}>
+                <Text style={[styles.emptyText, { color: theme.colors.textTertiary }]}>
                     {currentUserId
                         ? "Import workouts from social media to see them here"
                         : "Sign in to save custom workouts from social media"}
@@ -347,12 +347,16 @@ export default function WorkoutScreen() {
                                 style={[
                                     styles.filterChip,
                                     {
-                                        borderColor: theme.colors.border,
+                                        borderColor: (
+                                            item === "All" ? category === null : category === item
+                                        )
+                                            ? theme.colors.accent
+                                            : theme.colors.glassBorder,
                                         backgroundColor: (
                                             item === "All" ? category === null : category === item
                                         )
                                             ? theme.colors.accent
-                                            : "transparent",
+                                            : theme.colors.glassWhite,
                                     },
                                 ]}
                             >
@@ -400,7 +404,7 @@ export default function WorkoutScreen() {
 
                 {listLoading ? (
                     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                        <Text style={{ color: theme.colors.subtext }}>
+                        <Text style={{ color: theme.colors.textTertiary }}>
                             {showingCustom ? "Loading custom workouts..." : "Loading workouts..."}
                         </Text>
                     </View>
@@ -455,8 +459,8 @@ export default function WorkoutScreen() {
                             style={[
                                 styles.menuContainer,
                                 {
-                                    backgroundColor: theme.colors.surface,
-                                    borderColor: theme.colors.border,
+                                    backgroundColor: theme.colors.glassWhite,
+                                    borderColor: theme.colors.glassBorder,
                                 },
                             ]}
                         >
@@ -531,7 +535,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
     },
     backButton: { width: 60 },
-    backText: { fontSize: 16, fontWeight: "600" },
+    backText: { fontSize: 16, fontFamily: typography.fonts.bodySemibold },
     addBtn: {
         paddingHorizontal: 12,
         paddingVertical: 6,
@@ -541,16 +545,16 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-    addBtnText: { fontSize: 16, fontWeight: "700" },
+    addBtnText: { fontSize: 16, fontFamily: typography.fonts.bodyBold },
     filterBar: { borderBottomWidth: 1 },
     filterChip: {
         borderWidth: 1,
-        borderRadius: 20,
+        borderRadius: 9999,
         paddingHorizontal: 12,
         paddingVertical: 6,
         marginRight: 8,
     },
-    filterText: { fontSize: 14, fontWeight: "600" },
+    filterText: { fontSize: 14, fontFamily: typography.fonts.bodySemibold },
     importPrompt: {
         marginTop: 16,
         borderWidth: 1,
@@ -562,11 +566,11 @@ const styles = StyleSheet.create({
     },
     importPromptTitle: {
         fontSize: 16,
-        fontWeight: "700",
+        fontFamily: typography.fonts.bodyBold,
     },
     importPromptSubtitle: {
         fontSize: 16,
-        fontWeight: "700",
+        fontFamily: typography.fonts.bodyBold,
     },
     importIconsRow: {
         flexDirection: "row",
@@ -587,7 +591,7 @@ const styles = StyleSheet.create({
         paddingRight: 16,
     },
     menuContainer: {
-        borderRadius: 12,
+        borderRadius: 16,
         borderWidth: 1,
         minWidth: 200,
         shadowColor: "#000",
@@ -604,7 +608,7 @@ const styles = StyleSheet.create({
     },
     menuItemText: {
         fontSize: 16,
-        fontWeight: "500",
+        fontFamily: typography.fonts.bodyMedium,
     },
     emptyState: {
         paddingVertical: 32,
@@ -621,13 +625,14 @@ const styles = StyleSheet.create({
     },
     emptyTitle: {
         fontSize: 18,
-        fontWeight: "700",
+        fontFamily: typography.fonts.headline,
         marginBottom: 6,
         textAlign: "center",
     },
     emptyText: {
         textAlign: "center",
         fontSize: 14,
+        fontFamily: typography.fonts.body,
         lineHeight: 20,
         marginBottom: 16,
         maxWidth: 260,
@@ -638,11 +643,11 @@ const styles = StyleSheet.create({
         gap: 8,
         paddingVertical: 10,
         paddingHorizontal: 20,
-        borderRadius: 16,
+        borderRadius: 9999,
     },
     emptyButtonText: {
         color: "#fff",
         fontSize: 16,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
     },
 });

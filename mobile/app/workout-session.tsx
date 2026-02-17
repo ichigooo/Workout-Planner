@@ -2,7 +2,6 @@ import React, { useEffect, useReducer, useRef, useCallback, useState } from "rea
 import {
     View,
     Text,
-    Modal,
     Pressable,
     TouchableOpacity,
     StyleSheet,
@@ -26,7 +25,8 @@ import {
     PERCENTAGE_PRESETS,
     PERCENTAGE_1RM_SETS,
 } from "@/src/types";
-import { spacing, radii, typography, palettes } from "@/src/theme";
+import { spacing, radii, typography } from "@/src/theme";
+import ConfirmationDialog from "@/src/components/ConfirmationDialog";
 import { StoryProgressBar } from "@/src/components/workout-session/StoryProgressBar";
 import { WarmupSlide } from "@/src/components/workout-session/WarmupSlide";
 import { ExerciseSlide } from "@/src/components/workout-session/ExerciseSlide";
@@ -399,7 +399,7 @@ export default function WorkoutSessionScreen() {
                 <View
                     style={[
                         styles.closeButtonContainer,
-                        { top: insets.top + 28 },
+                        { top: insets.top + 14 },
                     ]}
                 >
                     <TouchableOpacity
@@ -412,7 +412,7 @@ export default function WorkoutSessionScreen() {
                 </View>
 
                 {/* Content */}
-                <View style={[styles.slideContainer, { paddingBottom: insets.bottom }]}>
+                <View style={styles.slideContainer}>
                     {state.phase === "warmup" && (
                         <WarmupSlide
                             onComplete={() =>
@@ -452,52 +452,17 @@ export default function WorkoutSessionScreen() {
                         )}
                 </View>
 
-                {/* Exit Confirmation Modal */}
-                <Modal
+                <ConfirmationDialog
                     visible={showExitConfirm}
-                    animationType="fade"
-                    transparent={true}
-                    onRequestClose={handleDismissExit}
-                >
-                    <Pressable style={exitStyles.overlay} onPress={handleDismissExit}>
-                        <Pressable
-                            style={exitStyles.card}
-                            onPress={(e) => e.stopPropagation()}
-                        >
-                            <View style={exitStyles.iconContainer}>
-                                <Ionicons
-                                    name="warning-outline"
-                                    size={32}
-                                    color={palettes.light.danger}
-                                />
-                            </View>
-
-                            <Text style={exitStyles.title}>End Workout?</Text>
-
-                            <Text style={exitStyles.body}>
-                                Your progress will be lost.
-                            </Text>
-
-                            <View style={exitStyles.buttonRow}>
-                                <TouchableOpacity
-                                    style={exitStyles.cancelButton}
-                                    onPress={handleDismissExit}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text style={exitStyles.cancelButtonText}>Cancel</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={exitStyles.endButton}
-                                    onPress={handleConfirmExit}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text style={exitStyles.endButtonText}>End Workout</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </Pressable>
-                    </Pressable>
-                </Modal>
+                    onDismiss={handleDismissExit}
+                    onConfirm={handleConfirmExit}
+                    title="End Workout?"
+                    body="Your progress will be lost."
+                    confirmLabel="End Workout"
+                    cancelLabel="Cancel"
+                    variant="danger"
+                    icon="warning-outline"
+                />
             </View>
         </GestureHandlerRootView>
     );
@@ -506,7 +471,7 @@ export default function WorkoutSessionScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#1A1A1A",
+        backgroundColor: "#292521",
     },
     progressBarContainer: {
         position: "absolute",
@@ -547,86 +512,3 @@ const styles = StyleSheet.create({
     },
 });
 
-const exitStyles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.6)",
-        justifyContent: "center",
-        alignItems: "center",
-        paddingHorizontal: spacing.lg,
-    },
-    card: {
-        backgroundColor: palettes.light.bg,
-        borderRadius: radii.lg,
-        paddingTop: spacing.lg,
-        paddingBottom: spacing.md,
-        paddingHorizontal: spacing.md,
-        width: "100%",
-        maxWidth: 320,
-        alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 24,
-        elevation: 10,
-    },
-    iconContainer: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: "rgba(196, 119, 106, 0.12)",
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: spacing.sm,
-    },
-    title: {
-        fontFamily: typography.fonts.headlineSemibold,
-        fontSize: typography.sizes.lg,
-        color: palettes.light.text,
-        marginBottom: spacing.xs,
-        textAlign: "center",
-    },
-    body: {
-        fontFamily: typography.fonts.body,
-        fontSize: typography.sizes.sm,
-        color: palettes.light.textTertiary,
-        textAlign: "center",
-        marginBottom: spacing.md,
-        lineHeight: 20,
-    },
-    buttonRow: {
-        flexDirection: "row",
-        gap: spacing.sm,
-        width: "100%",
-    },
-    cancelButton: {
-        flex: 1,
-        borderRadius: radii.sm,
-        borderWidth: 1.5,
-        borderColor: palettes.light.border,
-        backgroundColor: palettes.light.surface,
-        paddingVertical: spacing.sm,
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: 48,
-    },
-    cancelButtonText: {
-        fontFamily: typography.fonts.bodyMedium,
-        fontSize: typography.sizes.md,
-        color: palettes.light.text,
-    },
-    endButton: {
-        flex: 1,
-        borderRadius: radii.sm,
-        backgroundColor: palettes.light.danger,
-        paddingVertical: spacing.sm,
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: 48,
-    },
-    endButtonText: {
-        fontFamily: typography.fonts.bodyMedium,
-        fontSize: typography.sizes.md,
-        color: "#FFFFFF",
-    },
-});

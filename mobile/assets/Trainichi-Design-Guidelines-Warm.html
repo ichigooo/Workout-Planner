@@ -7,27 +7,48 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
   <style>
     :root {
-      /* Warm Neutrals */
-      --cream: #FAF7F2;
-      --warm-white: #F5F1EA;
-      --sand: #E8E2D9;
-      --stone: #D4CCC0;
-      --warm-gray: #9C948A;
-      --charcoal: #3D3A36;
-      --espresso: #2C2925;
-      
-      /* Earthy Accents */
-      --terracotta: #C17F61;
-      --terracotta-light: #D4A088;
-      --sage: #8B9A7E;
-      --sage-light: #A8B59D;
-      --clay: #B8977A;
-      --moss: #6B7B5E;
-      
-      /* Functional */
-      --success: #7A9B6F;
-      --warning: #D4A574;
-      --error: #C4776A;
+      /* Warm Stone Backgrounds */
+      --bg: #F0EBE3;
+      --surface: #E8E2D8;
+      --surface-elevated: #F5F0E8;
+      --border: #D1C9BC;
+      --divider: #C4BAA9;
+
+      /* Text Hierarchy */
+      --text: #1E1B18;
+      --text-secondary: #3A3632;
+      --text-tertiary: #8A7F72;
+
+      /* Primary Accent — Slate Blue */
+      --accent: #6B7B8A;
+      --accent-hover: #8494A2;
+      --accent-pressed: #566470;
+
+      /* Secondary Accent — Olive */
+      --sage: #6B7B5A;
+      --sage-light: #8A9A76;
+      --moss: #515F42;
+
+      /* Warm Tones */
+      --clay: #A68568;
+      --stone: #C4BAA9;
+      --sand: #D1C9BC;
+
+      /* Semantic */
+      --success: #6B8A5F;
+      --warning: #C49560;
+      --danger: #B06A5E;
+
+      /* Glass Tokens */
+      --glass-white: rgba(255, 255, 255, 0.55);
+      --glass-border: rgba(255, 255, 255, 0.25);
+      --glass-overlay: rgba(30, 27, 24, 0.35);
+
+      /* Legacy mappings */
+      --cream: #F0EBE3;
+      --espresso: #1E1B18;
+      --charcoal: #3A3632;
+      --warm-gray: #8A7F72;
     }
 
     * {
@@ -38,8 +59,8 @@
 
     body {
       font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--cream);
-      color: var(--espresso);
+      background: var(--bg);
+      color: var(--text);
       line-height: 1.6;
     }
 
@@ -51,7 +72,7 @@
       justify-content: center;
       align-items: center;
       text-align: center;
-      background: var(--cream);
+      background: var(--bg);
       position: relative;
       overflow: hidden;
     }
@@ -63,7 +84,7 @@
       right: -20%;
       width: 70%;
       height: 70%;
-      background: radial-gradient(circle, rgba(193, 127, 97, 0.08) 0%, transparent 60%);
+      background: radial-gradient(circle, rgba(107, 123, 138, 0.08) 0%, transparent 60%);
       border-radius: 50%;
     }
 
@@ -74,7 +95,7 @@
       left: -10%;
       width: 50%;
       height: 50%;
-      background: radial-gradient(circle, rgba(139, 154, 126, 0.08) 0%, transparent 60%);
+      background: radial-gradient(circle, rgba(107, 123, 90, 0.08) 0%, transparent 60%);
       border-radius: 50%;
     }
 
@@ -89,7 +110,7 @@
       font-weight: 500;
       letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: var(--terracotta);
+      color: var(--accent);
       margin-bottom: 24px;
     }
 
@@ -97,10 +118,10 @@
       font-family: 'Fraunces', serif;
       font-size: clamp(48px, 10vw, 100px);
       font-weight: 400;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.03em;
       line-height: 1;
       margin-bottom: 24px;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     .hero-title em {
@@ -110,8 +131,8 @@
 
     .hero-subtitle {
       font-size: 18px;
-      color: var(--warm-gray);
-      max-width: 450px;
+      color: var(--text-tertiary);
+      max-width: 500px;
       margin: 0 auto 48px;
       font-weight: 400;
     }
@@ -119,11 +140,12 @@
     .version-badge {
       display: inline-block;
       padding: 10px 20px;
-      background: var(--warm-white);
-      border: 1px solid var(--sand);
-      border-radius: 100px;
+      background: var(--glass-white);
+      border: 1px solid var(--glass-border);
+      border-radius: 9999px;
       font-size: 13px;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
+      backdrop-filter: blur(8px);
     }
 
     /* Section Styles */
@@ -134,7 +156,7 @@
     }
 
     .section-alt {
-      background: var(--warm-white);
+      background: var(--surface);
       max-width: 100%;
       padding-left: 0;
       padding-right: 0;
@@ -154,8 +176,8 @@
       font-family: 'DM Sans', sans-serif;
       font-size: 13px;
       font-weight: 500;
-      color: var(--terracotta);
-      letter-spacing: 0.15em;
+      color: var(--accent);
+      letter-spacing: 0.2em;
       margin-bottom: 16px;
       text-transform: uppercase;
     }
@@ -164,14 +186,14 @@
       font-family: 'Fraunces', serif;
       font-size: clamp(32px, 5vw, 48px);
       font-weight: 400;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.03em;
       margin-bottom: 16px;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     .section-desc {
       font-size: 17px;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       max-width: 550px;
       line-height: 1.7;
     }
@@ -187,7 +209,7 @@
       font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       margin-bottom: 24px;
     }
 
@@ -200,8 +222,9 @@
     .color-card {
       border-radius: 16px;
       overflow: hidden;
-      background: white;
-      box-shadow: 0 2px 8px rgba(44, 41, 37, 0.06);
+      background: var(--glass-white);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 2px 8px rgba(30, 27, 24, 0.06);
     }
 
     .color-swatch {
@@ -220,13 +243,13 @@
       font-size: 15px;
       font-weight: 600;
       margin-bottom: 4px;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     .color-hex {
       font-family: 'SF Mono', 'Monaco', monospace;
       font-size: 13px;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
     }
 
     /* Typography Section */
@@ -235,7 +258,7 @@
     }
 
     .type-item {
-      border-bottom: 1px solid var(--sand);
+      border-bottom: 1px solid var(--border);
       padding: 48px 0;
       display: grid;
       grid-template-columns: 180px 1fr;
@@ -248,25 +271,25 @@
     }
 
     .type-meta {
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       font-size: 13px;
       line-height: 1.6;
     }
 
     .type-meta-name {
       font-weight: 600;
-      color: var(--espresso);
+      color: var(--text);
       margin-bottom: 8px;
       font-size: 14px;
     }
 
     .type-display {
       font-family: 'Fraunces', serif;
-      font-size: 64px;
+      font-size: 72px;
       font-weight: 400;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.03em;
       line-height: 1;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     .type-display em {
@@ -275,27 +298,28 @@
 
     .type-h1 {
       font-family: 'Fraunces', serif;
-      font-size: 42px;
+      font-size: 48px;
       font-weight: 400;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.03em;
       line-height: 1.15;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     .type-h2 {
       font-family: 'Fraunces', serif;
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 500;
+      letter-spacing: -0.03em;
       line-height: 1.25;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     .type-h3 {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 20px;
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
       font-weight: 600;
       line-height: 1.35;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     .type-body {
@@ -303,33 +327,34 @@
       font-size: 16px;
       font-weight: 400;
       line-height: 1.7;
-      color: var(--charcoal);
+      color: var(--text-secondary);
     }
 
     .type-caption {
       font-family: 'DM Sans', sans-serif;
       font-size: 14px;
       font-weight: 400;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       line-height: 1.6;
     }
 
     .type-overline {
       font-family: 'DM Sans', sans-serif;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
-      letter-spacing: 0.15em;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: var(--terracotta);
+      color: var(--accent);
     }
 
     /* Font Showcase */
     .font-showcase {
-      background: white;
-      border-radius: 20px;
+      background: var(--glass-white);
+      border: 1px solid var(--glass-border);
+      border-radius: 22px;
       padding: 48px;
       margin-top: 64px;
-      box-shadow: 0 2px 12px rgba(44, 41, 37, 0.06);
+      box-shadow: 0 2px 12px rgba(30, 27, 24, 0.06);
     }
 
     .font-row {
@@ -337,7 +362,7 @@
       justify-content: space-between;
       align-items: center;
       padding: 28px 0;
-      border-bottom: 1px solid var(--sand);
+      border-bottom: 1px solid var(--border);
     }
 
     .font-row:last-child {
@@ -346,7 +371,7 @@
 
     .font-name {
       font-size: 13px;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       width: 140px;
     }
 
@@ -354,17 +379,17 @@
       font-family: 'Fraunces', serif;
       font-size: 36px;
       font-weight: 400;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     .font-preview-body {
       font-family: 'DM Sans', sans-serif;
       font-size: 22px;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     .font-desc {
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       font-size: 13px;
       text-align: right;
     }
@@ -386,17 +411,17 @@
     .spacing-visual {
       width: 200px;
       height: 44px;
-      background: white;
+      background: var(--glass-white);
+      border: 1px solid var(--glass-border);
       border-radius: 8px;
       display: flex;
       align-items: center;
       padding-left: 16px;
-      box-shadow: 0 1px 4px rgba(44, 41, 37, 0.06);
     }
 
     .spacing-bar {
       height: 6px;
-      background: linear-gradient(90deg, var(--terracotta) 0%, var(--terracotta-light) 100%);
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-hover) 100%);
       border-radius: 3px;
     }
 
@@ -409,26 +434,26 @@
     .spacing-token {
       font-family: monospace;
       font-size: 13px;
-      color: var(--terracotta);
+      color: var(--accent);
       width: 90px;
     }
 
     .spacing-value {
       font-size: 14px;
-      color: var(--charcoal);
+      color: var(--text-secondary);
       width: 50px;
       font-weight: 500;
     }
 
     .spacing-use {
       font-size: 14px;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
     }
 
     /* Radius Section */
     .radius-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 24px;
       margin-top: 48px;
     }
@@ -440,22 +465,21 @@
     .radius-box {
       width: 100%;
       aspect-ratio: 1;
-      background: white;
-      border: 2px solid var(--terracotta-light);
+      background: var(--glass-white);
+      border: 2px solid var(--accent-hover);
       margin-bottom: 16px;
-      box-shadow: 0 2px 8px rgba(44, 41, 37, 0.06);
     }
 
     .radius-label {
       font-family: monospace;
       font-size: 13px;
-      color: var(--terracotta);
+      color: var(--accent);
       margin-bottom: 4px;
     }
 
     .radius-value {
       font-size: 12px;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
     }
 
     /* Components Section */
@@ -466,10 +490,11 @@
     }
 
     .component-card {
-      background: white;
-      border-radius: 20px;
+      background: var(--glass-white);
+      border: 1px solid var(--glass-border);
+      border-radius: 22px;
       padding: 32px;
-      box-shadow: 0 2px 12px rgba(44, 41, 37, 0.06);
+      box-shadow: 0 2px 12px rgba(30, 27, 24, 0.06);
     }
 
     .component-title {
@@ -477,7 +502,7 @@
       font-size: 14px;
       font-weight: 600;
       margin-bottom: 24px;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
@@ -491,10 +516,9 @@
     /* Buttons */
     .btn {
       padding: 16px 32px;
-      border-radius: 12px;
       font-family: 'DM Sans', sans-serif;
       font-size: 15px;
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.25s ease;
       text-align: center;
@@ -502,36 +526,41 @@
     }
 
     .btn-primary {
-      background: var(--espresso);
-      color: var(--cream);
+      background: var(--accent);
+      color: white;
+      border-radius: 9999px;
     }
 
     .btn-primary:hover {
-      background: var(--charcoal);
+      background: var(--accent-hover);
     }
 
     .btn-accent {
-      background: var(--terracotta);
-      color: white;
+      background: var(--text);
+      color: var(--bg);
+      border-radius: 9999px;
     }
 
     .btn-accent:hover {
-      background: var(--terracotta-light);
+      background: var(--text-secondary);
     }
 
     .btn-soft {
       background: var(--sage);
       color: white;
+      border-radius: 9999px;
     }
 
     .btn-ghost {
-      background: transparent;
-      color: var(--espresso);
-      border: 1.5px solid var(--stone);
+      background: var(--glass-white);
+      color: var(--text);
+      border: 1.5px solid var(--glass-border);
+      border-radius: 9999px;
     }
 
     .btn-ghost:hover {
-      border-color: var(--charcoal);
+      border-color: var(--border);
+      background: rgba(255, 255, 255, 0.7);
     }
 
     /* Selection Cards */
@@ -543,8 +572,8 @@
 
     .selection-card {
       aspect-ratio: 1;
-      background: var(--warm-white);
-      border: 2px solid transparent;
+      background: var(--glass-white);
+      border: 2px solid var(--glass-border);
       border-radius: 14px;
       display: flex;
       flex-direction: column;
@@ -556,22 +585,22 @@
     }
 
     .selection-card:hover {
-      background: var(--sand);
+      background: rgba(255, 255, 255, 0.7);
     }
 
     .selection-card.selected {
-      border-color: var(--terracotta);
-      background: rgba(193, 127, 97, 0.08);
+      border-color: var(--accent);
+      background: rgba(107, 123, 138, 0.08);
     }
 
     .selection-card.selected::after {
-      content: '✓';
+      content: '\2713';
       position: absolute;
       top: 8px;
       right: 8px;
       width: 18px;
       height: 18px;
-      background: var(--terracotta);
+      background: var(--accent);
       color: white;
       border-radius: 50%;
       font-size: 10px;
@@ -584,7 +613,7 @@
       font-family: 'DM Sans', sans-serif;
       font-size: 16px;
       font-weight: 600;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     /* Date Picker */
@@ -595,33 +624,33 @@
 
     .date-chip {
       padding: 14px 18px;
-      background: var(--warm-white);
-      border-radius: 12px;
+      background: var(--glass-white);
+      border-radius: 14px;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s ease;
-      border: 2px solid transparent;
+      border: 2px solid var(--glass-border);
     }
 
     .date-chip:hover {
-      background: var(--sand);
+      background: rgba(255, 255, 255, 0.7);
     }
 
     .date-chip.selected {
-      background: rgba(193, 127, 97, 0.08);
-      border-color: var(--terracotta);
+      background: rgba(107, 123, 138, 0.08);
+      border-color: var(--accent);
     }
 
     .date-day {
       font-size: 22px;
       font-weight: 600;
       font-family: 'DM Sans', sans-serif;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     .date-name {
       font-size: 11px;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       margin-top: 2px;
@@ -636,22 +665,23 @@
 
     .time-slot {
       padding: 12px 18px;
-      background: var(--warm-white);
-      border-radius: 10px;
+      background: var(--glass-white);
+      border-radius: 9999px;
       font-size: 14px;
       cursor: pointer;
-      border: 2px solid transparent;
-      color: var(--espresso);
+      border: 2px solid var(--glass-border);
+      color: var(--text);
       transition: all 0.2s ease;
     }
 
     .time-slot:hover {
-      background: var(--sand);
+      background: rgba(255, 255, 255, 0.7);
     }
 
     .time-slot.selected {
-      background: rgba(193, 127, 97, 0.08);
-      border-color: var(--terracotta);
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
     }
 
     .time-slot.unavailable {
@@ -668,31 +698,36 @@
 
     .badge {
       padding: 8px 14px;
-      border-radius: 100px;
+      border-radius: 9999px;
       font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.04em;
+      border: 1px solid transparent;
     }
 
-    .badge-terracotta {
-      background: rgba(193, 127, 97, 0.15);
-      color: var(--terracotta);
+    .badge-accent {
+      background: rgba(107, 123, 138, 0.15);
+      border-color: rgba(107, 123, 138, 0.3);
+      color: var(--accent);
     }
 
     .badge-sage {
-      background: rgba(139, 154, 126, 0.15);
+      background: rgba(107, 123, 90, 0.15);
+      border-color: rgba(107, 123, 90, 0.3);
       color: var(--moss);
     }
 
     .badge-clay {
-      background: rgba(184, 151, 122, 0.2);
+      background: rgba(166, 133, 104, 0.15);
+      border-color: rgba(166, 133, 104, 0.3);
       color: var(--clay);
     }
 
     .badge-neutral {
-      background: var(--sand);
-      color: var(--charcoal);
+      background: var(--glass-white);
+      border-color: var(--glass-border);
+      color: var(--text-secondary);
     }
 
     /* Input Demo */
@@ -704,28 +739,50 @@
 
     .input-field {
       padding: 16px 20px;
-      background: var(--warm-white);
-      border: 1.5px solid var(--sand);
-      border-radius: 12px;
+      background: var(--glass-white);
+      border: 1.5px solid var(--glass-border);
+      border-radius: 14px;
       font-family: 'DM Sans', sans-serif;
       font-size: 15px;
-      color: var(--espresso);
+      color: var(--text);
       transition: all 0.2s ease;
     }
 
     .input-field:focus {
       outline: none;
-      border-color: var(--terracotta);
-      background: white;
+      border-color: var(--accent);
+      background: rgba(255, 255, 255, 0.8);
     }
 
     .input-field::placeholder {
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
+    }
+
+    /* Glass Card Section */
+    .glass-demo {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-top: 48px;
+    }
+
+    .glass-card-demo {
+      background: var(--glass-white);
+      border: 1px solid var(--glass-border);
+      border-radius: 22px;
+      padding: 32px;
+      backdrop-filter: blur(12px);
+    }
+
+    .glass-card-demo.dark {
+      background: rgba(30, 27, 24, 0.6);
+      border-color: rgba(255, 255, 255, 0.12);
+      color: white;
     }
 
     /* Phone Mockup */
     .phone-mockup-section {
-      background: linear-gradient(180deg, var(--warm-white) 0%, var(--cream) 100%);
+      background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
       padding: 120px 48px;
       max-width: 100%;
     }
@@ -742,17 +799,17 @@
     .phone-frame {
       width: 300px;
       height: 620px;
-      background: var(--espresso);
+      background: var(--text);
       border-radius: 44px;
       padding: 12px;
       margin: 0 auto;
-      box-shadow: 0 40px 80px rgba(44, 41, 37, 0.2);
+      box-shadow: 0 40px 80px rgba(30, 27, 24, 0.25);
     }
 
     .phone-screen {
       width: 100%;
       height: 100%;
-      background: var(--cream);
+      background: var(--bg);
       border-radius: 36px;
       overflow: hidden;
       position: relative;
@@ -760,8 +817,8 @@
 
     .phone-header-image {
       height: 42%;
-      background: linear-gradient(180deg, transparent 30%, var(--cream) 100%),
-                  linear-gradient(135deg, #d4a088 0%, #c17f61 50%, #a86d52 100%);
+      background: linear-gradient(180deg, transparent 30%, var(--bg) 100%),
+                  linear-gradient(135deg, #8494A2 0%, #6B7B8A 50%, #566470 100%);
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
@@ -773,16 +830,17 @@
       font-weight: 600;
       letter-spacing: 0.15em;
       text-transform: uppercase;
-      color: var(--terracotta);
+      color: var(--accent);
       margin-bottom: 6px;
     }
 
     .phone-title {
       font-family: 'Fraunces', serif;
-      font-size: 26px;
-      font-weight: 400;
+      font-size: 28px;
+      font-weight: 600;
       line-height: 1.15;
-      color: var(--espresso);
+      letter-spacing: -0.03em;
+      color: var(--text);
     }
 
     .phone-content {
@@ -790,16 +848,16 @@
     }
 
     .phone-card {
-      background: white;
-      border-radius: 14px;
+      background: var(--glass-white);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
       padding: 16px;
       margin-bottom: 12px;
-      box-shadow: 0 2px 8px rgba(44, 41, 37, 0.06);
     }
 
     .phone-card-title {
       font-size: 11px;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       margin-bottom: 12px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -814,29 +872,29 @@
 
     .phone-selection-item {
       aspect-ratio: 1;
-      background: var(--warm-white);
-      border-radius: 8px;
+      background: var(--surface);
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 11px;
       font-weight: 600;
-      color: var(--espresso);
+      color: var(--text);
       border: 2px solid transparent;
     }
 
     .phone-selection-item.selected {
-      border-color: var(--terracotta);
-      background: rgba(193, 127, 97, 0.08);
+      border-color: var(--accent);
+      background: rgba(107, 123, 138, 0.08);
     }
 
     .phone-btn {
       width: 100%;
       padding: 14px;
-      background: var(--espresso);
-      color: var(--cream);
+      background: var(--accent);
+      color: white;
       border: none;
-      border-radius: 12px;
+      border-radius: 9999px;
       font-weight: 600;
       font-size: 14px;
       font-family: 'DM Sans', sans-serif;
@@ -858,7 +916,7 @@
     .pattern-number {
       width: 36px;
       height: 36px;
-      background: var(--terracotta);
+      background: var(--accent);
       border-radius: 10px;
       display: flex;
       align-items: center;
@@ -872,11 +930,11 @@
     .pattern-content h4 {
       font-weight: 600;
       margin-bottom: 4px;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     .pattern-content p {
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       font-size: 14px;
       line-height: 1.5;
     }
@@ -891,7 +949,7 @@
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       font-size: 12px;
       animation: bounce 2s infinite;
     }
@@ -904,7 +962,7 @@
     .scroll-indicator svg {
       width: 20px;
       height: 20px;
-      stroke: var(--warm-gray);
+      stroke: var(--text-tertiary);
     }
 
     /* CSS Tokens Section */
@@ -915,10 +973,10 @@
     }
 
     .token-card {
-      background: white;
+      background: var(--glass-white);
+      border: 1px solid var(--glass-border);
       border-radius: 16px;
       padding: 28px;
-      box-shadow: 0 2px 8px rgba(44, 41, 37, 0.06);
     }
 
     .token-card-title {
@@ -926,7 +984,7 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       margin-bottom: 20px;
     }
 
@@ -934,18 +992,18 @@
       font-family: 'SF Mono', Monaco, monospace;
       font-size: 13px;
       line-height: 2;
-      color: var(--charcoal);
+      color: var(--text-secondary);
     }
 
     .token-line .key {
-      color: var(--terracotta);
+      color: var(--accent);
     }
 
     /* Footer */
     footer {
       text-align: center;
       padding: 80px 48px;
-      background: var(--warm-white);
+      background: var(--surface);
     }
 
     .footer-logo {
@@ -953,11 +1011,11 @@
       font-size: 28px;
       font-weight: 400;
       margin-bottom: 12px;
-      color: var(--espresso);
+      color: var(--text);
     }
 
     .footer-text {
-      color: var(--warm-gray);
+      color: var(--text-tertiary);
       font-size: 14px;
     }
 
@@ -1007,8 +1065,8 @@
     <div class="hero-content">
       <div class="hero-overline">Design System</div>
       <h1 class="hero-title">Trainichi</h1>
-      <p class="hero-subtitle">A warm, earthy design language for mindful fitness experiences</p>
-      <span class="version-badge">Version 1.0 · December 2025</span>
+      <p class="hero-subtitle">A moody, editorial design language for mindful fitness experiences. Glassmorphism meets warm tones.</p>
+      <span class="version-badge">Version 2.0 &middot; February 2026</span>
     </div>
     <div class="scroll-indicator">
       <span>Scroll to explore</span>
@@ -1021,125 +1079,212 @@
   <!-- Color System -->
   <section>
     <div class="section-header">
-      <div class="section-number">01 — Colors</div>
+      <div class="section-number">01 &mdash; Colors</div>
       <h2 class="section-title">Color Palette</h2>
-      <p class="section-desc">Grounded in nature. Warm neutrals create calm while earthy accents inspire movement.</p>
+      <p class="section-desc">Moody, editorial tones. Warm stone backgrounds with slate blue accents and olive secondaries create a sophisticated, grounded atmosphere.</p>
     </div>
 
     <div class="color-category">
-      <div class="color-category-title">Warm Neutrals</div>
+      <div class="color-category-title">Warm Stone Backgrounds</div>
       <div class="color-grid">
         <div class="color-card">
-          <div class="color-swatch" style="background: #FAF7F2;"></div>
+          <div class="color-swatch" style="background: #F0EBE3;"></div>
           <div class="color-info">
-            <div class="color-name">Cream</div>
-            <div class="color-hex">#FAF7F2</div>
+            <div class="color-name">Warm Stone</div>
+            <div class="color-hex">#F0EBE3 &middot; bg</div>
           </div>
         </div>
         <div class="color-card">
-          <div class="color-swatch" style="background: #F5F1EA;"></div>
+          <div class="color-swatch" style="background: #E8E2D8;"></div>
           <div class="color-info">
-            <div class="color-name">Warm White</div>
-            <div class="color-hex">#F5F1EA</div>
+            <div class="color-name">Warm Sand</div>
+            <div class="color-hex">#E8E2D8 &middot; surface</div>
           </div>
         </div>
         <div class="color-card">
-          <div class="color-swatch" style="background: #E8E2D9;"></div>
+          <div class="color-swatch" style="background: #F5F0E8;"></div>
           <div class="color-info">
-            <div class="color-name">Sand</div>
-            <div class="color-hex">#E8E2D9</div>
+            <div class="color-name">Soft Elevated</div>
+            <div class="color-hex">#F5F0E8 &middot; surfaceElevated</div>
           </div>
         </div>
         <div class="color-card">
-          <div class="color-swatch" style="background: #D4CCC0;"></div>
+          <div class="color-swatch" style="background: #D1C9BC;"></div>
           <div class="color-info">
-            <div class="color-name">Stone</div>
-            <div class="color-hex">#D4CCC0</div>
+            <div class="color-name">Warm Taupe</div>
+            <div class="color-hex">#D1C9BC &middot; border</div>
           </div>
         </div>
         <div class="color-card">
-          <div class="color-swatch" style="background: #9C948A;"></div>
+          <div class="color-swatch" style="background: #C4BAA9;"></div>
           <div class="color-info">
-            <div class="color-name">Warm Gray</div>
-            <div class="color-hex">#9C948A</div>
-          </div>
-        </div>
-        <div class="color-card">
-          <div class="color-swatch" style="background: #3D3A36;">
-            <span style="color: #9C948A; font-size: 12px;">Text</span>
-          </div>
-          <div class="color-info">
-            <div class="color-name">Charcoal</div>
-            <div class="color-hex">#3D3A36</div>
-          </div>
-        </div>
-        <div class="color-card">
-          <div class="color-swatch" style="background: #2C2925;">
-            <span style="color: #9C948A; font-size: 12px;">Primary</span>
-          </div>
-          <div class="color-info">
-            <div class="color-name">Espresso</div>
-            <div class="color-hex">#2C2925</div>
+            <div class="color-name">Deep Stone</div>
+            <div class="color-hex">#C4BAA9 &middot; divider</div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="color-category">
-      <div class="color-category-title">Earthy Accents</div>
+      <div class="color-category-title">Text Hierarchy</div>
       <div class="color-grid">
         <div class="color-card">
-          <div class="color-swatch" style="background: #C17F61;">
+          <div class="color-swatch" style="background: #1E1B18;">
+            <span style="color: #8A7F72; font-size: 12px;">Primary</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Near-Black Espresso</div>
+            <div class="color-hex">#1E1B18 &middot; text</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #3A3632;">
+            <span style="color: #8A7F72; font-size: 12px;">Secondary</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Deep Charcoal</div>
+            <div class="color-hex">#3A3632 &middot; textSecondary</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #8A7F72;">
+            <span style="color: white; font-size: 12px;">Tertiary</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Warm Taupe</div>
+            <div class="color-hex">#8A7F72 &middot; textTertiary</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="color-category">
+      <div class="color-category-title">Primary Accent &mdash; Slate Blue</div>
+      <div class="color-grid">
+        <div class="color-card">
+          <div class="color-swatch" style="background: #6B7B8A;">
             <span style="color: white; font-size: 12px; font-weight: 500;">Primary Accent</span>
           </div>
           <div class="color-info">
-            <div class="color-name">Terracotta</div>
-            <div class="color-hex">#C17F61</div>
+            <div class="color-name">Slate Blue</div>
+            <div class="color-hex">#6B7B8A &middot; accent</div>
           </div>
         </div>
         <div class="color-card">
-          <div class="color-swatch" style="background: #D4A088;">
+          <div class="color-swatch" style="background: #8494A2;">
             <span style="color: white; font-size: 12px;">Hover / Light</span>
           </div>
           <div class="color-info">
-            <div class="color-name">Terracotta Light</div>
-            <div class="color-hex">#D4A088</div>
+            <div class="color-name">Slate Blue Light</div>
+            <div class="color-hex">#8494A2 &middot; accentHover</div>
           </div>
         </div>
         <div class="color-card">
-          <div class="color-swatch" style="background: #8B9A7E;">
+          <div class="color-swatch" style="background: #566470;">
+            <span style="color: white; font-size: 12px;">Pressed</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Slate Blue Dark</div>
+            <div class="color-hex">#566470 &middot; accentPressed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="color-category">
+      <div class="color-category-title">Secondary Accent &mdash; Olive</div>
+      <div class="color-grid">
+        <div class="color-card">
+          <div class="color-swatch" style="background: #6B7B5A;">
             <span style="color: white; font-size: 12px; font-weight: 500;">Secondary</span>
           </div>
           <div class="color-info">
-            <div class="color-name">Sage</div>
-            <div class="color-hex">#8B9A7E</div>
+            <div class="color-name">Olive Sage</div>
+            <div class="color-hex">#6B7B5A &middot; sage</div>
           </div>
         </div>
         <div class="color-card">
-          <div class="color-swatch" style="background: #A8B59D;">
+          <div class="color-swatch" style="background: #8A9A76;">
             <span style="color: white; font-size: 12px;">Light</span>
           </div>
           <div class="color-info">
-            <div class="color-name">Sage Light</div>
-            <div class="color-hex">#A8B59D</div>
+            <div class="color-name">Light Olive</div>
+            <div class="color-hex">#8A9A76 &middot; sageLight</div>
           </div>
         </div>
         <div class="color-card">
-          <div class="color-swatch" style="background: #B8977A;">
-            <span style="color: white; font-size: 12px;">Warm</span>
-          </div>
-          <div class="color-info">
-            <div class="color-name">Clay</div>
-            <div class="color-hex">#B8977A</div>
-          </div>
-        </div>
-        <div class="color-card">
-          <div class="color-swatch" style="background: #6B7B5E;">
+          <div class="color-swatch" style="background: #515F42;">
             <span style="color: white; font-size: 12px;">Deep</span>
           </div>
           <div class="color-info">
-            <div class="color-name">Moss</div>
-            <div class="color-hex">#6B7B5E</div>
+            <div class="color-name">Deep Moss</div>
+            <div class="color-hex">#515F42 &middot; moss</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="color-category">
+      <div class="color-category-title">Semantic</div>
+      <div class="color-grid">
+        <div class="color-card">
+          <div class="color-swatch" style="background: #6B8A5F;">
+            <span style="color: white; font-size: 12px;">Success</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Muted Green</div>
+            <div class="color-hex">#6B8A5F</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #C49560;">
+            <span style="color: white; font-size: 12px;">Warning</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Warm Amber</div>
+            <div class="color-hex">#C49560</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: #B06A5E;">
+            <span style="color: white; font-size: 12px;">Danger</span>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Muted Rose</div>
+            <div class="color-hex">#B06A5E</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="color-category">
+      <div class="color-category-title">Glass Tokens (Glassmorphism)</div>
+      <div class="color-grid">
+        <div class="color-card">
+          <div class="color-swatch" style="background: linear-gradient(135deg, #6B7B8A 0%, #6B7B5A 100%);">
+            <div style="background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #1E1B18; backdrop-filter: blur(8px);">Glass Card</div>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Glass White</div>
+            <div class="color-hex">rgba(255, 255, 255, 0.55)</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: linear-gradient(135deg, #8494A2 0%, #8A9A76 100%);">
+            <div style="border: 2px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 8px 12px; font-size: 11px; color: white;">Border</div>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Glass Border</div>
+            <div class="color-hex">rgba(255, 255, 255, 0.25)</div>
+          </div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background: linear-gradient(135deg, #D1C9BC 0%, #C4BAA9 100%);">
+            <div style="background: rgba(30,27,24,0.35); border-radius: 8px; padding: 8px 12px; font-size: 11px; color: white;">Overlay</div>
+          </div>
+          <div class="color-info">
+            <div class="color-name">Glass Overlay</div>
+            <div class="color-hex">rgba(30, 27, 24, 0.35)</div>
           </div>
         </div>
       </div>
@@ -1149,17 +1294,17 @@
   <!-- Typography -->
   <section class="section-alt">
     <div class="section-header">
-      <div class="section-number">02 — Typography</div>
+      <div class="section-number">02 &mdash; Typography</div>
       <h2 class="section-title">Type System</h2>
-      <p class="section-desc">Elegant serifs for headlines paired with clean sans-serifs for readability. Calm, confident, approachable.</p>
+      <p class="section-desc">Bold, editorial typography. Fraunces serifs command attention in headlines while DM Sans provides clean readability for body text.</p>
     </div>
 
     <div class="type-scale">
       <div class="type-item">
         <div class="type-meta">
           <div class="type-meta-name">Display</div>
-          48–64px / Regular 400<br>
-          Fraunces
+          72px / Regular 400<br>
+          Fraunces · -0.03em
         </div>
         <div class="type-display">Move <em>mindfully</em></div>
       </div>
@@ -1167,17 +1312,17 @@
       <div class="type-item">
         <div class="type-meta">
           <div class="type-meta-name">Heading 1</div>
-          36–42px / Regular 400<br>
-          Fraunces
+          48px / Regular 400<br>
+          Fraunces · -0.03em
         </div>
-        <div class="type-h1">Book your session</div>
+        <div class="type-h1">Your journey begins</div>
       </div>
 
       <div class="type-item">
         <div class="type-meta">
           <div class="type-meta-name">Heading 2</div>
-          24–28px / Medium 500<br>
-          Fraunces
+          32px / Medium 500<br>
+          Fraunces · -0.03em
         </div>
         <div class="type-h2">Choose your practice</div>
       </div>
@@ -1185,16 +1330,16 @@
       <div class="type-item">
         <div class="type-meta">
           <div class="type-meta-name">Heading 3</div>
-          18–20px / Semibold 600<br>
-          DM Sans
+          22px / Semibold 600<br>
+          Fraunces
         </div>
-        <div class="type-h3">Available Time Slots</div>
+        <div class="type-h3">Today's Workouts</div>
       </div>
 
       <div class="type-item">
         <div class="type-meta">
           <div class="type-meta-name">Body</div>
-          15–16px / Regular 400<br>
+          16px / Regular 400<br>
           DM Sans, 1.7 line-height
         </div>
         <div class="type-body">Training is a journey, not a destination. Each session brings you closer to the strongest version of yourself. Find your rhythm and let movement become meditation.</div>
@@ -1203,19 +1348,19 @@
       <div class="type-item">
         <div class="type-meta">
           <div class="type-meta-name">Caption</div>
-          13–14px / Regular 400<br>
+          14px / Regular 400<br>
           DM Sans
         </div>
-        <div class="type-caption">By confirming your reservation, a 50% deposit will be collected. The remainder is due at check-in.</div>
+        <div class="type-caption">3 sets &times; 12 reps &middot; Moderate intensity &middot; Rest 60s between sets</div>
       </div>
 
       <div class="type-item">
         <div class="type-meta">
           <div class="type-meta-name">Overline</div>
-          11–12px / Semibold 600<br>
-          DM Sans, tracking 15%
+          11px / Semibold 600<br>
+          DM Sans, tracking 20%
         </div>
-        <div class="type-overline">WELLNESS · STUDIO · RESERVATION</div>
+        <div class="type-overline">STRENGTH &middot; CONDITIONING &middot; RECOVERY</div>
       </div>
     </div>
 
@@ -1223,7 +1368,7 @@
       <div class="font-row">
         <div class="font-name">Display & Headlines</div>
         <div class="font-preview-display">Fraunces</div>
-        <div class="font-desc">Soft serif with warmth and character</div>
+        <div class="font-desc">Soft serif with warmth and editorial character</div>
       </div>
       <div class="font-row">
         <div class="font-name">Body & UI</div>
@@ -1236,7 +1381,7 @@
   <!-- Spacing & Layout -->
   <section>
     <div class="section-header">
-      <div class="section-number">03 — Spacing</div>
+      <div class="section-number">03 &mdash; Spacing</div>
       <h2 class="section-title">Space & Rhythm</h2>
       <p class="section-desc">Generous breathing room creates a sense of calm. An 8px base unit ensures consistency.</p>
     </div>
@@ -1247,7 +1392,7 @@
           <div class="spacing-bar" style="width: 4px;"></div>
         </div>
         <div class="spacing-info">
-          <span class="spacing-token">xs</span>
+          <span class="spacing-token">xxs</span>
           <span class="spacing-value">4px</span>
           <span class="spacing-use">Icon gaps, tight elements</span>
         </div>
@@ -1257,7 +1402,7 @@
           <div class="spacing-bar" style="width: 8px;"></div>
         </div>
         <div class="spacing-info">
-          <span class="spacing-token">sm</span>
+          <span class="spacing-token">xs</span>
           <span class="spacing-value">8px</span>
           <span class="spacing-use">Inline spacing, small gaps</span>
         </div>
@@ -1267,7 +1412,7 @@
           <div class="spacing-bar" style="width: 16px;"></div>
         </div>
         <div class="spacing-info">
-          <span class="spacing-token">md</span>
+          <span class="spacing-token">sm</span>
           <span class="spacing-value">16px</span>
           <span class="spacing-use">Default padding, form gaps</span>
         </div>
@@ -1277,7 +1422,7 @@
           <div class="spacing-bar" style="width: 24px;"></div>
         </div>
         <div class="spacing-info">
-          <span class="spacing-token">lg</span>
+          <span class="spacing-token">md</span>
           <span class="spacing-value">24px</span>
           <span class="spacing-use">Card padding, sections</span>
         </div>
@@ -1287,7 +1432,7 @@
           <div class="spacing-bar" style="width: 32px;"></div>
         </div>
         <div class="spacing-info">
-          <span class="spacing-token">xl</span>
+          <span class="spacing-token">lg</span>
           <span class="spacing-value">32px</span>
           <span class="spacing-use">Section dividers</span>
         </div>
@@ -1297,7 +1442,7 @@
           <div class="spacing-bar" style="width: 48px;"></div>
         </div>
         <div class="spacing-info">
-          <span class="spacing-token">2xl</span>
+          <span class="spacing-token">xl</span>
           <span class="spacing-value">48px</span>
           <span class="spacing-use">Page margins, hero areas</span>
         </div>
@@ -1307,7 +1452,7 @@
           <div class="spacing-bar" style="width: 64px;"></div>
         </div>
         <div class="spacing-info">
-          <span class="spacing-token">3xl</span>
+          <span class="spacing-token">xxl</span>
           <span class="spacing-value">64px</span>
           <span class="spacing-use">Major sections</span>
         </div>
@@ -1315,27 +1460,32 @@
     </div>
 
     <h3 style="font-family: 'Fraunces', serif; font-size: 24px; margin-bottom: 16px; margin-top: 80px;">Border Radius</h3>
-    <p style="color: var(--warm-gray); margin-bottom: 32px; font-size: 15px;">Soft, organic shapes that feel natural and inviting.</p>
+    <p style="color: var(--text-tertiary); margin-bottom: 32px; font-size: 15px;">Soft, organic shapes. Pill buttons are a key pattern in the editorial style.</p>
     <div class="radius-grid">
       <div class="radius-item">
         <div class="radius-box" style="border-radius: 8px;"></div>
         <div class="radius-label">sm</div>
-        <div class="radius-value">8px — Buttons, badges</div>
+        <div class="radius-value">8px &mdash; Buttons, badges</div>
       </div>
       <div class="radius-item">
-        <div class="radius-box" style="border-radius: 12px;"></div>
+        <div class="radius-box" style="border-radius: 14px;"></div>
         <div class="radius-label">md</div>
-        <div class="radius-value">12px — Inputs, small cards</div>
+        <div class="radius-value">14px &mdash; Inputs, small cards</div>
       </div>
       <div class="radius-item">
-        <div class="radius-box" style="border-radius: 20px;"></div>
+        <div class="radius-box" style="border-radius: 22px;"></div>
         <div class="radius-label">lg</div>
-        <div class="radius-value">20px — Cards, panels</div>
+        <div class="radius-value">22px &mdash; Cards, panels</div>
+      </div>
+      <div class="radius-item">
+        <div class="radius-box" style="border-radius: 30px;"></div>
+        <div class="radius-label">xl</div>
+        <div class="radius-value">30px &mdash; Modals, sheets</div>
       </div>
       <div class="radius-item">
         <div class="radius-box" style="border-radius: 50%;"></div>
         <div class="radius-label">full</div>
-        <div class="radius-value">50% — Avatars, pills</div>
+        <div class="radius-value">9999px &mdash; Pills, avatars</div>
       </div>
     </div>
   </section>
@@ -1343,17 +1493,17 @@
   <!-- Components -->
   <section class="section-alt">
     <div class="section-header">
-      <div class="section-number">04 — Components</div>
+      <div class="section-number">04 &mdash; Components</div>
       <h2 class="section-title">Building Blocks</h2>
-      <p class="section-desc">Core interface elements designed for warmth, clarity, and ease of use.</p>
+      <p class="section-desc">Glass cards, pill-shaped CTAs, and semi-transparent badges. Designed for warmth, depth, and editorial polish.</p>
     </div>
 
     <div class="component-grid">
       <div class="component-card">
         <div class="component-title">Buttons</div>
         <div class="component-demo">
-          <button class="btn btn-primary">Book Session</button>
-          <button class="btn btn-accent">Start Training</button>
+          <button class="btn btn-primary">Start Training</button>
+          <button class="btn btn-accent">Book Session</button>
           <button class="btn btn-soft">Explore Classes</button>
           <button class="btn btn-ghost">View Details</button>
         </div>
@@ -1364,7 +1514,7 @@
         <div class="input-demo">
           <input type="text" class="input-field" placeholder="Your name">
           <input type="email" class="input-field" placeholder="Email address">
-          <input type="text" class="input-field" value="sarah@example.com" style="border-color: var(--terracotta); background: white;">
+          <input type="text" class="input-field" value="sarah@example.com" style="border-color: var(--accent); background: rgba(255,255,255,0.8);">
         </div>
       </div>
 
@@ -1415,20 +1565,20 @@
       </div>
 
       <div class="component-card">
-        <div class="component-title">Time Slots</div>
+        <div class="component-title">Filter Chips</div>
         <div class="time-slots">
-          <div class="time-slot selected">9:00 AM</div>
-          <div class="time-slot">10:30 AM</div>
-          <div class="time-slot">12:00 PM</div>
-          <div class="time-slot unavailable">2:00 PM</div>
-          <div class="time-slot">4:30 PM</div>
+          <div class="time-slot selected">All</div>
+          <div class="time-slot">Upper Body</div>
+          <div class="time-slot">Lower Body</div>
+          <div class="time-slot">Core</div>
+          <div class="time-slot">Cardio</div>
         </div>
       </div>
 
       <div class="component-card">
         <div class="component-title">Badges & Tags</div>
         <div class="badge-demo">
-          <span class="badge badge-terracotta">Popular</span>
+          <span class="badge badge-accent">Strength</span>
           <span class="badge badge-sage">Beginner</span>
           <span class="badge badge-clay">Premium</span>
           <span class="badge badge-neutral">Indoor</span>
@@ -1437,23 +1587,23 @@
       </div>
 
       <div class="component-card">
-        <div class="component-title">Pricing</div>
+        <div class="component-title">Stat Display</div>
         <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;">
-          <span style="font-family: 'Fraunces', serif; font-size: 36px; color: var(--espresso);">$45</span>
-          <span style="color: var(--warm-gray); font-size: 14px;">/ session</span>
+          <span style="font-family: 'Fraunces', serif; font-size: 36px; color: var(--text);">12</span>
+          <span style="color: var(--text-tertiary); font-size: 14px;">exercises completed</span>
         </div>
-        <p style="font-size: 13px; color: var(--warm-gray); line-height: 1.5;">
-          Includes studio access, equipment, and post-session amenities.
+        <p style="font-size: 13px; color: var(--text-tertiary); line-height: 1.5;">
+          Total volume: 4,250 lbs &middot; Duration: 42 min
         </p>
       </div>
 
       <div class="component-card">
-        <div class="component-title">Card Example</div>
+        <div class="component-title">Workout Card</div>
         <div style="display: flex; gap: 16px; align-items: center;">
-          <div style="width: 64px; height: 64px; background: linear-gradient(135deg, var(--terracotta-light), var(--terracotta)); border-radius: 12px;"></div>
+          <div style="width: 64px; height: 64px; background: linear-gradient(135deg, var(--accent-hover), var(--accent)); border-radius: 14px;"></div>
           <div>
-            <div style="font-weight: 600; margin-bottom: 4px;">Morning Flow</div>
-            <div style="font-size: 13px; color: var(--warm-gray);">Yoga · 60 min · Sarah M.</div>
+            <div style="font-family: 'Fraunces', serif; font-weight: 500; font-size: 18px; margin-bottom: 4px; letter-spacing: -0.02em;">Morning Flow</div>
+            <div style="font-size: 13px; color: var(--text-tertiary);">3 sets &times; 12 reps &middot; Upper Body</div>
           </div>
         </div>
       </div>
@@ -1464,37 +1614,44 @@
   <section class="phone-mockup-section">
     <div class="mockup-container">
       <div>
-        <div class="section-number">05 — In Practice</div>
+        <div class="section-number">05 &mdash; In Practice</div>
         <h2 class="section-title">All Together</h2>
-        <p class="section-desc" style="margin-bottom: 32px;">See how the system comes to life in a cohesive, calming experience.</p>
-        
+        <p class="section-desc" style="margin-bottom: 32px;">See how the moody editorial system comes to life with glassmorphism and bold typography.</p>
+
         <div class="pattern-list">
           <div class="pattern-item">
             <div class="pattern-number">1</div>
             <div class="pattern-content">
-              <h4>Warm, Light Backgrounds</h4>
-              <p>Cream and warm white create an inviting, spa-like atmosphere</p>
+              <h4>Glassmorphism Cards</h4>
+              <p>Translucent surfaces with subtle borders create depth and layering</p>
             </div>
           </div>
           <div class="pattern-item">
             <div class="pattern-number">2</div>
             <div class="pattern-content">
-              <h4>Terracotta Accents</h4>
-              <p>Earthy orange-brown highlights guide attention to key actions</p>
+              <h4>Slate Blue Accents</h4>
+              <p>Calm, sophisticated slate blue highlights guide attention to key actions</p>
             </div>
           </div>
           <div class="pattern-item">
             <div class="pattern-number">3</div>
             <div class="pattern-content">
-              <h4>Elegant Typography</h4>
-              <p>Fraunces serif headlines feel refined yet approachable</p>
+              <h4>Editorial Typography</h4>
+              <p>Bold Fraunces headlines at larger sizes for a magazine-style feel</p>
             </div>
           </div>
           <div class="pattern-item">
             <div class="pattern-number">4</div>
             <div class="pattern-content">
-              <h4>Generous Spacing</h4>
-              <p>Breathing room between elements creates calm and clarity</p>
+              <h4>Pill-Shaped CTAs</h4>
+              <p>Fully rounded buttons create a modern, premium interaction pattern</p>
+            </div>
+          </div>
+          <div class="pattern-item">
+            <div class="pattern-number">5</div>
+            <div class="pattern-content">
+              <h4>Gradient Overlays</h4>
+              <p>LinearGradient fades over hero images instead of flat dark overlays</p>
             </div>
           </div>
         </div>
@@ -1503,28 +1660,28 @@
       <div class="phone-frame">
         <div class="phone-screen">
           <div class="phone-header-image">
-            <div class="phone-overline">Wellness Studio</div>
-            <div class="phone-title">Morning<br>Flow</div>
+            <div class="phone-overline">Today's Training</div>
+            <div class="phone-title">Morning<br>Strength</div>
           </div>
           <div class="phone-content">
             <div class="phone-card">
-              <div class="phone-card-title">Select a Room</div>
+              <div class="phone-card-title">This Week</div>
               <div class="phone-selection-grid">
-                <div class="phone-selection-item">A1</div>
-                <div class="phone-selection-item selected">A2</div>
-                <div class="phone-selection-item">B1</div>
-                <div class="phone-selection-item">B2</div>
+                <div class="phone-selection-item">M</div>
+                <div class="phone-selection-item selected">T</div>
+                <div class="phone-selection-item">W</div>
+                <div class="phone-selection-item">T</div>
               </div>
             </div>
             <div class="phone-card">
-              <div class="phone-card-title">Choose Time</div>
+              <div class="phone-card-title">Up Next</div>
               <div style="display: flex; gap: 8px;">
-                <div style="padding: 10px 14px; background: rgba(193, 127, 97, 0.1); border-radius: 8px; font-size: 12px; font-weight: 500; border: 1.5px solid var(--terracotta); color: var(--espresso);">9:00 AM</div>
-                <div style="padding: 10px 14px; background: var(--warm-white); border-radius: 8px; font-size: 12px; color: var(--charcoal);">10:30 AM</div>
-                <div style="padding: 10px 14px; background: var(--warm-white); border-radius: 8px; font-size: 12px; color: var(--charcoal);">12:00 PM</div>
+                <div style="padding: 10px 14px; background: rgba(107, 123, 138, 0.1); border-radius: 9999px; font-size: 12px; font-weight: 500; border: 1.5px solid var(--accent); color: var(--text);">Squats</div>
+                <div style="padding: 10px 14px; background: var(--glass-white); border: 1px solid var(--glass-border); border-radius: 9999px; font-size: 12px; color: var(--text-secondary);">Deadlift</div>
+                <div style="padding: 10px 14px; background: var(--glass-white); border: 1px solid var(--glass-border); border-radius: 9999px; font-size: 12px; color: var(--text-secondary);">Bench</div>
               </div>
             </div>
-            <button class="phone-btn">Book Now · $45</button>
+            <button class="phone-btn">Start Workout</button>
           </div>
         </div>
       </div>
@@ -1534,59 +1691,77 @@
   <!-- Design Tokens -->
   <section>
     <div class="section-header">
-      <div class="section-number">06 — Tokens</div>
+      <div class="section-number">06 &mdash; Tokens</div>
       <h2 class="section-title">Design Tokens</h2>
-      <p class="section-desc">Copy these CSS variables directly into your project for instant consistency.</p>
+      <p class="section-desc">Reference tokens for the React Native theme system in <code style="font-size: 14px; background: var(--surface); padding: 2px 6px; border-radius: 4px;">theme.ts</code>.</p>
     </div>
 
     <div class="tokens-grid">
       <div class="token-card">
-        <div class="token-card-title">Neutrals</div>
-        <div class="token-line"><span class="key">--cream</span>: #FAF7F2;</div>
-        <div class="token-line"><span class="key">--warm-white</span>: #F5F1EA;</div>
-        <div class="token-line"><span class="key">--sand</span>: #E8E2D9;</div>
-        <div class="token-line"><span class="key">--stone</span>: #D4CCC0;</div>
-        <div class="token-line"><span class="key">--warm-gray</span>: #9C948A;</div>
-        <div class="token-line"><span class="key">--charcoal</span>: #3D3A36;</div>
-        <div class="token-line"><span class="key">--espresso</span>: #2C2925;</div>
+        <div class="token-card-title">Backgrounds</div>
+        <div class="token-line"><span class="key">bg</span>: #F0EBE3;</div>
+        <div class="token-line"><span class="key">surface</span>: #E8E2D8;</div>
+        <div class="token-line"><span class="key">surfaceElevated</span>: #F5F0E8;</div>
+        <div class="token-line"><span class="key">border</span>: #D1C9BC;</div>
+        <div class="token-line"><span class="key">divider</span>: #C4BAA9;</div>
+      </div>
+
+      <div class="token-card">
+        <div class="token-card-title">Text</div>
+        <div class="token-line"><span class="key">text</span>: #1E1B18;</div>
+        <div class="token-line"><span class="key">textSecondary</span>: #3A3632;</div>
+        <div class="token-line"><span class="key">textTertiary</span>: #8A7F72;</div>
       </div>
 
       <div class="token-card">
         <div class="token-card-title">Accents</div>
-        <div class="token-line"><span class="key">--terracotta</span>: #C17F61;</div>
-        <div class="token-line"><span class="key">--terracotta-light</span>: #D4A088;</div>
-        <div class="token-line"><span class="key">--sage</span>: #8B9A7E;</div>
-        <div class="token-line"><span class="key">--sage-light</span>: #A8B59D;</div>
-        <div class="token-line"><span class="key">--clay</span>: #B8977A;</div>
-        <div class="token-line"><span class="key">--moss</span>: #6B7B5E;</div>
+        <div class="token-line"><span class="key">accent</span>: #6B7B8A;</div>
+        <div class="token-line"><span class="key">accentHover</span>: #8494A2;</div>
+        <div class="token-line"><span class="key">accentPressed</span>: #566470;</div>
+        <div class="token-line" style="margin-top: 12px;"><span class="key">sage</span>: #6B7B5A;</div>
+        <div class="token-line"><span class="key">sageLight</span>: #8A9A76;</div>
+        <div class="token-line"><span class="key">moss</span>: #515F42;</div>
+      </div>
+
+      <div class="token-card">
+        <div class="token-card-title">Glass</div>
+        <div class="token-line"><span class="key">glassWhite</span>: rgba(255, 255, 255, 0.55);</div>
+        <div class="token-line"><span class="key">glassBorder</span>: rgba(255, 255, 255, 0.25);</div>
+        <div class="token-line"><span class="key">glassOverlay</span>: rgba(30, 27, 24, 0.35);</div>
       </div>
 
       <div class="token-card">
         <div class="token-card-title">Spacing</div>
-        <div class="token-line"><span class="key">--space-xs</span>: 4px;</div>
-        <div class="token-line"><span class="key">--space-sm</span>: 8px;</div>
-        <div class="token-line"><span class="key">--space-md</span>: 16px;</div>
-        <div class="token-line"><span class="key">--space-lg</span>: 24px;</div>
-        <div class="token-line"><span class="key">--space-xl</span>: 32px;</div>
-        <div class="token-line"><span class="key">--space-2xl</span>: 48px;</div>
-        <div class="token-line"><span class="key">--space-3xl</span>: 64px;</div>
+        <div class="token-line"><span class="key">xxs</span>: 4px;</div>
+        <div class="token-line"><span class="key">xs</span>: 8px;</div>
+        <div class="token-line"><span class="key">sm</span>: 16px;</div>
+        <div class="token-line"><span class="key">md</span>: 24px;</div>
+        <div class="token-line"><span class="key">lg</span>: 32px;</div>
+        <div class="token-line"><span class="key">xl</span>: 48px;</div>
+        <div class="token-line"><span class="key">xxl</span>: 64px;</div>
       </div>
 
       <div class="token-card">
-        <div class="token-card-title">Radius & Motion</div>
-        <div class="token-line"><span class="key">--radius-sm</span>: 8px;</div>
-        <div class="token-line"><span class="key">--radius-md</span>: 12px;</div>
-        <div class="token-line"><span class="key">--radius-lg</span>: 20px;</div>
-        <div class="token-line"><span class="key">--radius-full</span>: 9999px;</div>
-        <div class="token-line" style="margin-top: 16px;"><span class="key">--ease-out</span>: cubic-bezier(0.16, 1, 0.3, 1);</div>
-        <div class="token-line"><span class="key">--duration</span>: 250ms;</div>
+        <div class="token-card-title">Radius & Typography</div>
+        <div class="token-line"><span class="key">radii.sm</span>: 8px;</div>
+        <div class="token-line"><span class="key">radii.md</span>: 14px;</div>
+        <div class="token-line"><span class="key">radii.lg</span>: 22px;</div>
+        <div class="token-line"><span class="key">radii.xl</span>: 30px;</div>
+        <div class="token-line"><span class="key">radii.full</span>: 9999px;</div>
+        <div class="token-line" style="margin-top: 12px;"><span class="key">sizes.xs</span>: 11px;</div>
+        <div class="token-line"><span class="key">sizes.sm</span>: 14px;</div>
+        <div class="token-line"><span class="key">sizes.md</span>: 16px;</div>
+        <div class="token-line"><span class="key">sizes.lg</span>: 22px;</div>
+        <div class="token-line"><span class="key">sizes.xl</span>: 32px;</div>
+        <div class="token-line"><span class="key">sizes.xxl</span>: 48px;</div>
+        <div class="token-line"><span class="key">sizes.display</span>: 72px;</div>
       </div>
     </div>
   </section>
 
   <footer>
     <div class="footer-logo">Trainichi</div>
-    <div class="footer-text">Design System v1.0 · December 2025</div>
+    <div class="footer-text">Design System v2.0 &middot; February 2026 &middot; Moody Editorial</div>
   </footer>
 
 </body>

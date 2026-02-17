@@ -1,12 +1,13 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, useColorScheme } from "react-native";
+import { Text, StyleSheet, ImageBackground, TouchableOpacity, useColorScheme } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { getTheme, spacing, radii, typography } from "../theme";
 
 interface LandingScreenProps {
     onBegin: () => void;
     isLoading?: boolean;
-    isLoggedIn?: boolean; // Optional prop to conditionally show sign-in button
+    isLoggedIn?: boolean;
 }
 
 const QUOTES = [
@@ -34,7 +35,6 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
 
-    // Select a random quote once when component mounts
     const [quote] = useState(() => {
         const randomIndex = Math.floor(Math.random() * QUOTES.length);
         return QUOTES[randomIndex];
@@ -46,34 +46,49 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
             style={styles.container}
             resizeMode="cover"
         >
-            {/* Warm overlay for readability */}
-            <View style={styles.imageOverlay} />
+            <LinearGradient
+                colors={["rgba(41, 37, 33, 0.15)", "rgba(41, 37, 33, 0.75)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+            />
 
             <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-                <View style={styles.content}>
-                    {/* Quote - Fraunces serif font */}
-                    <View style={styles.quoteContainer}>
+                <LinearGradient
+                    colors={["transparent", "rgba(41, 37, 33, 0.5)"]}
+                    start={{ x: 0, y: 0.4 }}
+                    end={{ x: 0, y: 1 }}
+                    style={styles.content}
+                >
+                    {/* Quote */}
+                    <LinearGradient
+                        colors={["transparent", "transparent"]}
+                        style={styles.quoteContainer}
+                    >
                         <Text
                             style={[
                                 styles.quoteText,
                                 {
-                                    fontFamily: typography.fonts.display,
+                                    fontFamily: typography.fonts.displayItalic,
                                     fontSize: typography.sizes.xl,
                                 },
                             ]}
                         >
                             "{quote}"
                         </Text>
-                    </View>
+                    </LinearGradient>
 
-                    {/* Buttons - Neutral & Minimal style */}
-                    <View style={styles.buttonContainer}>
+                    {/* Buttons */}
+                    <LinearGradient
+                        colors={["transparent", "transparent"]}
+                        style={styles.buttonContainer}
+                    >
                         <TouchableOpacity
                             style={[
                                 styles.primaryButton,
                                 {
                                     backgroundColor: theme.colors.accent,
-                                    borderRadius: radii.md,
+                                    borderRadius: radii.full,
                                     ...theme.shadows.subtle,
                                 },
                             ]}
@@ -86,7 +101,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
                                     styles.primaryButtonText,
                                     {
                                         color: "#FFFFFF",
-                                        fontFamily: typography.fonts.bodyMedium,
+                                        fontFamily: typography.fonts.bodySemibold,
                                         fontSize: typography.sizes.md,
                                     },
                                 ]}
@@ -95,15 +110,14 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
                             </Text>
                         </TouchableOpacity>
 
-                        {/* Conditional Sign In Button - Outline style */}
                         {!isLoggedIn && (
                             <TouchableOpacity
                                 style={[
                                     styles.secondaryButton,
                                     {
-                                        backgroundColor: "transparent",
-                                        borderColor: "#FFFFFF",
-                                        borderRadius: radii.md,
+                                        backgroundColor: "rgba(255,255,255,0.10)",
+                                        borderColor: "rgba(255,255,255,0.4)",
+                                        borderRadius: radii.full,
                                     },
                                 ]}
                                 onPress={onBegin}
@@ -123,8 +137,8 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
                                 </Text>
                             </TouchableOpacity>
                         )}
-                    </View>
-                </View>
+                    </LinearGradient>
+                </LinearGradient>
             </SafeAreaView>
         </ImageBackground>
     );
@@ -134,10 +148,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    imageOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: "rgba(44, 41, 37, 0.5)", // Warm espresso overlay
-    },
     safeArea: {
         flex: 1,
     },
@@ -145,46 +155,43 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "flex-end",
         paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.xxl,
+        paddingBottom: spacing.xxl + spacing.sm,
     },
     quoteContainer: {
         alignItems: "center",
         marginBottom: spacing.xxl,
-        paddingHorizontal: spacing.md,
+        paddingHorizontal: spacing.sm,
     },
     quoteText: {
-        // Base style - dynamic values applied inline
         textAlign: "center",
-        lineHeight: 36,
-        letterSpacing: -0.3, // Tighter for serif font
-        color: "#FFFFFF", // White text on dark overlay
-        textShadowColor: "rgba(0, 0, 0, 0.4)",
+        lineHeight: 42,
+        letterSpacing: -0.5,
+        color: "#FFFFFF",
+        textShadowColor: "rgba(0, 0, 0, 0.3)",
         textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 8,
+        textShadowRadius: 12,
     },
     buttonContainer: {
         alignItems: "center",
-        gap: spacing.md,
+        gap: spacing.sm,
         width: "100%",
     },
     primaryButton: {
-        // Terracotta button with white text
-        width: "80%",
-        paddingVertical: spacing.sm, // 16
-        paddingHorizontal: spacing.lg, // 32
+        width: "85%",
+        paddingVertical: spacing.sm + 2,
+        paddingHorizontal: spacing.lg,
         alignItems: "center",
         justifyContent: "center",
-        minHeight: 48, // Touch target
+        minHeight: 52,
     },
     primaryButtonText: {
-        fontWeight: "500",
+        fontWeight: "600",
     },
     secondaryButton: {
-        // Outline button with transparent bg
-        width: "80%",
-        paddingVertical: spacing.sm - 2, // 14 (account for border)
+        width: "85%",
+        paddingVertical: spacing.sm,
         paddingHorizontal: spacing.lg,
-        borderWidth: 1.5,
+        borderWidth: 1,
         alignItems: "center",
         justifyContent: "center",
         minHeight: 48,

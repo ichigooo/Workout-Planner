@@ -30,20 +30,24 @@ All comprehensive documentation is in [docs/reference/](docs/reference/):
 
 ## Design Guidelines
 
-Complete design system: [mobile/assets/Trainichi-Design-Guidelines-Warm.html](mobile/assets/Trainichi-Design-Guidelines-Warm.html)
+Complete design system: [docs/reference/02-design-system.md](docs/reference/02-design-system.md)
+
+**Style**: Moody editorial — glassmorphism, bold serif headlines, warm deep tones
 
 **Quick Reference**:
-- **Colors**: Warm neutrals (cream, sand, espresso) + earthy accents (terracotta, sage)
+- **Colors**: Cream backgrounds + Blue Regatta accent + olive secondary
 - **Typography**: Fraunces (serif, headlines) + DM Sans (sans-serif, body/UI)
+- **Surfaces**: Glassmorphism cards (expo-blur BlurView) + gradient overlays (expo-linear-gradient)
 - **Spacing**: 8px base unit (4px, 8px, 16px, 24px, 32px, 48px, 64px)
-- **Radius**: 8px (buttons), 12px (inputs), 20px (cards), 50% (avatars)
+- **Radius**: 8px (buttons), 14px (inputs), 22px (cards), 30px (modals), pill (CTAs)
 
 **Primary Colors**:
 ```css
---cream: #FAF7F2           /* Backgrounds */
---terracotta: #C17F61      /* Primary accent */
---espresso: #2C2925        /* Primary text/buttons */
---warm-gray: #9C948A       /* Secondary text */
+--cream: #F5EDE1            /* Backgrounds */
+--blue-regatta: #366299     /* Primary accent */
+--charcoal: #292521         /* Primary text */
+--warm-taupe: #8A7F72       /* Secondary text */
+--olive: #6B7B5A            /* Secondary accent */
 ```
 
 ## Current Branch

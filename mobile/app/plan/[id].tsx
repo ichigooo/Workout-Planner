@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useColorScheme } from "react-native";
-import { getTheme } from "@/src/theme";
+import { getTheme, typography } from "@/src/theme";
 import type { WorkoutPlanTemplate, Workout } from "@/src/types";
 import { planItemsCache } from "@/src/services/planItemsCache";
 import { PlanSetupModal } from "@/src/components/plan/PlanSetupModal";
@@ -163,7 +163,11 @@ export default function PlanDetailScreen() {
                                 <View
                                     style={[
                                         styles.weekCard,
-                                        { backgroundColor: theme.colors.surface },
+                                        {
+                                            backgroundColor: theme.colors.glassWhite,
+                                            borderColor: theme.colors.glassBorder,
+                                            borderWidth: 1,
+                                        },
                                         isExpanded && styles.weekCardExpanded,
                                     ]}
                                 >
@@ -190,7 +194,7 @@ export default function PlanDetailScreen() {
                                                     {day.workouts.map((workout) => (
                                                         <Text
                                                             key={workout.id}
-                                                            style={styles.workoutItem}
+                                                            style={[styles.workoutItem, { color: theme.colors.textSecondary }]}
                                                         >
                                                             • {workout.title}
                                                         </Text>
@@ -234,20 +238,22 @@ const styles = StyleSheet.create({
     },
     backText: {
         fontSize: 16,
+        fontFamily: typography.fonts.bodyMedium,
     },
     heroTitle: {
-        fontSize: 24,
-        fontWeight: "700",
+        fontSize: typography.sizes.xl,
+        fontFamily: typography.fonts.headline,
         marginBottom: 8,
     },
     heroSubtitle: {
         fontSize: 14,
+        fontFamily: typography.fonts.body,
         lineHeight: 20,
         marginBottom: 8,
     },
     heroMeta: {
         fontSize: 14,
-        fontWeight: "500",
+        fontFamily: typography.fonts.bodyMedium,
     },
     weekCard: {
         borderRadius: 18,
@@ -265,10 +271,11 @@ const styles = StyleSheet.create({
     },
     weekTitle: {
         fontSize: 16,
-        fontWeight: "600",
+        fontFamily: typography.fonts.headline,
     },
     weekToggle: {
         fontSize: 14,
+        fontFamily: typography.fonts.bodyMedium,
         opacity: 0.7,
     },
     dayRow: {
@@ -281,10 +288,11 @@ const styles = StyleSheet.create({
     },
     dayName: {
         fontSize: 14,
-        fontWeight: "500",
+        fontFamily: typography.fonts.bodyMedium,
     },
     dayMeta: {
         fontSize: 13,
+        fontFamily: typography.fonts.body,
         opacity: 0.7,
     },
     workoutList: {
@@ -293,18 +301,18 @@ const styles = StyleSheet.create({
     },
     workoutItem: {
         fontSize: 13,
-        color: "#333",
+        fontFamily: typography.fonts.body,
         marginBottom: 2,
     },
     button: {
         marginTop: 16,
-        borderRadius: 999,
+        borderRadius: 9999,
         paddingVertical: 14,
         alignItems: "center",
     },
     buttonText: {
         color: "#fff",
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
         fontSize: 16,
     },
 });

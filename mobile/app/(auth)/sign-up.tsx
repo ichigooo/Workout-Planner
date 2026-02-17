@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { getTheme } from "@/src/theme";
+import { getTheme, typography, radii } from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/src/lib/supabase";
 import { apiService } from "@/src/services/api";
@@ -114,21 +114,21 @@ export default function SignUpScreen() {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
-                    <Text style={[styles.title, { color: theme.colors.text }]}>Sign Up</Text>
-                    <Text style={[styles.subtitle, { color: theme.colors.subtext }]}>
+                    <Text style={[styles.title, { color: theme.colors.text, fontFamily: typography.fonts.headlineSemibold }]}>Sign Up</Text>
+                    <Text style={[styles.subtitle, { color: theme.colors.subtext, fontFamily: typography.fonts.body }]}>
                         Create your account to start training.
                     </Text>
                 </View>
 
                 <View style={styles.form}>
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: theme.colors.text }]}>Name *</Text>
+                        <Text style={[styles.label, { color: theme.colors.text, fontFamily: typography.fonts.bodyMedium }]}>Name *</Text>
                         <View
                             style={[
                                 styles.inputContainer,
                                 {
-                                    backgroundColor: theme.colors.surface,
-                                    borderColor: theme.colors.border,
+                                    backgroundColor: theme.colors.glassWhite,
+                                    borderColor: theme.colors.glassBorder,
                                 },
                             ]}
                         >
@@ -151,13 +151,13 @@ export default function SignUpScreen() {
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: theme.colors.text }]}>Email *</Text>
+                        <Text style={[styles.label, { color: theme.colors.text, fontFamily: typography.fonts.bodyMedium }]}>Email *</Text>
                         <View
                             style={[
                                 styles.inputContainer,
                                 {
-                                    backgroundColor: theme.colors.surface,
-                                    borderColor: theme.colors.border,
+                                    backgroundColor: theme.colors.glassWhite,
+                                    borderColor: theme.colors.glassBorder,
                                 },
                             ]}
                         >
@@ -181,13 +181,13 @@ export default function SignUpScreen() {
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: theme.colors.text }]}>Password *</Text>
+                        <Text style={[styles.label, { color: theme.colors.text, fontFamily: typography.fonts.bodyMedium }]}>Password *</Text>
                         <View
                             style={[
                                 styles.inputContainer,
                                 {
-                                    backgroundColor: theme.colors.surface,
-                                    borderColor: theme.colors.border,
+                                    backgroundColor: theme.colors.glassWhite,
+                                    borderColor: theme.colors.glassBorder,
                                 },
                             ]}
                         >
@@ -216,15 +216,15 @@ export default function SignUpScreen() {
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: theme.colors.text }]}>
+                        <Text style={[styles.label, { color: theme.colors.text, fontFamily: typography.fonts.bodyMedium }]}>
                             Confirm Password *
                         </Text>
                         <View
                             style={[
                                 styles.inputContainer,
                                 {
-                                    backgroundColor: theme.colors.surface,
-                                    borderColor: theme.colors.border,
+                                    backgroundColor: theme.colors.glassWhite,
+                                    borderColor: theme.colors.glassBorder,
                                 },
                             ]}
                         >
@@ -278,6 +278,7 @@ export default function SignUpScreen() {
                                     isFormValid && !isLoading
                                         ? theme.colors.accent
                                         : theme.colors.border,
+                                borderRadius: radii.full,
                             },
                         ]}
                         onPress={handleSignUp}
@@ -295,6 +296,7 @@ export default function SignUpScreen() {
                                             isFormValid && !isLoading
                                                 ? "#FFFFFF"
                                                 : theme.colors.subtext,
+                                        fontFamily: typography.fonts.bodySemibold,
                                     },
                                 ]}
                             >
@@ -333,12 +335,11 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     title: {
-        fontSize: 32,
-        fontWeight: "700",
+        fontSize: typography.sizes.xl,
         marginBottom: 8,
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: typography.sizes.md,
         lineHeight: 22,
     },
     form: {
@@ -348,15 +349,14 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     label: {
-        fontSize: 14,
-        fontWeight: "600",
+        fontSize: typography.sizes.sm,
         marginBottom: 8,
     },
     inputContainer: {
         flexDirection: "row",
         alignItems: "center",
         borderWidth: 1,
-        borderRadius: 12,
+        borderRadius: radii.md,
         paddingHorizontal: 12,
         paddingVertical: 10,
     },
@@ -365,7 +365,8 @@ const styles = StyleSheet.create({
     },
     input: {
         flex: 1,
-        fontSize: 16,
+        fontSize: typography.sizes.md,
+        fontFamily: typography.fonts.body,
     },
     helperText: {
         fontSize: 12,
@@ -386,13 +387,12 @@ const styles = StyleSheet.create({
     primaryButton: {
         marginTop: 8,
         paddingVertical: 14,
-        borderRadius: 12,
+        borderRadius: radii.full,
         alignItems: "center",
         justifyContent: "center",
     },
     primaryButtonText: {
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: typography.sizes.md,
     },
     signInLink: {
         flexDirection: "row",
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     linkText: {
-        fontSize: 14,
-        fontWeight: "600",
+        fontSize: typography.sizes.sm,
+        fontFamily: typography.fonts.bodySemibold,
     },
 });

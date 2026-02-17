@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getTheme, spacing, radii } from "@/src/theme";
+import { getTheme, spacing, radii, typography } from "@/src/theme";
 import { useColorScheme } from "react-native";
 import * as Linking from "expo-linking";
 import { WorkoutImport, CreateWorkoutRequest, WorkoutCategory } from "@/src/types";
@@ -282,9 +282,9 @@ export default function CustomImportScreen() {
                                 <Ionicons
                                     name="person-circle-outline"
                                     size={16}
-                                    color={theme.colors.subtext}
+                                    color={theme.colors.textTertiary}
                                 />
-                                <Text style={[styles.authorText, { color: theme.colors.subtext }]}>
+                                <Text style={[styles.authorText, { color: theme.colors.textTertiary }]}>
                                     by {data.metadata.author_name}
                                 </Text>
                             </View>
@@ -293,7 +293,7 @@ export default function CustomImportScreen() {
                         {/* Description */}
                         {data.description && data.description !== "TBD" ? (
                             <View style={styles.section}>
-                                <Text style={[styles.description, { color: theme.colors.subtext }]}>
+                                <Text style={[styles.description, { color: theme.colors.textTertiary }]}>
                                     {data.description}
                                 </Text>
                             </View>
@@ -306,15 +306,15 @@ export default function CustomImportScreen() {
                                     style={[
                                         styles.metadataPill,
                                         {
-                                            backgroundColor: theme.colors.surface,
-                                            borderColor: theme.colors.border,
+                                            backgroundColor: theme.colors.glassWhite,
+                                            borderColor: theme.colors.glassBorder,
                                         },
                                     ]}
                                 >
                                     <Ionicons
                                         name="time-outline"
                                         size={16}
-                                        color={theme.colors.subtext}
+                                        color={theme.colors.textTertiary}
                                     />
                                     <Text style={[styles.metadataText, { color: theme.colors.text }]}>
                                         {data.metadata.duration}
@@ -326,17 +326,17 @@ export default function CustomImportScreen() {
                                     style={[
                                         styles.metadataPill,
                                         {
-                                            backgroundColor: theme.colors.surface,
-                                            borderColor: theme.colors.border,
+                                            backgroundColor: theme.colors.accent + "20",
+                                            borderColor: theme.colors.accent + "40",
                                         },
                                     ]}
                                 >
                                     <Ionicons
                                         name="fitness-outline"
                                         size={16}
-                                        color={theme.colors.subtext}
+                                        color={theme.colors.accent}
                                     />
-                                    <Text style={[styles.metadataText, { color: theme.colors.text }]}>
+                                    <Text style={[styles.metadataText, { color: theme.colors.accent }]}>
                                         {data.category}
                                     </Text>
                                 </View>
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
     },
     platformBadgeText: {
         fontSize: 11,
-        fontWeight: "700",
+        fontFamily: typography.fonts.bodyBold,
         letterSpacing: 0.5,
     },
     customBadge: {
@@ -539,13 +539,13 @@ const styles = StyleSheet.create({
     },
     customBadgeText: {
         fontSize: 11,
-        fontWeight: "700",
+        fontFamily: typography.fonts.bodyBold,
         color: "#fff",
         letterSpacing: 0.5,
     },
     title: {
         fontSize: 26,
-        fontWeight: "700",
+        fontFamily: typography.fonts.headline,
         marginBottom: spacing.sm,
         lineHeight: 32,
     },
@@ -557,18 +557,19 @@ const styles = StyleSheet.create({
     },
     authorText: {
         fontSize: 15,
-        fontWeight: "500",
+        fontFamily: typography.fonts.bodyMedium,
     },
     section: {
         marginBottom: spacing.lg,
     },
     sectionLabel: {
         fontSize: 14,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
         marginBottom: spacing.xs,
     },
     description: {
         fontSize: 16,
+        fontFamily: typography.fonts.body,
         lineHeight: 24,
     },
     metadataRow: {
@@ -588,7 +589,7 @@ const styles = StyleSheet.create({
     },
     metadataText: {
         fontSize: 14,
-        fontWeight: "500",
+        fontFamily: typography.fonts.bodyMedium,
     },
     sourceUrl: {
         fontSize: 14,
@@ -613,7 +614,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         gap: spacing.xs,
         paddingVertical: spacing.md,
-        borderRadius: radii.xl,
+        borderRadius: 9999,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
@@ -623,7 +624,7 @@ const styles = StyleSheet.create({
     primaryButtonText: {
         color: "#FFFFFF",
         fontSize: 16,
-        fontWeight: "700",
+        fontFamily: typography.fonts.bodyBold,
         letterSpacing: 0.3,
     },
     secondaryButton: {
@@ -633,12 +634,12 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         gap: spacing.xs,
         paddingVertical: spacing.md,
-        borderRadius: radii.xl,
+        borderRadius: 9999,
         borderWidth: 1,
     },
     secondaryButtonText: {
         fontSize: 16,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
         letterSpacing: 0.3,
     },
     backButton: {
@@ -673,6 +674,6 @@ const styles = StyleSheet.create({
     },
     menuItemText: {
         fontSize: 16,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
     },
 });

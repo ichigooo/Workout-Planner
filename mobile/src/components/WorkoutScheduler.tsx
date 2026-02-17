@@ -336,14 +336,14 @@ const styles = StyleSheet.create({
         textAlign: "center",
         marginTop: 50,
         fontSize: 16,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
     },
     section: {
         padding: 16,
     },
     sectionTitle: {
         fontSize: 18,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
         marginBottom: 16,
     },
     scheduledWorkouts: {
@@ -362,22 +362,22 @@ const styles = StyleSheet.create({
     },
     workoutTitle: {
         fontSize: 16,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
         marginBottom: 4,
     },
     workoutDetails: {
         fontSize: 14,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
         marginBottom: 2,
     },
     workoutFrequency: {
         fontSize: 14,
-        fontFamily: "Inter_500Medium",
+        fontFamily: "DMSans_500Medium",
         marginBottom: 2,
     },
     workoutIntensity: {
         fontSize: 14,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
     },
     removeButton: {
         paddingVertical: 8,
@@ -387,11 +387,11 @@ const styles = StyleSheet.create({
     removeButtonText: {
         color: "#FFFFFF",
         fontSize: 12,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
     },
     noWorkoutsText: {
         fontSize: 16,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
         textAlign: "center",
         fontStyle: "italic",
     },
@@ -400,12 +400,12 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 16,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
         marginBottom: 8,
     },
     intensityHint: {
         fontSize: 14,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
         marginTop: 4,
     },
     workoutSelector: {
@@ -421,12 +421,12 @@ const styles = StyleSheet.create({
     },
     workoutOptionText: {
         fontSize: 14,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
         marginBottom: 2,
     },
     workoutOptionDetails: {
         fontSize: 12,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
     },
     daysContainer: {
         flexDirection: "row",
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     },
     dayButtonText: {
         fontSize: 14,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
     },
     scheduleButton: {
         paddingVertical: 16,
@@ -455,6 +455,6 @@ const styles = StyleSheet.create({
     scheduleButtonText: {
         color: "#FFFFFF",
         fontSize: 16,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
     },
 });

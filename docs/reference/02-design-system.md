@@ -1,63 +1,83 @@
 # Trainichi Design System
 
-> The "Warm Earthy" design system for a grounded, fitness-focused aesthetic.
+> A **moody editorial** design system — warm stone tones, glassmorphism surfaces, and bold serif typography for a grounded, fitness-focused aesthetic.
 
 **Source file:** `mobile/src/theme.ts`
 
 ---
 
+## Design Direction
+
+The visual language blends:
+- **Warm, deep tones** (Blue Regatta, olive, cream) for a moodier feel
+- **Glassmorphism** (translucent cards, blur effects) for depth and layering
+- **Editorial typography** (bold Fraunces serif headlines) for personality
+- **Pill-shaped CTAs** and generous radii for a modern, approachable look
+
+Dependencies: `expo-blur` (BlurView for glass effects), `expo-linear-gradient` (gradient overlays)
+
+---
+
 ## Color Palette
 
-### Warm Neutrals (Backgrounds)
+### Cream Backgrounds
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `bg` | `#FAF7F2` | Primary background (cream) |
-| `surface` | `#F5F1EA` | Card surfaces, elevated elements |
-| `surfaceElevated` | `#FFFFFF` | Highest elevation (modals) |
-| `border` | `#E8E2D9` | Subtle borders (sand) |
-| `divider` | `#D4CCC0` | Divider lines (stone) |
+| `bg` | `#F5EDE1` | Primary background (cream) |
+| `surface` | `#EDE4D6` | Card surfaces (warm sand) |
+| `surfaceElevated` | `#FAF5EC` | Highest elevation (modals, panels) |
+| `border` | `#D6CEBF` | Subtle borders (warm taupe) |
+| `divider` | `#C9BFAE` | Divider lines (deeper stone) |
 
 ### Text Hierarchy
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `text` | `#2C2925` | Primary text (espresso) |
-| `textSecondary` | `#3D3A36` | Secondary text (charcoal) |
-| `textTertiary` | `#9C948A` | Hints, placeholders (warm gray) |
-| `subtext` | `#9C948A` | Alias for textTertiary |
+| `text` | `#292521` | Primary text (charcoal) |
+| `textSecondary` | `#45413D` | Secondary text (deep charcoal) |
+| `textTertiary` | `#8A7F72` | Hints, placeholders (warm taupe) |
+| `subtext` | `#8A7F72` | Alias for textTertiary |
 
-### Earthy Accents (Primary)
-
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `accent` | `#C17F61` | Primary accent, CTAs (terracotta) |
-| `accentHover` | `#D4A088` | Hover state |
-| `accentPressed` | `#A86D52` | Pressed state |
-
-### Secondary Accents
+### Primary Accent — Blue Regatta
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `sage` | `#8B9A7E` | Secondary accent |
-| `sageLight` | `#A8B59D` | Lighter sage variant |
-| `moss` | `#6B7B5E` | Deep sage |
+| `accent` | `#366299` | Primary accent, CTAs (Blue Regatta) |
+| `accentHover` | `#5E82AD` | Hover state |
+| `accentPressed` | `#2B4E7A` | Pressed state |
+
+### Secondary Accent — Olive
+
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `sage` | `#6B7B5A` | Secondary accent (olive sage) |
+| `sageLight` | `#8A9A76` | Light olive |
+| `moss` | `#515F42` | Deep moss |
 
 ### Warm Tones
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `clay` | `#B8977A` | Warm accent |
-| `stone` | `#D4CCC0` | Stone color |
-| `sand` | `#E8E2D9` | Sand color |
+| `clay` | `#A68568` | Deep clay accent |
+| `stone` | `#C4BAA9` | Stone |
+| `sand` | `#D1C9BC` | Sand |
 
 ### Semantic Colors
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `success` | `#7A9B6F` | Success states |
-| `warning` | `#D4A574` | Warning states |
-| `danger` | `#C4776A` | Error states, destructive actions |
+| `success` | `#6B8A5F` | Success states (muted green) |
+| `warning` | `#C49560` | Warning states (warm amber) |
+| `danger` | `#B06A5E` | Error / destructive (muted rose) |
+
+### Glass Tokens
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `glassWhite` | `rgba(255,255,255,0.55)` | Translucent card backgrounds |
+| `glassBorder` | `rgba(255,255,255,0.25)` | Translucent card borders |
+| `glassOverlay` | `rgba(41,37,33,0.35)` | Dark overlay for image backgrounds |
 
 ---
 
@@ -67,11 +87,11 @@
 
 | Token | Font | Usage |
 |-------|------|-------|
-| `display` | Fraunces_400Regular | Display headlines, H1 |
-| `displayItalic` | Fraunces_400Regular_Italic | Italic display |
-| `headline` | Fraunces_500Medium | H2 headlines |
+| `display` | Fraunces_400Regular | Display headlines, hero text |
+| `displayItalic` | Fraunces_400Regular_Italic | Italic display (quotes, callouts) |
+| `headline` | Fraunces_500Medium | H2 headlines, section titles |
 | `headlineSemibold` | Fraunces_600SemiBold | H3 headlines |
-| `body` | DMSans_400Regular | Body text, UI |
+| `body` | DMSans_400Regular | Body text, UI elements |
 | `bodyMedium` | DMSans_500Medium | Labels |
 | `bodySemibold` | DMSans_600SemiBold | Emphasis, buttons |
 | `bodyBold` | DMSans_700Bold | Strong emphasis |
@@ -80,13 +100,13 @@
 
 | Token | Size | Usage |
 |-------|------|-------|
-| `xs` | 12px | Overlines, small labels |
+| `xs` | 11px | Overlines, small labels |
 | `sm` | 14px | Captions, small body |
 | `md` | 16px | Body text, inputs |
-| `lg` | 20px | H3 |
-| `xl` | 28px | H2 |
-| `xxl` | 42px | H1 |
-| `display` | 64px | Hero display |
+| `lg` | 22px | H3, section titles |
+| `xl` | 32px | H2 |
+| `xxl` | 48px | H1 |
+| `display` | 72px | Hero display |
 
 ### Line Heights
 
@@ -100,9 +120,9 @@
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `tight` | -0.02em | Display/large headlines |
+| `tight` | -0.03em | Display/large headlines |
 | `normal` | 0 | Default |
-| `wide` | 0.15em | Overlines, uppercase labels |
+| `wide` | 0.2em | Overlines, uppercase labels |
 
 ---
 
@@ -120,20 +140,6 @@ export const spacing = {
 }
 ```
 
-### Usage Examples
-
-```typescript
-// Component padding
-paddingHorizontal: spacing.md,  // 24px
-paddingVertical: spacing.sm,    // 16px
-
-// Gap between items
-gap: spacing.xs,  // 8px
-
-// Section margin
-marginBottom: spacing.lg,  // 32px
-```
-
 ---
 
 ## Border Radius
@@ -141,57 +147,98 @@ marginBottom: spacing.lg,  // 32px
 ```typescript
 export const radii = {
     sm: 8,      // Buttons, badges
-    md: 12,     // Inputs, small cards
-    lg: 20,     // Cards, panels
-    xl: 28,     // Large cards, modals
+    md: 14,     // Inputs, small cards
+    lg: 22,     // Cards, panels
+    xl: 30,     // Large cards, modals
     full: 9999, // Pills, avatars, circles
 }
-```
-
-### Usage Examples
-
-```typescript
-// Button
-borderRadius: radii.sm,  // 8px
-
-// Card
-borderRadius: radii.lg,  // 20px
-
-// Avatar/pill
-borderRadius: radii.full,  // Fully rounded
 ```
 
 ---
 
 ## Shadows
 
-### Light Mode
+Shadow color uses `#292521` (charcoal) with increasing opacity for depth.
 
 ```typescript
 shadows.light = {
     minimal: {
-        shadowColor: "#2C2925",
-        shadowOpacity: 0.04,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 1 },
+        shadowColor: "#292521",
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 2 },
         elevation: 1,
     },
     subtle: {
-        shadowColor: "#2C2925",
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 2 },
+        shadowColor: "#292521",
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 3 },
         elevation: 2,
     },
     card: {
-        shadowColor: "#2C2925",
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 3,
+        shadowColor: "#292521",
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 4,
     },
 }
 ```
+
+---
+
+## Glassmorphism
+
+The app uses a glassmorphism treatment for cards and overlays, achieved via `expo-blur` BlurView and translucent RGBA backgrounds.
+
+### Glass Style Tokens
+
+```typescript
+export const glassStyles = {
+    card: {
+        backgroundColor: "rgba(255, 255, 255, 0.45)",
+        borderWidth: 1,
+        borderColor: "rgba(255, 255, 255, 0.25)",
+        borderRadius: 22,
+        overflow: "hidden",
+    },
+    cardDark: {
+        backgroundColor: "rgba(41, 37, 33, 0.40)",
+        borderWidth: 1,
+        borderColor: "rgba(255, 255, 255, 0.12)",
+        borderRadius: 22,
+        overflow: "hidden",
+    },
+    blurIntensity: 40,
+    blurTint: "light",
+}
+```
+
+### GlassCard Component
+
+Reusable glass card wrapper at `mobile/src/components/GlassCard.tsx`:
+
+```typescript
+import { GlassCard } from "../components/GlassCard";
+
+// Light glass card (default — use over image backgrounds)
+<GlassCard>
+    <Text>Content</Text>
+</GlassCard>
+
+// Dark glass card
+<GlassCard dark>
+    <Text>Content</Text>
+</GlassCard>
+
+// Custom intensity and no padding
+<GlassCard intensity={60} noPadding>
+    <Text>Content</Text>
+</GlassCard>
+```
+
+**Performance note:** For cards on solid-color backgrounds, use the `glassWhite` / `glassBorder` rgba tokens directly (skip BlurView) for better Android performance.
 
 ---
 
@@ -200,9 +247,8 @@ shadows.light = {
 ### Import and Use
 
 ```typescript
-// File: mobile/src/components/MyComponent.tsx
 import { useColorScheme } from "react-native";
-import { getTheme, spacing, radii, typography } from "../theme";
+import { getTheme, spacing, radii, typography, glassStyles } from "../theme";
 
 const MyComponent = () => {
     const scheme = useColorScheme();
@@ -216,10 +262,10 @@ const MyComponent = () => {
         }}>
             <Text style={{
                 color: theme.colors.text,
-                fontFamily: typography.fonts.body,
-                fontSize: typography.sizes.md,
+                fontFamily: typography.fonts.headline,
+                fontSize: typography.sizes.lg,
             }}>
-                Hello World
+                Section Title
             </Text>
         </View>
     );
@@ -231,20 +277,21 @@ const MyComponent = () => {
 ```typescript
 const theme = getTheme("light");
 
-// Access colors
-theme.colors.bg           // "#FAF7F2"
-theme.colors.accent       // "#C17F61"
-theme.colors.text         // "#2C2925"
+// Colors
+theme.colors.bg              // "#F5EDE1"
+theme.colors.accent           // "#366299"
+theme.colors.text              // "#292521"
+theme.colors.glassWhite        // "rgba(255,255,255,0.55)"
 
-// Access spacing (also exported directly)
-theme.spacing.md          // 24
+// Glass styles
+theme.glass.card               // Glass card style object
+theme.glass.blurIntensity      // 40
 
-// Access radii (also exported directly)
-theme.radii.lg            // 20
-
-// Access typography (also exported directly)
-theme.typography.fonts.body       // "DMSans_400Regular"
-theme.typography.sizes.md         // 16
+// Spacing, radii, typography (also exported directly)
+theme.spacing.md               // 24
+theme.radii.lg                 // 22
+theme.typography.fonts.body    // "DMSans_400Regular"
+theme.typography.sizes.md      // 16
 ```
 
 ---
@@ -258,13 +305,18 @@ theme.typography.sizes.md         // 16
 - Use `spacing` constants for consistent gaps
 - Use `radii` for border radius values
 - Apply `typography.fonts` for font families
+- Use Fraunces for all headlines and section titles
+- Use DM Sans for all body text, labels, and UI
+- Use glass tokens for translucent card effects
+- Use pill-shaped buttons (`radii.full`) for primary CTAs
 
 ### DON'T
 
-- Hardcode colors: `color: "#C17F61"`
+- Hardcode colors: `color: "#366299"`
 - Use arbitrary spacing: `padding: 17`
 - Mix font families inconsistently
-- Ignore dark mode support
+- Use Inter or other fonts — only Fraunces and DM Sans
+- Use BlurView on solid backgrounds (use rgba tokens instead for performance)
 
 ### Examples
 
@@ -274,15 +326,15 @@ theme.typography.sizes.md         // 16
 <Text style={{ color: theme.colors.text }}>
 
 // DON'T
-<View style={{ backgroundColor: "#F5F1EA" }}>
-<Text style={{ color: "#2C2925" }}>
+<View style={{ backgroundColor: "#EDE4D6" }}>
+<Text style={{ color: "#292521" }}>
 ```
 
 ---
 
 ## Common Patterns
 
-### Card Style
+### Card Style (Solid)
 
 ```typescript
 const cardStyle = {
@@ -294,14 +346,26 @@ const cardStyle = {
 };
 ```
 
-### Button Primary
+### Card Style (Glass)
+
+```typescript
+const glassCardStyle = {
+    backgroundColor: theme.colors.glassWhite,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.glassBorder,
+};
+```
+
+### Primary Button (Pill)
 
 ```typescript
 const primaryButtonStyle = {
     backgroundColor: theme.colors.accent,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    borderRadius: radii.xl,
+    borderRadius: radii.full,
     alignItems: "center",
 };
 
@@ -312,16 +376,16 @@ const primaryButtonTextStyle = {
 };
 ```
 
-### Button Secondary
+### Secondary Button (Glass Border)
 
 ```typescript
 const secondaryButtonStyle = {
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.glassBorder,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    borderRadius: radii.xl,
+    borderRadius: radii.full,
 };
 
 const secondaryButtonTextStyle = {
@@ -331,22 +395,44 @@ const secondaryButtonTextStyle = {
 };
 ```
 
-### Category Badge
+### Category Badge (Semi-transparent)
 
 ```typescript
 const badgeStyle = {
-    backgroundColor: theme.colors.accent,
+    backgroundColor: "rgba(54, 98, 153, 0.15)",
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxs,
     borderRadius: radii.full,
 };
 
 const badgeTextStyle = {
-    color: "#FFFFFF",
+    color: theme.colors.accent,
     fontFamily: typography.fonts.bodySemibold,
     fontSize: typography.sizes.xs,
     textTransform: "uppercase",
 };
+```
+
+### Section Title (Editorial)
+
+```typescript
+const sectionTitleStyle = {
+    fontFamily: typography.fonts.headline,   // Fraunces_500Medium
+    fontSize: typography.sizes.lg,            // 22px
+    color: theme.colors.text,
+    letterSpacing: typography.letterSpacing.tight,
+};
+```
+
+### Gradient Overlay (over images)
+
+```typescript
+import { LinearGradient } from "expo-linear-gradient";
+
+<LinearGradient
+    colors={["transparent", "rgba(41, 37, 33, 0.7)"]}
+    style={StyleSheet.absoluteFill}
+/>
 ```
 
 ---

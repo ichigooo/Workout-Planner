@@ -196,7 +196,7 @@ export const ExerciseSlide: React.FC<ExerciseSlideProps> = ({
         : null;
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top + 48 }]}>
+        <View style={[styles.container, { paddingTop: insets.top + 56 }]}>
             {/* Image area */}
             {images.length > 0 ? (
                 <View style={[styles.imageContainer, { height: imageHeight }]}>
@@ -240,7 +240,7 @@ export const ExerciseSlide: React.FC<ExerciseSlideProps> = ({
             )}
 
             {/* Info area */}
-            <View style={styles.infoContainer}>
+            <View style={[styles.infoContainer, { paddingBottom: insets.bottom + spacing.lg }]}>
                 {/* Category badge */}
                 <View
                     style={[
@@ -359,13 +359,13 @@ export const ExerciseSlide: React.FC<ExerciseSlideProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#2C2925",
+        backgroundColor: "#292521",
     },
     imageContainer: {
-        backgroundColor: "#1A1A1A",
+        backgroundColor: "#1F1B17",
     },
     imagePlaceholder: {
-        backgroundColor: "#1A1A1A",
+        backgroundColor: "#1F1B17",
         justifyContent: "center",
         alignItems: "center",
     },
@@ -391,7 +391,6 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: spacing.md,
         paddingTop: spacing.md,
-        paddingBottom: spacing.lg,
     },
     categoryBadge: {
         alignSelf: "flex-start",
@@ -424,7 +423,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         alignSelf: "flex-start",
         gap: 6,
-        backgroundColor: "rgba(255,255,255,0.15)",
+        backgroundColor: "rgba(255,255,255,0.10)",
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 16,
@@ -441,7 +440,7 @@ const styles = StyleSheet.create({
         flexWrap: "wrap",
     },
     detailPill: {
-        backgroundColor: "rgba(255,255,255,0.15)",
+        backgroundColor: "rgba(255,255,255,0.10)",
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 16,

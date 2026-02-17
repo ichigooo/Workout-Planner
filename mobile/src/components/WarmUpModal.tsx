@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { getTheme, spacing, radii, typography } from "../theme";
+import { getTheme, spacing, radii, typography, hexToRgba } from "../theme";
 
 interface WarmUpModalProps {
     visible: boolean;
@@ -113,12 +113,12 @@ const WarmUpModal: React.FC<WarmUpModalProps> = ({ visible, onClose }) => {
 
     return (
         <Modal visible={visible} animationType="fade" transparent={true} onRequestClose={onClose}>
-            <Pressable style={styles.modalOverlay} onPress={onClose}>
+            <Pressable style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]} onPress={onClose}>
                 <Pressable
                     style={[
                         styles.modalContent,
                         {
-                            backgroundColor: theme.colors.bg,
+                            backgroundColor: hexToRgba(theme.colors.bg, 0.95),
                             paddingBottom: insets.bottom + spacing.md,
                         },
                     ]}
@@ -183,8 +183,8 @@ const WarmUpModal: React.FC<WarmUpModalProps> = ({ visible, onClose }) => {
                                 style={[
                                     styles.videoCard,
                                     {
-                                        backgroundColor: theme.colors.surface,
-                                        borderColor: theme.colors.border,
+                                        backgroundColor: theme.colors.glassWhite,
+                                        borderColor: theme.colors.glassBorder,
                                     },
                                 ]}
                                 onPress={() => handleVideoPress(video)}
@@ -265,7 +265,7 @@ const WarmUpModal: React.FC<WarmUpModalProps> = ({ visible, onClose }) => {
                 transparent={true}
                 onRequestClose={handleClosePreview}
             >
-                <Pressable style={styles.previewOverlay} onPress={handleClosePreview}>
+                <Pressable style={[styles.previewOverlay, { backgroundColor: theme.colors.overlay }]} onPress={handleClosePreview}>
                     <Pressable
                         style={[
                             styles.previewContent,
@@ -392,12 +392,12 @@ const WarmUpModal: React.FC<WarmUpModalProps> = ({ visible, onClose }) => {
 const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
         justifyContent: "flex-end",
     },
     modalContent: {
-        borderTopLeftRadius: radii.xl,
-        borderTopRightRadius: radii.xl,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
         paddingTop: spacing.sm,
         paddingHorizontal: spacing.md,
         maxHeight: "85%",
@@ -506,12 +506,12 @@ const styles = StyleSheet.create({
     // Preview Modal Styles
     previewOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.6)",
+        backgroundColor: "rgba(0, 0, 0, 0.65)",
         justifyContent: "flex-end",
     },
     previewContent: {
-        borderTopLeftRadius: radii.xl,
-        borderTopRightRadius: radii.xl,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
         paddingTop: spacing.sm,
         paddingHorizontal: spacing.md,
         shadowColor: "#000",

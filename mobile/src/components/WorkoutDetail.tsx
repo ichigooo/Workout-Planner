@@ -16,7 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Workout, CreateWorkoutRequest, PercentagePreset } from "../types";
 import { PRSection } from "./personal-records";
-import { getTheme } from "../theme";
+import { getTheme, typography, radii } from "../theme";
 import { apiService } from "../services/api";
 import { getCurrentPlanId, getCurrentUserId } from "../state/session";
 import { useAdminMode } from "../hooks/useAdminMode";
@@ -230,11 +230,11 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                         )}
 
                         <View style={styles.body}>
-                            <View style={styles.categoryPill}>
-                                <Text style={styles.categoryPillText}>{workout.category}</Text>
+                            <View style={[styles.categoryPill, { backgroundColor: theme.colors.accent + "20", borderColor: theme.colors.accent + "40" }]}>
+                                <Text style={[styles.categoryPillText, { color: theme.colors.accent }]}>{workout.category}</Text>
                             </View>
 
-                            <Text style={[styles.title, { color: theme.colors.text }]}>
+                            <Text style={[styles.title, { color: theme.colors.text, fontFamily: typography.fonts.headlineSemibold }]}>
                                 {workout.title}
                             </Text>
 
@@ -259,8 +259,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                 style={[
                                                     styles.detailPill,
                                                     {
-                                                        backgroundColor: theme.colors.surface,
-                                                        borderColor: theme.colors.border,
+                                                        backgroundColor: theme.colors.glassWhite,
+                                                        borderColor: theme.colors.glassBorder,
                                                     },
                                                 ]}
                                             >
@@ -285,8 +285,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                 style={[
                                                     styles.detailPill,
                                                     {
-                                                        backgroundColor: theme.colors.surface,
-                                                        borderColor: theme.colors.border,
+                                                        backgroundColor: theme.colors.glassWhite,
+                                                        borderColor: theme.colors.glassBorder,
                                                     },
                                                 ]}
                                             >
@@ -322,8 +322,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                 style={[
                                                     styles.detailPill,
                                                     {
-                                                        backgroundColor: theme.colors.surface,
-                                                        borderColor: theme.colors.border,
+                                                        backgroundColor: theme.colors.glassWhite,
+                                                        borderColor: theme.colors.glassBorder,
                                                     },
                                                 ]}
                                             >
@@ -348,8 +348,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                 style={[
                                                     styles.detailPill,
                                                     {
-                                                        backgroundColor: theme.colors.surface,
-                                                        borderColor: theme.colors.border,
+                                                        backgroundColor: theme.colors.glassWhite,
+                                                        borderColor: theme.colors.glassBorder,
                                                     },
                                                 ]}
                                             >
@@ -377,8 +377,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                 style={[
                                                     styles.detailPill,
                                                     {
-                                                        backgroundColor: theme.colors.surface,
-                                                        borderColor: theme.colors.border,
+                                                        backgroundColor: theme.colors.glassWhite,
+                                                        borderColor: theme.colors.glassBorder,
                                                     },
                                                 ]}
                                             >
@@ -403,8 +403,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                 style={[
                                                     styles.detailPill,
                                                     {
-                                                        backgroundColor: theme.colors.surface,
-                                                        borderColor: theme.colors.border,
+                                                        backgroundColor: theme.colors.glassWhite,
+                                                        borderColor: theme.colors.glassBorder,
                                                     },
                                                 ]}
                                             >
@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
     heroContainer: {
         width: "100%",
         position: "relative",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "transparent",
         marginBottom: 16,
     },
     heroImage: {
@@ -631,11 +631,9 @@ const styles = StyleSheet.create({
         width: "100%",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#1f2937",
     },
     heroPlaceholderText: {
-        color: "#9CA3AF",
-        fontSize: 14,
+        fontSize: typography.sizes.sm,
         textTransform: "uppercase",
         letterSpacing: 1,
     },
@@ -661,7 +659,7 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: "#111827",
+        backgroundColor: "rgba(41, 37, 33, 0.85)",
     },
     body: {
         paddingHorizontal: 20,
@@ -669,13 +667,12 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
     },
     title: {
-        fontSize: 26,
-        fontWeight: "700",
+        fontSize: typography.sizes.xl,
         marginBottom: 12,
     },
     category: {
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: typography.sizes.md,
+        fontFamily: typography.fonts.bodySemibold,
         textTransform: "uppercase",
         marginBottom: 20,
     },
@@ -683,28 +680,26 @@ const styles = StyleSheet.create({
         alignSelf: "flex-start",
         paddingHorizontal: 10,
         paddingVertical: 3,
-        borderRadius: 999,
-        borderWidth: StyleSheet.hairlineWidth,
-        backgroundColor: "transparent",
-        borderColor: "#D1D5DB",
+        borderRadius: radii.full,
+        borderWidth: 1,
         marginBottom: 10,
     },
     categoryPillText: {
-        fontSize: 12,
-        fontWeight: "500",
+        fontSize: typography.sizes.xs,
+        fontFamily: typography.fonts.bodyMedium,
         letterSpacing: 0.3,
-        color: "#4B5563",
     },
     section: {
         marginBottom: 24,
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: "600",
+        fontSize: typography.sizes.lg,
+        fontFamily: typography.fonts.headline,
         marginBottom: 12,
     },
     description: {
-        fontSize: 16,
+        fontSize: typography.sizes.md,
+        fontFamily: typography.fonts.body,
         lineHeight: 24,
     },
     detailsGrid: {
@@ -721,19 +716,19 @@ const styles = StyleSheet.create({
     detailPill: {
         paddingVertical: 10,
         paddingHorizontal: 14,
-        borderRadius: 12,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: radii.md,
+        borderWidth: 1,
         marginHorizontal: 6,
         marginBottom: 8,
     },
     detailPillLabel: {
-        fontSize: 12,
-        fontWeight: "500",
+        fontSize: typography.sizes.xs,
+        fontFamily: typography.fonts.bodyMedium,
         marginBottom: 2,
     },
     detailPillValue: {
-        fontSize: 14,
-        fontWeight: "600",
+        fontSize: typography.sizes.sm,
+        fontFamily: typography.fonts.bodySemibold,
     },
     personalRecordInput: {
         borderWidth: StyleSheet.hairlineWidth,
@@ -907,14 +902,14 @@ const styles = StyleSheet.create({
     // Menu styles
     menuOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
         justifyContent: "flex-start",
         alignItems: "flex-end",
         paddingTop: 60,
         paddingRight: 16,
     },
     menuContainer: {
-        borderRadius: 12,
+        borderRadius: radii.lg,
         borderWidth: 1,
         minWidth: 160,
         shadowColor: "#000",
@@ -929,8 +924,8 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
     },
     menuItemText: {
-        fontSize: 16,
-        fontWeight: "500",
+        fontSize: typography.sizes.md,
+        fontFamily: typography.fonts.bodyMedium,
     },
     // Modal styles
     modalContainer: {
@@ -1039,7 +1034,7 @@ const styles = StyleSheet.create({
     },
     addToPlanCTA: {
         paddingVertical: 12,
-        borderRadius: 12,
+        borderRadius: radii.full,
         alignItems: "center",
         justifyContent: "center",
         shadowColor: "#000",
@@ -1050,8 +1045,8 @@ const styles = StyleSheet.create({
     },
     addToPlanCTAText: {
         color: "#FFFFFF",
-        fontSize: 15,
-        fontWeight: "700",
+        fontSize: typography.sizes.md,
+        fontFamily: typography.fonts.bodySemibold,
         letterSpacing: 0.5,
     },
     presetToggleContainer: {

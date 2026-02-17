@@ -64,7 +64,7 @@ export const RestTimer: React.FC<RestTimerProps> = ({
 const styles = StyleSheet.create({
     overlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: "rgba(0,0,0,0.75)",
+        backgroundColor: "rgba(30,27,24,0.85)",
         justifyContent: "center",
         alignItems: "center",
     },

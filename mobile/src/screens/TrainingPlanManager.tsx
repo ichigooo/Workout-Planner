@@ -13,7 +13,7 @@ import {
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
-import { getTheme } from "../theme";
+import { getTheme, typography } from "../theme";
 import { apiService } from "../services/api";
 import { planItemsCache } from "../services/planItemsCache";
 import { Workout } from "../types";
@@ -373,7 +373,7 @@ export const TrainingPlanManager: React.FC = () => {
                 {/* Scheduled Workouts (next 5 days) wrapped in ScrollView so tab press can scroll to top */}
                 <ScrollView
                     ref={scrollRef}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12 }}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 100 }}
                 >
                     <View
                         style={{
@@ -383,7 +383,7 @@ export const TrainingPlanManager: React.FC = () => {
                             marginBottom: 8,
                         }}
                     >
-                        <Text style={{ fontSize: 18, fontWeight: "700", color: theme.colors.text }}>
+                        <Text style={{ fontSize: typography.sizes.lg, fontFamily: typography.fonts.headline, color: theme.colors.text }}>
                             Scheduled Workouts
                         </Text>
                         <TouchableOpacity
@@ -399,7 +399,7 @@ export const TrainingPlanManager: React.FC = () => {
                     </View>
                     {scheduledByDate.map((section) => (
                         <View key={section.date} style={{ marginBottom: 12 }}>
-                            <Text style={{ color: theme.colors.subtext, marginBottom: 8 }}>
+                            <Text style={{ color: theme.colors.textTertiary, marginBottom: 8, fontFamily: typography.fonts.bodyMedium }}>
                                 {section.label}
                             </Text>
                             {section.items.length > 0 ? (
@@ -409,8 +409,8 @@ export const TrainingPlanManager: React.FC = () => {
                                         style={[
                                             styles.scheduledCard,
                                             {
-                                                backgroundColor: theme.colors.surface,
-                                                borderColor: theme.colors.border,
+                                                backgroundColor: theme.colors.glassWhite,
+                                                borderColor: theme.colors.glassBorder,
                                             },
                                         ]}
                                         activeOpacity={0.8}
@@ -421,17 +421,17 @@ export const TrainingPlanManager: React.FC = () => {
                                         }
                                     >
                                         <Text
-                                            style={{ color: theme.colors.text, fontWeight: "600" }}
+                                            style={{ color: theme.colors.text, fontFamily: typography.fonts.bodySemibold }}
                                         >
                                             {it.workout.title}
                                         </Text>
-                                        <Text style={{ color: theme.colors.subtext, marginTop: 4 }}>
+                                        <Text style={{ color: theme.colors.textTertiary, marginTop: 4, fontFamily: typography.fonts.body }}>
                                             {it.workout.sets} sets × {it.workout.reps} reps •{" "}
                                             {it.workout.category}
                                         </Text>
                                         {it.intensity ? (
                                             <Text
-                                                style={{ color: theme.colors.accent, marginTop: 6 }}
+                                                style={{ color: theme.colors.accent, marginTop: 6, fontFamily: typography.fonts.bodyMedium }}
                                             >
                                                 {it.intensity}
                                             </Text>
@@ -439,7 +439,7 @@ export const TrainingPlanManager: React.FC = () => {
                                     </TouchableOpacity>
                                 ))
                             ) : (
-                                <Text style={{ color: theme.colors.subtext }}>
+                                <Text style={{ color: theme.colors.textTertiary, fontFamily: typography.fonts.body }}>
                                     No workouts scheduled
                                 </Text>
                             )}
@@ -501,13 +501,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
     },
-    headerTitle: { fontSize: 18, fontWeight: "700" },
-    browseButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
-    browseText: { fontSize: 14, fontWeight: "600" },
+    headerTitle: { fontSize: typography.sizes.lg, fontFamily: typography.fonts.headline },
+    browseButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 9999, borderWidth: 1 },
+    browseText: { fontSize: 14, fontFamily: typography.fonts.bodySemibold },
     fab: {
         position: "absolute",
         right: 20,
-        bottom: 24,
+        bottom: 96,
         width: 56,
         height: 56,
         borderRadius: 28,
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowRadius: 8,
     },
-    scheduledCard: { borderRadius: 12, borderWidth: 1, padding: 12, marginBottom: 8 },
+    scheduledCard: { borderRadius: 16, borderWidth: 1, padding: 12, marginBottom: 8 },
     calendarShortcut: { padding: 8, borderRadius: 8 },
 });
 

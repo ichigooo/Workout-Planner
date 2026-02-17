@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
-import { getTheme } from "@/src/theme";
+import { getTheme, typography } from "@/src/theme";
 import { apiService } from "@/src/services/api";
 import { getCurrentPlanId } from "@/src/state/session";
 import { PlanItem, Workout } from "@/src/types";
@@ -123,15 +123,15 @@ export default function CalendarScreen() {
                 >
                     <TouchableOpacity onPress={() => router.back()} style={{ width: 60 }}>
                         <Text
-                            style={{ fontSize: 16, fontWeight: "600", color: theme.colors.accent }}
+                            style={{ fontSize: 16, fontFamily: typography.fonts.bodySemibold, color: theme.colors.accent }}
                         >
                             ‹ Back
                         </Text>
                     </TouchableOpacity>
                     <Text
                         style={{
-                            fontSize: 18,
-                            fontWeight: "700",
+                            fontSize: typography.sizes.lg,
+                            fontFamily: typography.fonts.headline,
                             color: theme.colors.text,
                             flex: 1,
                             textAlign: "center",
@@ -144,10 +144,10 @@ export default function CalendarScreen() {
                 <ScrollView contentContainerStyle={{ padding: 16 }}>
                     <View
                         style={{
-                            backgroundColor: theme.colors.surface,
-                            borderColor: theme.colors.border,
+                            backgroundColor: theme.colors.glassWhite,
+                            borderColor: theme.colors.glassBorder,
                             borderWidth: 1,
-                            borderRadius: 16,
+                            borderRadius: 18,
                             padding: 8,
                             marginBottom: 16,
                         }}
@@ -157,25 +157,28 @@ export default function CalendarScreen() {
                             markedDates={getMarkedDates()}
                             markingType="custom"
                             style={{
-                                backgroundColor: theme.colors.surface,
+                                backgroundColor: "transparent",
                             }}
                             theme={{
-                                backgroundColor: theme.colors.surface,
-                                calendarBackground: theme.colors.surface,
+                                backgroundColor: "transparent",
+                                calendarBackground: "transparent",
                                 textSectionTitleColor: theme.colors.text,
-                                textSectionTitleDisabledColor: theme.colors.subtext,
+                                textSectionTitleDisabledColor: theme.colors.textTertiary,
                                 selectedDayBackgroundColor: theme.colors.accent,
                                 selectedDayTextColor: "#FFFFFF",
                                 todayTextColor: theme.colors.accent,
                                 dayTextColor: theme.colors.text,
-                                textDisabledColor: theme.colors.subtext,
+                                textDisabledColor: theme.colors.textTertiary,
                                 monthTextColor: theme.colors.text,
                                 textDayFontSize: 16,
-                                textDayFontWeight: "700",
+                                textDayFontWeight: "600",
+                                textDayFontFamily: typography.fonts.bodyMedium,
                                 textMonthFontSize: 20,
                                 textMonthFontWeight: "700",
+                                textMonthFontFamily: typography.fonts.headline,
                                 textDayHeaderFontSize: 14,
-                                textDayHeaderFontWeight: "700",
+                                textDayHeaderFontWeight: "600",
+                                textDayHeaderFontFamily: typography.fonts.bodyMedium,
                                 arrowColor: theme.colors.accent,
                                 disabledArrowColor: theme.colors.border,
                                 dotColor: theme.colors.accent,
@@ -187,7 +190,7 @@ export default function CalendarScreen() {
 
                     <View style={{ marginTop: 16 }}>
                         <Text
-                            style={{ color: theme.colors.text, fontWeight: "700", marginBottom: 8 }}
+                            style={{ color: theme.colors.text, fontFamily: typography.fonts.headline, fontSize: typography.sizes.lg, marginBottom: 8 }}
                         >
                             {selectedDate === localTodayStr
                                 ? "Today's Workouts"
@@ -199,11 +202,11 @@ export default function CalendarScreen() {
                                     key={s.id}
                                     activeOpacity={0.8}
                                     style={{
-                                        backgroundColor: theme.colors.surface,
-                                        borderColor: theme.colors.border,
+                                        backgroundColor: theme.colors.glassWhite,
+                                        borderColor: theme.colors.glassBorder,
                                         borderWidth: 1,
                                         padding: 12,
-                                        borderRadius: 12,
+                                        borderRadius: 16,
                                         marginBottom: 8,
                                     }}
                                     onPress={() =>
@@ -212,17 +215,17 @@ export default function CalendarScreen() {
                                         )
                                     }
                                 >
-                                    <Text style={{ color: theme.colors.text, fontWeight: "600" }}>
+                                    <Text style={{ color: theme.colors.text, fontFamily: typography.fonts.bodySemibold }}>
                                         {s.workout.title}
                                     </Text>
-                                    <Text style={{ color: theme.colors.subtext }}>
+                                    <Text style={{ color: theme.colors.textTertiary, fontFamily: typography.fonts.body }}>
                                         {s.workout.sets} sets × {s.workout.reps} reps •{" "}
                                         {s.workout.category}
                                     </Text>
                                 </TouchableOpacity>
                             ))
                         ) : (
-                            <Text style={{ color: theme.colors.subtext }}>
+                            <Text style={{ color: theme.colors.textTertiary, fontFamily: typography.fonts.body }}>
                                 No workouts scheduled.
                             </Text>
                         )}

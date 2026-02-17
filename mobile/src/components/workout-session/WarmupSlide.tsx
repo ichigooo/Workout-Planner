@@ -9,6 +9,7 @@ import {
     useColorScheme,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getTheme, spacing, radii, typography } from "../../theme";
 
 interface WarmupSlideProps {
@@ -52,6 +53,7 @@ const warmUpVideos: WarmUpVideo[] = [
 export const WarmupSlide: React.FC<WarmupSlideProps> = ({ onComplete }) => {
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
+    const insets = useSafeAreaInsets();
 
     const handleVideoPress = async (video: WarmUpVideo) => {
         try {
@@ -158,7 +160,7 @@ export const WarmupSlide: React.FC<WarmupSlideProps> = ({ onComplete }) => {
             <TouchableOpacity
                 style={[
                     styles.skipButton,
-                    { backgroundColor: theme.colors.accent },
+                    { backgroundColor: theme.colors.accent, marginBottom: insets.bottom + spacing.md },
                 ]}
                 onPress={onComplete}
                 activeOpacity={0.85}
@@ -175,7 +177,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         paddingHorizontal: spacing.md,
-        paddingTop: spacing.xl,
+        paddingTop: spacing.xl * 2,
     },
     header: {
         alignItems: "center",
@@ -230,7 +232,6 @@ const styles = StyleSheet.create({
         borderRadius: radii.lg,
         paddingVertical: spacing.sm,
         alignItems: "center",
-        marginBottom: spacing.md,
         minHeight: 48,
         justifyContent: "center",
     },

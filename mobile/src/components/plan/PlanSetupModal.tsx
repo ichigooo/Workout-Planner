@@ -12,7 +12,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColorScheme } from "react-native";
-import { getTheme } from "@/src/theme";
+import { getTheme, radii } from "@/src/theme";
 import type { WorkoutPlanTemplate, Workout } from "@/src/types";
 import {
     createUserPlanFromTemplate,
@@ -248,7 +248,7 @@ export const PlanSetupModal: React.FC<PlanSetupModalProps> = ({
     return (
         <Modal visible={visible} transparent animationType="slide" statusBarTranslucent>
             {/* Dim over existing bg image */}
-            <View style={styles.backdrop}>
+            <View style={[styles.backdrop, { backgroundColor: theme.colors.overlay }]}>
                 <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
                     {/* Bottom sheet card – fully opaque so nothing shows through */}
                     <View
@@ -600,7 +600,6 @@ export const PlanSetupModal: React.FC<PlanSetupModalProps> = ({
 const styles = StyleSheet.create({
     backdrop: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.45)", // dim only; sheet is solid
         justifyContent: "flex-end",
     },
     safeArea: {
@@ -610,8 +609,8 @@ const styles = StyleSheet.create({
     },
     sheet: {
         width: "100%",
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
+        borderTopLeftRadius: radii.xl,
+        borderTopRightRadius: radii.xl,
         paddingHorizontal: 20,
         paddingTop: 16,
         minHeight: "60%",

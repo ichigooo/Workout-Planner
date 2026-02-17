@@ -60,9 +60,11 @@ workout-planner/
 
 ## Design Philosophy
 
-Trainichi uses a **warm, earthy aesthetic** inspired by:
-- Natural materials (terracotta, sage, stone)
-- Fitness/climbing culture
+Trainichi uses a **moody editorial aesthetic** with warm, deep tones:
+- **Glassmorphism** — translucent cards and blur effects for depth
+- **Editorial typography** — bold Fraunces serif headlines, DM Sans body
+- **Warm stone palette** — rosewood accent, olive secondary, warm stone backgrounds
+- **Pill-shaped CTAs** and generous radii for a modern feel
 - High accessibility (contrast, readability)
 
 See [02-design-system.md](./02-design-system.md) for detailed design guidelines.

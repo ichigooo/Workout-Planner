@@ -206,8 +206,8 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
                                 {
                                     color:
                                         workoutType === WORKOUT_TYPES.CARDIO
-                                            ? "#FF6B35"
-                                            : "#007AFF",
+                                            ? "#C49560"
+                                            : "#366299",
                                 },
                             ]}
                         >

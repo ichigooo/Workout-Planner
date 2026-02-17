@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getTheme } from "../src/theme";
+import { getTheme, typography } from "../src/theme";
 import { apiService } from "../src/services/api";
 import { getCurrentUserId } from "../src/state/session";
 import { WorkoutPRSummary, CurrentPR } from "../src/types";
@@ -82,7 +82,7 @@ export default function MyPRsPage() {
                     <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
                         No Tracked Workouts
                     </Text>
-                    <Text style={[styles.emptyText, { color: theme.colors.subtext }]}>
+                    <Text style={[styles.emptyText, { color: theme.colors.textTertiary }]}>
                         Workouts with PR tracking enabled will appear here.
                     </Text>
                 </View>
@@ -102,8 +102,8 @@ export default function MyPRsPage() {
                                 style={[
                                     styles.workoutCard,
                                     {
-                                        backgroundColor: theme.colors.surface,
-                                        borderColor: theme.colors.border,
+                                        backgroundColor: theme.colors.glassWhite,
+                                        borderColor: theme.colors.glassBorder,
                                     },
                                 ]}
                                 onPress={() => handleWorkoutPress(item)}
@@ -122,7 +122,7 @@ export default function MyPRsPage() {
                                                 { backgroundColor: theme.colors.border },
                                             ]}
                                         >
-                                            <Text style={[styles.placeholderText, { color: theme.colors.subtext }]}>
+                                            <Text style={[styles.placeholderText, { color: theme.colors.textTertiary }]}>
                                                 {item.workout.title.charAt(0).toUpperCase()}
                                             </Text>
                                         </View>
@@ -135,7 +135,7 @@ export default function MyPRsPage() {
                                             {item.workout.title}
                                         </Text>
                                         <Text
-                                            style={[styles.workoutCategory, { color: theme.colors.subtext }]}
+                                            style={[styles.workoutCategory, { color: theme.colors.textTertiary }]}
                                         >
                                             {item.workout.category}
                                         </Text>
@@ -144,7 +144,7 @@ export default function MyPRsPage() {
 
                                 <View style={styles.prContainer}>
                                     <View style={styles.prItem}>
-                                        <Text style={[styles.prLabel, { color: theme.colors.subtext }]}>
+                                        <Text style={[styles.prLabel, { color: theme.colors.textTertiary }]}>
                                             1RM
                                         </Text>
                                         <Text style={[styles.prValue, { color: theme.colors.text }]}>
@@ -155,7 +155,7 @@ export default function MyPRsPage() {
                                         style={[styles.prDivider, { backgroundColor: theme.colors.border }]}
                                     />
                                     <View style={styles.prItem}>
-                                        <Text style={[styles.prLabel, { color: theme.colors.subtext }]}>
+                                        <Text style={[styles.prLabel, { color: theme.colors.textTertiary }]}>
                                             6RM
                                         </Text>
                                         <Text style={[styles.prValue, { color: theme.colors.text }]}>
@@ -165,7 +165,7 @@ export default function MyPRsPage() {
                                 </View>
 
                                 <View style={styles.chevron}>
-                                    <Text style={[styles.chevronText, { color: theme.colors.subtext }]}>
+                                    <Text style={[styles.chevronText, { color: theme.colors.textTertiary }]}>
                                         →
                                     </Text>
                                 </View>
@@ -198,13 +198,12 @@ const styles = StyleSheet.create({
     },
     backButtonText: {
         fontSize: 24,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
     },
     headerTitle: {
         flex: 1,
-        fontSize: 20,
-        fontWeight: "700",
-        fontFamily: "Fraunces_700Bold",
+        fontSize: typography.sizes.lg,
+        fontFamily: typography.fonts.headline,
         textAlign: "center",
     },
     headerSpacer: {
@@ -223,11 +222,12 @@ const styles = StyleSheet.create({
     },
     emptyTitle: {
         fontSize: 18,
-        fontWeight: "600",
+        fontFamily: typography.fonts.headline,
         marginBottom: 8,
     },
     emptyText: {
         fontSize: 14,
+        fontFamily: typography.fonts.body,
         textAlign: "center",
     },
     content: {
@@ -237,8 +237,8 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     workoutCard: {
-        borderRadius: 16,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: 18,
+        borderWidth: 1,
         padding: 16,
         marginBottom: 12,
     },
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     },
     placeholderText: {
         fontSize: 18,
-        fontWeight: "600",
+        fontFamily: typography.fonts.headline,
     },
     workoutDetails: {
         flex: 1,
@@ -269,10 +269,11 @@ const styles = StyleSheet.create({
     },
     workoutTitle: {
         fontSize: 16,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
     },
     workoutCategory: {
         fontSize: 13,
+        fontFamily: typography.fonts.body,
         marginTop: 2,
     },
     prContainer: {
@@ -285,13 +286,12 @@ const styles = StyleSheet.create({
     },
     prLabel: {
         fontSize: 12,
-        fontWeight: "500",
+        fontFamily: typography.fonts.bodyMedium,
         marginBottom: 4,
     },
     prValue: {
         fontSize: 18,
-        fontWeight: "700",
-        fontFamily: "Fraunces_700Bold",
+        fontFamily: typography.fonts.headlineSemibold,
     },
     prDivider: {
         width: 1,

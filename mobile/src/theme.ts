@@ -10,80 +10,90 @@ export const spacing = {
 
 export const radii = {
     sm: 8, // Buttons, badges
-    md: 12, // Inputs, small cards
-    lg: 20, // Cards, panels
-    xl: 28, // Large cards, modals
+    md: 14, // Inputs, small cards
+    lg: 22, // Cards, panels
+    xl: 30, // Large cards, modals
     full: 9999, // Pills, avatars, fully rounded
 } as const;
 
 export const palettes = {
     light: {
-        // Trainichi Warm Earthy Design System
-        // Warm Neutrals
-        bg: "#FAF7F2", // Cream - primary background
-        surface: "#F5F1EA", // Warm white - cards and elevated surfaces
-        surfaceElevated: "#FFFFFF", // Pure white for highest elevation
-        border: "#E8E2D9", // Sand - subtle borders
-        divider: "#D4CCC0", // Stone - dividers
+        // Trainichi Brand Palette
+        // Cream Backgrounds
+        bg: "#F5EDE1", // Cream - primary background
+        surface: "#EDE4D6", // Warm sand - cards and elevated surfaces
+        surfaceElevated: "#FAF5EC", // Soft elevated panels
+        border: "#D6CEBF", // Warm taupe - subtle borders
+        divider: "#C9BFAE", // Deeper stone - dividers
 
         // Text Hierarchy
-        text: "#2C2925", // Espresso - primary text
-        textSecondary: "#3D3A36", // Charcoal - secondary text
-        textTertiary: "#9C948A", // Warm gray - hints and placeholders
+        text: "#292521", // Charcoal - primary text
+        textSecondary: "#45413D", // Deep charcoal - secondary text
+        textTertiary: "#8A7F72", // Warm taupe - hints and placeholders
 
-        // Earthy Accents
-        accent: "#C17F61", // Terracotta - primary accent
-        accentHover: "#D4A088", // Terracotta light - hover state
-        accentPressed: "#A86D52", // Terracotta dark - pressed state
+        // Primary Accent - Blue Regatta
+        accent: "#366299", // Blue Regatta - primary accent
+        accentHover: "#5E82AD", // Blue Regatta light - hover state
+        accentPressed: "#2B4E7A", // Blue Regatta dark - pressed state
 
-        // Secondary Accent
-        sage: "#8B9A7E", // Sage - secondary accent
-        sageLight: "#A8B59D", // Sage light
-        moss: "#6B7B5E", // Moss - deep sage
+        // Secondary Accent - Olive
+        sage: "#6B7B5A", // Olive sage - secondary accent
+        sageLight: "#8A9A76", // Light olive
+        moss: "#515F42", // Deep moss
 
         // Warm Tones
-        clay: "#B8977A", // Clay - warm accent
-        stone: "#D4CCC0", // Stone
-        sand: "#E8E2D9", // Sand
+        clay: "#A68568", // Deep clay - warm accent
+        stone: "#C4BAA9", // Stone
+        sand: "#D1C9BC", // Sand
 
         // Semantic
-        success: "#7A9B6F", // Success green
-        warning: "#D4A574", // Warning
-        danger: "#C4776A", // Error
+        success: "#6B8A5F", // Muted success green
+        warning: "#C49560", // Warm amber
+        danger: "#B06A5E", // Muted rose
+        error: "#B06A5E", // Alias for danger
+
+        // Modal overlay
+        overlay: "rgba(0, 0, 0, 0.6)",
+
+        // Glass tokens (for glassmorphism effects)
+        glassWhite: "rgba(255, 255, 255, 0.55)",
+        glassBorder: "rgba(255, 255, 255, 0.25)",
+        glassOverlay: "rgba(41, 37, 33, 0.35)",
 
         // Legacy mappings (for backward compatibility)
-        iconBg: "#C17F61",
-        greeting: "#F5F1EA",
-        subtext: "#9C948A",
-        mutedAccent: "#B8977A",
-        cream: "#FAF7F2",
-        mutedPink: "#D4A088",
-        lightBlue: "#A8B59D",
-        warmGrey: "#9C948A",
-        charcoal: "#3D3A36",
+        iconBg: "#366299",
+        greeting: "#EDE4D6",
+        subtext: "#8A7F72",
+        mutedAccent: "#A68568",
+        cream: "#F5EDE1",
+        mutedPink: "#5E82AD",
+        lightBlue: "#8A9A76",
+        warmGrey: "#8A7F72",
+        charcoal: "#45413D",
     },
     dark: {
-        // Dark mode with sophisticated tones
-        bg: "#1A1A1A", // Deep charcoal background
-        surface: "#2C2C2C", // Dark grey surface
-        border: "#404040", // Subtle dark border
-        text: "#F5F5F5", // Light text
-        subtext: "#B0B0B0", // Muted light grey
-        accent: "#6B7F5F", // Lighter sage green
-        mutedAccent: "#9FB0C0", // Lighter blue-grey
-        divider: "#333333", // Dark divider
+        // Dark mode with brand palette
+        bg: "#292521", // Charcoal background
+        surface: "#393531", // Elevated surface
+        border: "#4A4540", // Subtle warm border
+        text: "#F5EDE1", // Cream text
+        subtext: "#B5ADA1", // Muted warm grey
+        accent: "#5A8CC4", // Light Blue Regatta
+        mutedAccent: "#7BA3CB", // Muted blue
+        divider: "#3D3935", // Warm dark divider
         danger: "#D67A7A", // Lighter muted red
-        // Additional sophisticated colors (adjusted for dark mode)
+        error: "#D67A7A", // Alias for danger
+        // Additional colors (adjusted for dark mode)
         sage: "#6B7F5F",
-        cream: "#3A3A3A",
-        mutedPink: "#4A3A3A",
-        lightBlue: "#9FB0C0",
-        warmGrey: "#A0A0A0",
-        charcoal: "#E0E0E0",
+        cream: "#3D3935",
+        mutedPink: "#3A4A5A",
+        lightBlue: "#7BA3CB",
+        warmGrey: "#A8A098",
+        charcoal: "#E8E2D8",
     },
 } as const;
 
-// Typography system (Trainichi Warm Earthy)
+// Typography system (Trainichi Moody Editorial)
 export const typography = {
     fonts: {
         // Fraunces for headlines - elegant serif with warmth
@@ -99,13 +109,13 @@ export const typography = {
         bodyBold: "DMSans_700Bold", // Strong emphasis
     },
     sizes: {
-        xs: 12, // Overlines, small labels
+        xs: 11, // Overlines, small labels
         sm: 14, // Captions, small body
         md: 16, // Body text, inputs
-        lg: 20, // H3
-        xl: 28, // H2
-        xxl: 42, // H1
-        display: 64, // Hero display
+        lg: 22, // H3
+        xl: 32, // H2
+        xxl: 48, // H1
+        display: 72, // Hero display
     },
     lineHeights: {
         tight: 1.15, // For headlines
@@ -113,35 +123,34 @@ export const typography = {
         relaxed: 1.7, // For long-form content
     },
     letterSpacing: {
-        tight: -0.02, // For display/large headlines
+        tight: -0.03, // For display/large headlines
         normal: 0, // Default
-        wide: 0.15, // For overlines/uppercase labels
+        wide: 0.2, // For overlines/uppercase labels
     },
 } as const;
 
 export const shadows = {
     light: {
-        // Very subtle, organic shadows
         minimal: {
-            shadowColor: "#2C2925",
-            shadowOpacity: 0.04,
-            shadowRadius: 4,
-            shadowOffset: { width: 0, height: 1 },
+            shadowColor: "#292521",
+            shadowOpacity: 0.05,
+            shadowRadius: 6,
+            shadowOffset: { width: 0, height: 2 },
             elevation: 1,
         },
         subtle: {
-            shadowColor: "#2C2925",
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 2 },
+            shadowColor: "#292521",
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 3 },
             elevation: 2,
         },
         card: {
-            shadowColor: "#2C2925",
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 3,
+            shadowColor: "#292521",
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: 6 },
+            elevation: 4,
         },
     },
     dark: {
@@ -169,6 +178,34 @@ export const shadows = {
     },
 } as const;
 
+// Utility to derive rgba from palette hex values
+export function hexToRgba(hex: string, alpha: number): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Glassmorphism utilities
+export const glassStyles = {
+    card: {
+        backgroundColor: "rgba(255, 255, 255, 0.45)" as const,
+        borderWidth: 1,
+        borderColor: "rgba(255, 255, 255, 0.25)" as const,
+        borderRadius: 22,
+        overflow: "hidden" as const,
+    },
+    cardDark: {
+        backgroundColor: "rgba(41, 37, 33, 0.40)" as const,
+        borderWidth: 1,
+        borderColor: "rgba(255, 255, 255, 0.12)" as const,
+        borderRadius: 22,
+        overflow: "hidden" as const,
+    },
+    blurIntensity: 40,
+    blurTint: "light" as const,
+} as const;
+
 export type ThemeMode = "light" | "dark";
 
 export const getTheme = (_mode: ThemeMode) => ({
@@ -177,4 +214,5 @@ export const getTheme = (_mode: ThemeMode) => ({
     typography,
     colors: palettes.light,
     shadows: shadows.light,
+    glass: glassStyles,
 });

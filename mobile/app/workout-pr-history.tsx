@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LineChart } from "react-native-chart-kit";
-import { getTheme } from "../src/theme";
+import { getTheme, typography } from "../src/theme";
 import { apiService } from "../src/services/api";
 import { getCurrentUserId } from "../src/state/session";
 import { PersonalRecordEntry, CurrentPR } from "../src/types";
@@ -117,7 +117,7 @@ export default function WorkoutPRHistory() {
                     <Text style={[styles.headerTitle, { color: theme.colors.text }]} numberOfLines={1}>
                         {workoutTitle || "PR History"}
                     </Text>
-                    <Text style={[styles.headerSubtitle, { color: theme.colors.subtext }]}>
+                    <Text style={[styles.headerSubtitle, { color: theme.colors.textTertiary }]}>
                         Progress History
                     </Text>
                 </View>
@@ -130,7 +130,7 @@ export default function WorkoutPRHistory() {
                 </View>
             ) : entries.length === 0 ? (
                 <View style={styles.emptyContainer}>
-                    <Text style={[styles.emptyText, { color: theme.colors.subtext }]}>
+                    <Text style={[styles.emptyText, { color: theme.colors.textTertiary }]}>
                         No records yet. Start logging your PRs!
                     </Text>
                 </View>
@@ -152,8 +152,10 @@ export default function WorkoutPRHistory() {
                                         backgroundColor:
                                             selectedReps === reps
                                                 ? theme.colors.accent
-                                                : theme.colors.surface,
-                                        borderColor: theme.colors.border,
+                                                : theme.colors.glassWhite,
+                                        borderColor: selectedReps === reps
+                                            ? theme.colors.accent
+                                            : theme.colors.glassBorder,
                                     },
                                 ]}
                                 onPress={() => setSelectedReps(reps)}
@@ -179,18 +181,18 @@ export default function WorkoutPRHistory() {
                             style={[
                                 styles.currentBestCard,
                                 {
-                                    backgroundColor: theme.colors.surface,
-                                    borderColor: theme.colors.border,
+                                    backgroundColor: theme.colors.glassWhite,
+                                    borderColor: theme.colors.glassBorder,
                                 },
                             ]}
                         >
-                            <Text style={[styles.currentBestLabel, { color: theme.colors.subtext }]}>
+                            <Text style={[styles.currentBestLabel, { color: theme.colors.textTertiary }]}>
                                 Current Best ({formatRepLabel(selectedReps)})
                             </Text>
                             <Text style={[styles.currentBestValue, { color: theme.colors.text }]}>
                                 {currentBest.weight} lbs
                             </Text>
-                            <Text style={[styles.currentBestDate, { color: theme.colors.subtext }]}>
+                            <Text style={[styles.currentBestDate, { color: theme.colors.textTertiary }]}>
                                 Achieved {formatFullDate(currentBest.dateAchieved)}
                             </Text>
                         </View>
@@ -212,7 +214,7 @@ export default function WorkoutPRHistory() {
                                     backgroundGradientTo: theme.colors.surface,
                                     decimalPlaces: 0,
                                     color: () => theme.colors.accent,
-                                    labelColor: () => theme.colors.subtext,
+                                    labelColor: () => theme.colors.textTertiary,
                                     style: {
                                         borderRadius: 12,
                                     },
@@ -244,11 +246,11 @@ export default function WorkoutPRHistory() {
                                         style={[
                                             styles.historyItem,
                                             {
-                                                backgroundColor: theme.colors.surface,
+                                                backgroundColor: theme.colors.glassWhite,
                                                 borderColor: isBest
                                                     ? theme.colors.accent
-                                                    : theme.colors.border,
-                                                borderWidth: isBest ? 2 : StyleSheet.hairlineWidth,
+                                                    : theme.colors.glassBorder,
+                                                borderWidth: isBest ? 2 : 1,
                                             },
                                         ]}
                                     >
@@ -264,7 +266,7 @@ export default function WorkoutPRHistory() {
                                             <Text
                                                 style={[
                                                     styles.historyDate,
-                                                    { color: theme.colors.subtext },
+                                                    { color: theme.colors.textTertiary },
                                                 ]}
                                             >
                                                 {formatFullDate(entry.dateAchieved)}
@@ -317,7 +319,7 @@ const styles = StyleSheet.create({
     },
     backButtonText: {
         fontSize: 24,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
     },
     headerTitleContainer: {
         flex: 1,
@@ -325,11 +327,11 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 18,
-        fontWeight: "700",
-        fontFamily: "Fraunces_700Bold",
+        fontFamily: typography.fonts.headline,
     },
     headerSubtitle: {
         fontSize: 12,
+        fontFamily: typography.fonts.body,
         marginTop: 2,
     },
     headerSpacer: {
@@ -363,29 +365,28 @@ const styles = StyleSheet.create({
     tab: {
         paddingVertical: 10,
         paddingHorizontal: 20,
-        borderRadius: 20,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: 9999,
+        borderWidth: 1,
         marginRight: 10,
     },
     tabText: {
         fontSize: 14,
-        fontWeight: "600",
+        fontFamily: typography.fonts.bodySemibold,
     },
     currentBestCard: {
         margin: 20,
         padding: 20,
-        borderRadius: 16,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: 18,
+        borderWidth: 1,
         alignItems: "center",
     },
     currentBestLabel: {
         fontSize: 14,
-        fontWeight: "500",
+        fontFamily: typography.fonts.bodyMedium,
     },
     currentBestValue: {
         fontSize: 36,
-        fontWeight: "800",
-        fontFamily: "Fraunces_700Bold",
+        fontFamily: typography.fonts.headlineSemibold,
         marginVertical: 8,
     },
     currentBestDate: {
@@ -397,18 +398,18 @@ const styles = StyleSheet.create({
     },
     chartTitle: {
         fontSize: 16,
-        fontWeight: "600",
+        fontFamily: typography.fonts.headline,
         marginBottom: 12,
     },
     chart: {
-        borderRadius: 12,
+        borderRadius: 16,
     },
     historySection: {
         paddingHorizontal: 20,
     },
     historyTitle: {
         fontSize: 16,
-        fontWeight: "600",
+        fontFamily: typography.fonts.headline,
         marginBottom: 12,
     },
     historyItem: {
@@ -416,13 +417,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 16,
         marginBottom: 10,
     },
     historyItemLeft: {},
     historyWeight: {
         fontSize: 18,
-        fontWeight: "700",
+        fontFamily: typography.fonts.headlineSemibold,
     },
     historyDate: {
         fontSize: 13,
@@ -435,6 +436,6 @@ const styles = StyleSheet.create({
     },
     prBadgeText: {
         fontSize: 12,
-        fontWeight: "700",
+        fontFamily: typography.fonts.bodyBold,
     },
 });

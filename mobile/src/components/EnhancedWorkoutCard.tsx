@@ -71,8 +71,8 @@ export const EnhancedWorkoutCard: React.FC<EnhancedWorkoutCardProps> = ({
             style={[
                 styles.card,
                 {
-                    backgroundColor: theme.colors.surface,
-                    borderColor: theme.colors.border,
+                    backgroundColor: theme.colors.glassWhite,
+                    borderColor: theme.colors.glassBorder,
                     ...theme.shadows.card,
                 },
             ]}
@@ -86,7 +86,9 @@ export const EnhancedWorkoutCard: React.FC<EnhancedWorkoutCardProps> = ({
                         style={[
                             styles.categoryBadge,
                             {
-                                backgroundColor: theme.colors.accent,
+                                backgroundColor: theme.colors.accent + "20",
+                                borderWidth: 1,
+                                borderColor: theme.colors.accent + "40",
                                 borderRadius: radii.full,
                             },
                         ]}
@@ -95,7 +97,7 @@ export const EnhancedWorkoutCard: React.FC<EnhancedWorkoutCardProps> = ({
                             style={[
                                 styles.categoryText,
                                 {
-                                    color: "#FFFFFF",
+                                    color: theme.colors.accent,
                                     fontFamily: typography.fonts.bodySemibold,
                                     fontSize: typography.sizes.xs,
                                 },
@@ -316,8 +318,9 @@ const styles = StyleSheet.create({
     title: {
         flex: 1,
         fontSize: 18,
-        fontWeight: "700",
-        letterSpacing: 0.2,
+        fontFamily: "Fraunces_500Medium",
+        fontWeight: "500",
+        letterSpacing: -0.2,
         lineHeight: 24,
     },
     equipmentIcon: {
@@ -356,7 +359,7 @@ const styles = StyleSheet.create({
         marginTop: spacing.xs,
         paddingTop: spacing.sm,
         borderTopWidth: 1,
-        borderTopColor: "#E8E2D9", // Sand border
+        borderTopColor: "rgba(209, 201, 188, 0.5)",
     },
     actionButton: {
         flex: 1,

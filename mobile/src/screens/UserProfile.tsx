@@ -23,7 +23,7 @@ import { imageAssetToDataUrl } from "../utils/image";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { User, UpdateUserProfileRequest } from "../types";
 import { apiService } from "../services/api";
-import { getTheme } from "../theme";
+import { getTheme, typography, radii } from "../theme";
 import { supabase } from "../lib/supabase";
 import { clearCurrentUserId, setCurrentPlanId } from "../state/session";
 import { useAdminMode } from "../hooks/useAdminMode";
@@ -288,8 +288,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                                     style={[
                                         styles.textInput,
                                         {
-                                            backgroundColor: theme.colors.bg,
-                                            borderColor: theme.colors.border,
+                                            backgroundColor: theme.colors.glassWhite,
+                                            borderColor: theme.colors.glassBorder,
                                             color: theme.colors.text,
                                         },
                                     ]}
@@ -309,8 +309,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                                     style={[
                                         styles.textInput,
                                         {
-                                            backgroundColor: theme.colors.bg,
-                                            borderColor: theme.colors.border,
+                                            backgroundColor: theme.colors.glassWhite,
+                                            borderColor: theme.colors.glassBorder,
                                             color: theme.colors.text,
                                         },
                                     ]}
@@ -332,8 +332,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                                     style={[
                                         styles.dateButton,
                                         {
-                                            backgroundColor: theme.colors.bg,
-                                            borderColor: theme.colors.border,
+                                            backgroundColor: theme.colors.glassWhite,
+                                            borderColor: theme.colors.glassBorder,
                                         },
                                     ]}
                                     onPress={() => setShowDatePicker(true)}
@@ -365,8 +365,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                             style={[
                                 styles.prLinkButton,
                                 {
-                                    backgroundColor: theme.colors.surface,
-                                    borderColor: theme.colors.border,
+                                    backgroundColor: theme.colors.glassWhite,
+                                    borderColor: theme.colors.glassBorder,
                                 },
                             ]}
                             onPress={() => router.push("/my-prs")}
@@ -388,8 +388,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                                 style={[
                                     styles.adminToggleRow,
                                     {
-                                        backgroundColor: theme.colors.surface,
-                                        borderColor: theme.colors.border,
+                                        backgroundColor: theme.colors.glassWhite,
+                                        borderColor: theme.colors.glassBorder,
                                     },
                                 ]}
                             >
@@ -489,7 +489,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                                     </Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={styles.logoutConfirmButton}
+                                    style={[styles.logoutConfirmButton, { backgroundColor: theme.colors.danger }]}
                                     onPress={performLogout}
                                 >
                                     <Text style={styles.logoutConfirmText}>Log Out</Text>
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
         marginBottom: 20,
         padding: 16,
-        borderRadius: 12,
+        borderRadius: radii.lg,
         borderWidth: 1,
     },
     adminToggleContent: {
@@ -529,11 +529,11 @@ const styles = StyleSheet.create({
     },
     adminToggleText: {
         fontSize: 16,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: typography.fonts.bodySemibold,
     },
     adminToggleSubtext: {
         fontSize: 13,
-        fontFamily: "Inter_400Regular",
+        fontFamily: typography.fonts.body,
         marginTop: 4,
     },
     scrollView: {
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
         marginTop: 50,
         fontSize: 16,
-        fontFamily: "Inter_400Regular",
+        fontFamily: typography.fonts.body,
     },
     photoSection: {
         alignItems: "center",
@@ -571,25 +571,25 @@ const styles = StyleSheet.create({
     },
     placeholderText: {
         fontSize: 14,
-        fontFamily: "Inter_500Medium",
+        fontFamily: typography.fonts.bodyMedium,
     },
     changePhotoButton: {
         paddingHorizontal: 20,
         paddingVertical: 10,
-        borderRadius: 8,
+        borderRadius: radii.full,
     },
     changePhotoText: {
         color: "white",
         fontSize: 14,
-        fontFamily: "Inter_500Medium",
+        fontFamily: typography.fonts.bodyMedium,
     },
     formSection: {
         padding: 24,
         marginBottom: 16,
     },
     sectionTitle: {
-        fontSize: 20,
-        fontFamily: "Inter_600SemiBold",
+        fontSize: typography.sizes.lg,
+        fontFamily: typography.fonts.headline,
         marginBottom: 20,
         textAlign: "center",
         letterSpacing: -0.3,
@@ -599,27 +599,27 @@ const styles = StyleSheet.create({
     },
     fieldLabel: {
         fontSize: 14,
-        fontFamily: "Inter_500Medium",
+        fontFamily: typography.fonts.bodyMedium,
         marginBottom: 8,
         letterSpacing: -0.2,
     },
     textInput: {
         borderWidth: 1,
-        borderRadius: 8,
+        borderRadius: radii.md,
         paddingHorizontal: 16,
         paddingVertical: 12,
-        fontSize: 16,
-        fontFamily: "Inter_400Regular",
+        fontSize: typography.sizes.md,
+        fontFamily: typography.fonts.body,
     },
     dateButton: {
         borderWidth: 1,
-        borderRadius: 8,
+        borderRadius: radii.md,
         paddingHorizontal: 16,
         paddingVertical: 12,
     },
     dateButtonText: {
         fontSize: 16,
-        fontFamily: "Inter_400Regular",
+        fontFamily: typography.fonts.body,
     },
     logoutButton: {
         marginTop: 16,
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
     },
     logoutButtonText: {
         fontSize: 15,
-        fontFamily: "Inter_500Medium",
+        fontFamily: typography.fonts.bodyMedium,
     },
     saveButton: {
         marginHorizontal: 16,
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
     },
     saveButtonText: {
         fontSize: 15,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: typography.fonts.bodySemibold,
         color: "#FFFFFF",
     },
     logoutIcon: {
@@ -660,25 +660,25 @@ const styles = StyleSheet.create({
     },
     logoutOverlayBackdrop: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: "rgba(0,0,0,0.35)",
+        backgroundColor: "rgba(0,0,0,0.6)",
     },
     logoutSheet: {
         paddingHorizontal: 20,
         paddingTop: 20,
         paddingBottom: 28,
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        borderTopLeftRadius: radii.xl,
+        borderTopRightRadius: radii.xl,
         borderWidth: 1,
-        borderColor: "rgba(148, 163, 184, 0.35)",
+        borderColor: "rgba(255, 255, 255, 0.25)",
     },
     logoutTitle: {
-        fontSize: 18,
-        fontFamily: "Inter_600SemiBold",
+        fontSize: typography.sizes.lg,
+        fontFamily: typography.fonts.headline,
         marginBottom: 8,
     },
     logoutMessage: {
         fontSize: 14,
-        fontFamily: "Inter_400Regular",
+        fontFamily: typography.fonts.body,
         lineHeight: 20,
         marginBottom: 20,
     },
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
     },
     logoutCancelButton: {
         flex: 1,
-        borderRadius: 10,
+        borderRadius: radii.md,
         borderWidth: 1,
         paddingVertical: 12,
         alignItems: "center",
@@ -697,19 +697,18 @@ const styles = StyleSheet.create({
     },
     logoutCancelText: {
         fontSize: 15,
-        fontFamily: "Inter_500Medium",
+        fontFamily: typography.fonts.bodyMedium,
     },
     logoutConfirmButton: {
         flex: 1,
-        borderRadius: 10,
+        borderRadius: radii.md,
         paddingVertical: 12,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#EF4444",
     },
     logoutConfirmText: {
         fontSize: 15,
-        fontFamily: "Inter_500Medium",
+        fontFamily: typography.fonts.bodyMedium,
         color: "#FFFFFF",
     },
     prLinkButton: {
@@ -719,7 +718,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
         marginBottom: 20,
         padding: 16,
-        borderRadius: 12,
+        borderRadius: radii.lg,
         borderWidth: 1,
     },
     prLinkContent: {
@@ -727,11 +726,11 @@ const styles = StyleSheet.create({
     },
     prLinkText: {
         fontSize: 16,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: typography.fonts.bodySemibold,
     },
     prLinkSubtext: {
         fontSize: 13,
-        fontFamily: "Inter_400Regular",
+        fontFamily: typography.fonts.body,
         marginTop: 4,
     },
     prLinkArrow: {

@@ -13,8 +13,9 @@ import {
     RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useScrollToTopOnTabPress } from "../hooks/useScrollToTopOnTabPress";
-import { getTheme } from "../theme";
+import { getTheme, typography } from "../theme";
 import { apiService } from "../services/api";
 import { useAuth } from "../state/AuthContext";
 import { planItemsCache } from "../services/planItemsCache";
@@ -24,6 +25,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import WarmUpModal from "../components/WarmUpModal";
+import PresetWorkoutSheet from "../components/PresetWorkoutSheet";
 
 interface HomeProps {
     onOpenCalendar: () => void;
@@ -84,6 +86,38 @@ const getEquipmentIconForTitle = (title: string): ImageSourcePropType | null => 
     return null;
 };
 
+const PRESET_WORKOUTS = [
+    {
+        name: "Upper Body Push Day",
+        icon: "arrow-up-circle-outline" as const,
+        workoutIds: [
+            "51cc545b-c511-489f-ba57-8855d140f314",
+            "e8b68612-c10a-420f-a262-a4eb540387a2",
+            "e0dca867-3c93-4411-972e-ec65507b0244",
+        ],
+    },
+    {
+        name: "Leg & Core Day",
+        icon: "fitness-outline" as const,
+        workoutIds: [
+            "baa54dba-8c0a-4e30-a1b1-83c49146f08d",
+            "4261b5cb-913d-4b41-8a4c-425e26617eac",
+            "43979fd8-b479-4463-a70a-7656498aa21f",
+            "dc10b789-3a07-4b68-bcb3-5df4161651b5",
+        ],
+    },
+    {
+        name: "Upper Body Pull Day",
+        icon: "arrow-down-circle-outline" as const,
+        workoutIds: [
+            "876d947d-a6b5-4ad3-8e59-9991716bc335",
+            "c0f1d6e4-eef2-47d7-be99-5f55b4db53ef",
+            "c4932f83-e9e7-4ae7-a629-dc1d4bf442d1",
+            "49059b85-0e9d-4818-a9c8-d18fe7bfd0d6",
+        ],
+    },
+];
+
 const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
     weekDates,
     weekWorkouts,
@@ -131,8 +165,8 @@ const WeekSnapshot: React.FC<WeekSnapshotProps> = ({
                 style={[
                     styles.weekCard,
                     {
-                        backgroundColor: theme.colors.surface + "E6",
-                        borderColor: theme.colors.border + "40",
+                        backgroundColor: theme.colors.glassWhite,
+                        borderColor: theme.colors.glassBorder,
                     },
                 ]}
             >
@@ -224,6 +258,10 @@ export const Home: React.FC<HomeProps> = ({
     const [userName, setUserName] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [showWarmUpModal, setShowWarmUpModal] = useState(false);
+    const [selectedPreset, setSelectedPreset] = useState<{
+        name: string;
+        workoutIds: string[];
+    } | null>(null);
 
     const nowLocal = new Date();
     const localTodayStr = `${nowLocal.getFullYear()}-${(nowLocal.getMonth() + 1)
@@ -447,7 +485,12 @@ export const Home: React.FC<HomeProps> = ({
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.heroBannerOverlay}>
+                        <LinearGradient
+                            colors={["transparent", "rgba(41, 37, 33, 0.75)"]}
+                            start={{ x: 0, y: 0.3 }}
+                            end={{ x: 0, y: 1 }}
+                            style={styles.heroBannerOverlay}
+                        >
                             <Text style={styles.heroBannerTitle}>
                                 {getTimeBasedGreeting()}
                                 {userName ? `, ${userName}` : ""} {getTimeBasedEmoji()}
@@ -473,7 +516,7 @@ export const Home: React.FC<HomeProps> = ({
                                     </Text>
                                 </TouchableOpacity>
                             </View>
-                        </View>
+                        </LinearGradient>
                     </ImageBackground>
                     {/* WEEK SNAPSHOT */}
                     <WeekSnapshot
@@ -560,8 +603,8 @@ export const Home: React.FC<HomeProps> = ({
                                         style={[
                                             styles.previewCardFull,
                                             {
-                                                backgroundColor: theme.colors.surface,
-                                                borderColor: theme.colors.border,
+                                                backgroundColor: theme.colors.glassWhite,
+                                                borderColor: theme.colors.glassBorder,
                                             },
                                         ]}
                                         activeOpacity={0.85}
@@ -575,10 +618,19 @@ export const Home: React.FC<HomeProps> = ({
                                             <View
                                                 style={[
                                                     styles.categoryBadge,
-                                                    { backgroundColor: theme.colors.accent },
+                                                    {
+                                                        backgroundColor: theme.colors.accent + "20",
+                                                        borderWidth: 1,
+                                                        borderColor: theme.colors.accent + "40",
+                                                    },
                                                 ]}
                                             >
-                                                <Text style={styles.categoryBadgeText}>
+                                                <Text
+                                                    style={[
+                                                        styles.categoryBadgeText,
+                                                        { color: theme.colors.accent },
+                                                    ]}
+                                                >
                                                     {item.category.toUpperCase()}
                                                 </Text>
                                             </View>
@@ -701,6 +753,66 @@ export const Home: React.FC<HomeProps> = ({
                         )}
                     </View>
 
+                    {/* NOT SURE WHAT TO DO? */}
+                    <View style={styles.suggestSection}>
+                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                            Not sure what to do?
+                        </Text>
+                        <Text style={[styles.suggestSubtitle, { color: theme.colors.subtext }]}>
+                            Jump into a preset workout
+                        </Text>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.presetRow}
+                        >
+                            {PRESET_WORKOUTS.map((preset, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={[
+                                        styles.presetCard,
+                                        {
+                                            backgroundColor: theme.colors.glassWhite,
+                                            borderColor: theme.colors.glassBorder,
+                                        },
+                                    ]}
+                                    activeOpacity={0.8}
+                                    onPress={() => setSelectedPreset(preset)}
+                                >
+                                    <View
+                                        style={[
+                                            styles.presetIconWrap,
+                                            { backgroundColor: theme.colors.accent + "18" },
+                                        ]}
+                                    >
+                                        <Ionicons
+                                            name={preset.icon}
+                                            size={22}
+                                            color={theme.colors.accent}
+                                        />
+                                    </View>
+                                    <Text
+                                        style={[
+                                            styles.presetCardTitle,
+                                            { color: theme.colors.text },
+                                        ]}
+                                        numberOfLines={2}
+                                    >
+                                        {preset.name}
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.presetCardCount,
+                                            { color: theme.colors.subtext },
+                                        ]}
+                                    >
+                                        {preset.workoutIds.length} exercises
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+
                     <TouchableOpacity
                         activeOpacity={0.85}
                         style={styles.warmupCard}
@@ -711,7 +823,12 @@ export const Home: React.FC<HomeProps> = ({
                             style={styles.warmupBackground}
                             imageStyle={styles.warmupImage}
                         >
-                            <View style={styles.warmupOverlay}>
+                            <LinearGradient
+                                colors={["transparent", "rgba(41, 37, 33, 0.7)"]}
+                                start={{ x: 0, y: 0.2 }}
+                                end={{ x: 0, y: 1 }}
+                                style={styles.warmupOverlay}
+                            >
                                 <Text style={styles.warmupTitle}>Start With A Warm Up</Text>
                                 <Text style={styles.warmupSubtitle}>
                                     Ease into today's session with pulses and mobility.
@@ -719,7 +836,7 @@ export const Home: React.FC<HomeProps> = ({
                                 <View style={styles.warmupPill}>
                                     <Text style={styles.warmupPillText}>Let's warm up</Text>
                                 </View>
-                            </View>
+                            </LinearGradient>
                         </ImageBackground>
                     </TouchableOpacity>
                 </ScrollView>
@@ -727,6 +844,20 @@ export const Home: React.FC<HomeProps> = ({
 
             {/* Warm Up Modal */}
             <WarmUpModal visible={showWarmUpModal} onClose={() => setShowWarmUpModal(false)} />
+
+            {/* Preset Workout Preview Sheet */}
+            <PresetWorkoutSheet
+                visible={selectedPreset !== null}
+                presetName={selectedPreset?.name ?? ""}
+                workoutIds={selectedPreset?.workoutIds ?? []}
+                onClose={() => setSelectedPreset(null)}
+                onStartWorkout={(ids) => {
+                    setSelectedPreset(null);
+                    router.push(
+                        `/workout-session?workoutIds=${ids.join(",")}`,
+                    );
+                }}
+            />
         </View>
     );
 };
@@ -748,7 +879,7 @@ const styles = StyleSheet.create({
     content: {
         paddingHorizontal: 20,
         paddingTop: 24,
-        paddingBottom: 16,
+        paddingBottom: 100,
     },
     headerRow: {
         flexDirection: "row",
@@ -797,20 +928,22 @@ const styles = StyleSheet.create({
     },
     heroBannerOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.35)",
         paddingHorizontal: 24,
         paddingVertical: 32,
         justifyContent: "flex-end",
     },
     heroBannerTitle: {
-        fontSize: 22,
-        fontWeight: "700",
+        fontSize: 28,
+        fontFamily: "Fraunces_600SemiBold",
+        fontWeight: "600",
         color: "#fff",
         marginBottom: 6,
+        letterSpacing: -0.5,
     },
     heroBannerSubtitle: {
         fontSize: 14,
-        color: "rgba(255,255,255,0.92)",
+        fontFamily: "DMSans_400Regular",
+        color: "rgba(255,255,255,0.88)",
         marginBottom: 14,
     },
     heroBannerActions: {
@@ -821,28 +954,30 @@ const styles = StyleSheet.create({
     heroBannerPrimaryButton: {
         flex: 1,
         alignItems: "center",
-        backgroundColor: "rgba(255,255,255,0.94)",
+        backgroundColor: "rgba(255,255,255,0.88)",
         paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingVertical: 12,
         borderRadius: 999,
     },
     heroBannerSecondaryButton: {
         flex: 1,
         alignItems: "center",
         paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingVertical: 12,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.8)",
-        backgroundColor: "rgba(0,0,0,0.35)",
+        borderColor: "rgba(255,255,255,0.4)",
+        backgroundColor: "rgba(255,255,255,0.12)",
     },
     heroBannerButtonText: {
         fontSize: 14,
+        fontFamily: "DMSans_600SemiBold",
         fontWeight: "600",
-        color: "#1f1f1f",
+        color: "#292521",
     },
     heroBannerSecondaryButtonText: {
         fontSize: 14,
+        fontFamily: "DMSans_600SemiBold",
         fontWeight: "600",
         color: "#fff",
     },
@@ -863,32 +998,37 @@ const styles = StyleSheet.create({
     },
     warmupOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.35)",
         padding: 20,
         justifyContent: "flex-end",
     },
     warmupTitle: {
-        fontSize: 20,
-        fontWeight: "700",
+        fontSize: 22,
+        fontFamily: "Fraunces_600SemiBold",
+        fontWeight: "600",
         color: "#fff",
+        letterSpacing: -0.3,
     },
     warmupSubtitle: {
         fontSize: 13,
-        color: "rgba(255,255,255,0.9)",
+        fontFamily: "DMSans_400Regular",
+        color: "rgba(255,255,255,0.85)",
         marginTop: 4,
         marginBottom: 12,
     },
     warmupPill: {
         alignSelf: "flex-start",
         paddingHorizontal: 16,
-        paddingVertical: 6,
+        paddingVertical: 8,
         borderRadius: 999,
-        backgroundColor: "rgba(255,255,255,0.92)",
+        backgroundColor: "rgba(255,255,255,0.85)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.3)",
     },
     warmupPillText: {
         fontSize: 13,
+        fontFamily: "DMSans_600SemiBold",
         fontWeight: "600",
-        color: "#262626",
+        color: "#292521",
     },
     heroSubtitle: {
         fontSize: 14,
@@ -942,9 +1082,11 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: "600",
-        marginBottom: 8,
+        fontSize: 22,
+        fontFamily: "Fraunces_500Medium",
+        fontWeight: "500",
+        marginBottom: 10,
+        letterSpacing: -0.3,
     },
     todaysCard: {
         padding: 16,
@@ -1030,14 +1172,17 @@ const styles = StyleSheet.create({
         borderRadius: 999,
     },
     categoryBadgeText: {
-        color: "#fff",
+        fontFamily: "DMSans_600SemiBold",
         fontWeight: "600",
-        fontSize: 12,
+        fontSize: 11,
+        letterSpacing: 0.5,
     },
     previewTitle: {
-        fontSize: 16,
-        fontWeight: "700",
+        fontSize: 17,
+        fontFamily: "Fraunces_500Medium",
+        fontWeight: "500",
         marginBottom: 6,
+        letterSpacing: -0.2,
     },
     previewDesc: {
         fontSize: 13,
@@ -1103,7 +1248,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         gap: 8,
         paddingVertical: 16,
-        borderRadius: 20,
+        borderRadius: 999,
         marginTop: 4,
         minHeight: 56,
     },
@@ -1111,6 +1256,44 @@ const styles = StyleSheet.create({
         fontFamily: "DMSans_600SemiBold",
         fontSize: 16,
         color: "#FFFFFF",
+    },
+    suggestSection: {
+        marginBottom: 20,
+    },
+    suggestSubtitle: {
+        fontSize: 14,
+        fontFamily: "DMSans_400Regular",
+        marginBottom: 12,
+        marginTop: -4,
+    },
+    presetRow: {
+        paddingRight: 20,
+        gap: 12,
+    },
+    presetCard: {
+        width: 160,
+        borderRadius: 18,
+        padding: 16,
+        borderWidth: StyleSheet.hairlineWidth,
+    },
+    presetIconWrap: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 12,
+    },
+    presetCardTitle: {
+        fontSize: 16,
+        fontFamily: "Fraunces_500Medium",
+        fontWeight: "500",
+        letterSpacing: -0.2,
+        marginBottom: 4,
+    },
+    presetCardCount: {
+        fontSize: 13,
+        fontFamily: "DMSans_400Regular",
     },
 });
 

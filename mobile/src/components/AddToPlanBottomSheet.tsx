@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
-import { getTheme, spacing, radii, typography } from "../theme";
+import { getTheme, spacing, radii, typography, hexToRgba } from "../theme";
 
 interface AddToPlanBottomSheetProps {
     visible: boolean;
@@ -81,12 +81,12 @@ export const AddToPlanBottomSheet: React.FC<AddToPlanBottomSheetProps> = ({
             animationType="fade"
             onRequestClose={handleClose}
         >
-            <Pressable style={styles.backdrop} onPress={handleClose}>
+            <Pressable style={[styles.backdrop, { backgroundColor: theme.colors.overlay }]} onPress={handleClose}>
                 <Pressable
                     style={[
                         styles.bottomSheet,
                         {
-                            backgroundColor: theme.colors.bg,
+                            backgroundColor: hexToRgba(theme.colors.bg, 0.95),
                             paddingBottom: insets.bottom + spacing.md,
                         },
                     ]}
@@ -132,8 +132,8 @@ export const AddToPlanBottomSheet: React.FC<AddToPlanBottomSheetProps> = ({
                             style={[
                                 styles.instructionCard,
                                 {
-                                    backgroundColor: theme.colors.surface,
-                                    borderColor: theme.colors.border,
+                                    backgroundColor: theme.colors.glassWhite,
+                                    borderColor: theme.colors.glassBorder,
                                 },
                             ]}
                         >
@@ -152,8 +152,8 @@ export const AddToPlanBottomSheet: React.FC<AddToPlanBottomSheetProps> = ({
                             style={[
                                 styles.calendarContainer,
                                 {
-                                    backgroundColor: theme.colors.surface,
-                                    borderColor: theme.colors.border,
+                                    backgroundColor: theme.colors.glassWhite,
+                                    borderColor: theme.colors.glassBorder,
                                 },
                             ]}
                         >
@@ -254,12 +254,12 @@ export const AddToPlanBottomSheet: React.FC<AddToPlanBottomSheetProps> = ({
 const styles = StyleSheet.create({
     backdrop: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
         justifyContent: "flex-end",
     },
     bottomSheet: {
-        borderTopLeftRadius: radii.xl,
-        borderTopRightRadius: radii.xl,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
         maxHeight: "90%",
         shadowColor: "#000",
         shadowOffset: { width: 0, height: -4 },
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: typography.sizes.lg,
-        fontFamily: typography.fonts.bodySemibold,
+        fontFamily: typography.fonts.headlineSemibold,
         marginBottom: 2,
     },
     subtitle: {

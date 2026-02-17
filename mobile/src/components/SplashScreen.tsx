@@ -9,7 +9,7 @@ import {
     Image,
     TouchableOpacity,
 } from "react-native";
-import { getTheme } from "../theme";
+import { getTheme, typography, radii } from "../theme";
 
 interface SplashScreenProps {
     onFinish: () => void;
@@ -93,7 +93,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
                     },
                 ]}
             >
-                <View style={[styles.iconBackground, { backgroundColor: "#FF6B35" }]}>
+                <View style={[styles.iconBackground, { backgroundColor: theme.colors.accent }]}>
                     <Image
                         source={require("../../assets/images/catt.png")}
                         style={styles.iconImage}
@@ -173,10 +173,9 @@ const styles = StyleSheet.create({
     },
     inspirationalPhrase: {
         fontSize: 18,
-        fontFamily: "Inter_500Medium",
+        fontFamily: typography.fonts.displayItalic,
         textAlign: "center",
-        fontStyle: "italic",
-        lineHeight: 24,
+        lineHeight: 26,
     },
     buttonContainer: {
         marginTop: 40,
@@ -184,7 +183,7 @@ const styles = StyleSheet.create({
     nextButton: {
         paddingHorizontal: 32,
         paddingVertical: 16,
-        borderRadius: 12,
+        borderRadius: radii.full,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
@@ -193,7 +192,7 @@ const styles = StyleSheet.create({
     },
     nextButtonText: {
         fontSize: 18,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: typography.fonts.bodySemibold,
         textAlign: "center",
         letterSpacing: -0.3,
     },

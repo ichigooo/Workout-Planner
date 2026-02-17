@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 24,
-        fontFamily: "Inter_700Bold",
+        fontFamily: "DMSans_700Bold",
         marginBottom: 24,
         textAlign: "center",
     },
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 16,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
         marginBottom: 8,
     },
     input: {
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 12,
         fontSize: 16,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
     },
     row: {
         flexDirection: "row",
@@ -526,18 +526,18 @@ const styles = StyleSheet.create({
         marginTop: 24,
     },
     submitButton: {
-        backgroundColor: "#007AFF",
+        backgroundColor: "#366299",
         paddingVertical: 12,
         paddingHorizontal: 24,
-        borderRadius: 8,
+        borderRadius: 9999,
         flex: 1,
         marginLeft: 12,
     },
     cancelButton: {
-        backgroundColor: "#8E8E93",
+        backgroundColor: "#8A7F72",
         paddingVertical: 12,
         paddingHorizontal: 24,
-        borderRadius: 8,
+        borderRadius: 9999,
         flex: 1,
         marginRight: 12,
     },
@@ -565,12 +565,12 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 18,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
         marginBottom: 4,
     },
     sectionSubtitle: {
         fontSize: 14,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
         marginBottom: 16,
     },
     workoutSelector: {
@@ -586,12 +586,12 @@ const styles = StyleSheet.create({
     },
     workoutOptionTitle: {
         fontSize: 14,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
         marginBottom: 2,
     },
     workoutOptionDetails: {
         fontSize: 12,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
     },
     workoutCard: {
         borderRadius: 12,
@@ -622,12 +622,12 @@ const styles = StyleSheet.create({
     },
     workoutTitle: {
         fontSize: 16,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
         marginBottom: 2,
     },
     workoutDetails: {
         fontSize: 14,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
     },
     removeButton: {
         width: 24,
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
     },
     daysLabel: {
         fontSize: 14,
-        fontFamily: "Inter_500Medium",
+        fontFamily: "DMSans_500Medium",
         marginBottom: 8,
     },
     daysRow: {
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
     },
     dayButtonText: {
         fontSize: 12,
-        fontFamily: "Inter_600SemiBold",
+        fontFamily: "DMSans_600SemiBold",
     },
     emptyState: {
         padding: 32,
@@ -673,12 +673,12 @@ const styles = StyleSheet.create({
     },
     emptyStateText: {
         fontSize: 16,
-        fontFamily: "Inter_500Medium",
+        fontFamily: "DMSans_500Medium",
         marginBottom: 4,
     },
     emptyStateSubtext: {
         fontSize: 14,
-        fontFamily: "Inter_400Regular",
+        fontFamily: "DMSans_400Regular",
     },
     workoutsContainer: {
         padding: 16,
