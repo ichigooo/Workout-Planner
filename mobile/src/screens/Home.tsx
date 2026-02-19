@@ -19,7 +19,7 @@ import { getTheme, typography } from "../theme";
 import { apiService } from "../services/api";
 import { useAuth } from "../state/AuthContext";
 import { planItemsCache } from "../services/planItemsCache";
-import { Workout, PlanItem, WorkoutCategory } from "../types";
+import { Workout, PlanItem, WorkoutCategory, getDefaultPreset } from "../types";
 import { orderCategoriesWithClimbingAtEnd } from "../utils/categoryOrder";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -65,7 +65,6 @@ const categoryIconSources: Record<string, ImageSourcePropType> = {
     "Climbing - Power": require("../../assets/images/workout_types/climbing.png"),
     "Climbing - Endurance": require("../../assets/images/workout_types/climbing.png"),
     "Climbing - Warm Up": require("../../assets/images/workout_types/climbing.png"),
-    "Cardio": require("../../assets/images/workout_types/warmup.png"),
     "Mobility": require("../../assets/images/workout_types/default.png"),
 };
 
@@ -663,26 +662,28 @@ export const Home: React.FC<HomeProps> = ({
                                             </Text>
                                         ) : null}
                                         <View style={styles.previewStats}>
-                                            {item.sets !== undefined && item.reps !== undefined ? (
-                                                <Text
-                                                    style={[
-                                                        styles.previewStatText,
-                                                        { color: theme.colors.text },
-                                                    ]}
-                                                >
-                                                    {item.sets} sets × {item.reps} reps
-                                                </Text>
-                                            ) : null}
-                                            {item.intensity ? (
-                                                <Text
-                                                    style={[
-                                                        styles.previewStatText,
-                                                        { color: theme.colors.subtext },
-                                                    ]}
-                                                >
-                                                    {item.intensity}
-                                                </Text>
-                                            ) : null}
+                                            {(() => {
+                                                const p = getDefaultPreset(item);
+                                                if (p?.sets && p?.reps) return (
+                                                    <Text style={[styles.previewStatText, { color: theme.colors.text }]}>
+                                                        {p.sets} sets × {p.reps} reps
+                                                    </Text>
+                                                );
+                                                if (p?.sets && p?.durationPerSet) return (
+                                                    <Text style={[styles.previewStatText, { color: theme.colors.text }]}>
+                                                        {p.sets} sets × {p.durationPerSet}s
+                                                    </Text>
+                                                );
+                                                return null;
+                                            })()}
+                                            {(() => {
+                                                const p = getDefaultPreset(item);
+                                                return p?.intensityLabel ? (
+                                                    <Text style={[styles.previewStatText, { color: theme.colors.subtext }]}>
+                                                        {p.intensityLabel}
+                                                    </Text>
+                                                ) : null;
+                                            })()}
                                         </View>
                                     </TouchableOpacity>
                                 ))}

@@ -51,14 +51,35 @@ model Workout {
   durationPerSet           Int?
   sourceUrl                String?
   sourcePlatform           String?
+  movementType             String?
+  isUnilateral             Boolean                 @default(false)
   planItems                PlanItem[]
   workoutLogs              WorkoutLog[]
   workout_personal_records WorkoutPersonalRecord[]
   personalRecordEntries    PersonalRecordEntry[]
   userRepConfigs           UserWorkoutRepConfig[]
+  presets                  WorkoutPreset[]
   creator                  User?                   @relation("WorkoutCreator", fields: [createdBy], references: [id])
 
   @@map("workouts")
+}
+
+model WorkoutPreset {
+  id             String  @id @default(dbgenerated("gen_random_uuid()::text"))
+  workoutId      String
+  preset         String
+  sets           Int?
+  reps           Int?
+  intensityPct   Int?
+  intensityLabel String?
+  restSeconds    Int?
+  durationPerSet Int?
+  isDefault      Boolean @default(false)
+  inputType      String  @default("sets_reps")
+  workout        Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  @@unique([workoutId, preset])
+  @@map("workout_presets")
 }
 
 model WorkoutPlan {

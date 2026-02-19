@@ -11,7 +11,7 @@ import { Calendar } from "react-native-calendars";
 import { getTheme, typography } from "@/src/theme";
 import { apiService } from "@/src/services/api";
 import { getCurrentPlanId } from "@/src/state/session";
-import { PlanItem, Workout } from "@/src/types";
+import { PlanItem, Workout, getDefaultPreset } from "@/src/types";
 import { useRouter } from "expo-router";
 
 interface ScheduledWorkout {
@@ -102,7 +102,7 @@ export default function CalendarScreen() {
                 id: `${pi.id}-${d}`,
                 workout,
                 date: d,
-                intensity: pi.intensity || workout.intensity,
+                intensity: pi.intensity,
             } as ScheduledWorkout;
         })
         .filter(Boolean) as ScheduledWorkout[];
@@ -219,7 +219,7 @@ export default function CalendarScreen() {
                                         {s.workout.title}
                                     </Text>
                                     <Text style={{ color: theme.colors.textTertiary, fontFamily: typography.fonts.body }}>
-                                        {s.workout.sets} sets × {s.workout.reps} reps •{" "}
+                                        {(() => { const p = getDefaultPreset(s.workout); return p?.sets && p?.reps ? `${p.sets} sets × ${p.reps} reps` : p?.sets && p?.durationPerSet ? `${p.sets} sets × ${p.durationPerSet}s` : ""; })()} •{" "}
                                         {s.workout.category}
                                     </Text>
                                 </TouchableOpacity>

@@ -49,9 +49,10 @@ workout-planner/
 
 ### 3. Social Media Import
 - Import workouts from YouTube (oEmbed)
-- Import workouts from Instagram (planned)
-- Import workouts from TikTok (planned)
+- Import workouts from Instagram (oEmbed + OG tag scraping fallback)
+- TikTok support (coming soon)
 - Auto-extract thumbnails and metadata
+- Platform auto-detection from URL
 
 ### 4. User Profile
 - Authentication via Supabase

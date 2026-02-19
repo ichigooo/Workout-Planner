@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
     View,
     Text,
@@ -7,15 +7,13 @@ import {
     useColorScheme,
 } from "react-native";
 import { Workout, CurrentPR } from "../../types";
+import { buildDisplayPRs } from "../../utils/epley";
 import { getTheme } from "../../theme";
 import { apiService } from "../../services/api";
 import { PRCurrentDisplay } from "./PRCurrentDisplay";
 import { PREntryForm } from "./PREntryForm";
 import { PRCelebration } from "./PRCelebration";
 import { useRouter } from "expo-router";
-
-// Standard rep counts that are always shown
-const STANDARD_REPS = [1, 6];
 
 interface PRSectionProps {
     workout: Workout;
@@ -28,29 +26,34 @@ export const PRSection: React.FC<PRSectionProps> = ({ workout, userId }) => {
     const router = useRouter();
 
     const [currentPRs, setCurrentPRs] = useState<CurrentPR[]>([]);
-    const [customReps, setCustomReps] = useState<number[]>([]);
     const [loading, setLoading] = useState(true);
     const [showEntryForm, setShowEntryForm] = useState(false);
     const [selectedReps, setSelectedReps] = useState<number | null>(null);
     const [showCelebration, setShowCelebration] = useState(false);
 
-    // All tracked rep counts (standard + custom)
-    const allRepCounts = [...STANDARD_REPS, ...customReps].sort((a, b) => a - b);
+    // Derive tracked rep counts from workout presets
+    const presetRepCounts = [...new Set(
+        workout.presets
+            ?.filter((p) => p.reps != null)
+            .map((p) => p.reps!) ?? []
+    )].sort((a, b) => a - b);
 
-    // Rep counts that have existing records
-    const existingRepCounts = currentPRs.map((pr) => pr.reps);
+    const displayPRs = useMemo(
+        () => buildDisplayPRs(currentPRs, presetRepCounts),
+        [currentPRs, presetRepCounts]
+    );
+
+    const unilateralLabel = workout.isUnilateral
+        ? workout.category === "Legs" ? "per leg" : "per arm"
+        : undefined;
 
     const fetchData = useCallback(async () => {
         if (!userId) return;
 
         try {
             setLoading(true);
-            const [prs, config] = await Promise.all([
-                apiService.getCurrentPRs(workout.id, userId),
-                apiService.getRepConfig(workout.id, userId),
-            ]);
+            const prs = await apiService.getCurrentPRs(workout.id, userId);
             setCurrentPRs(prs);
-            setCustomReps(config.customReps || []);
         } catch (error) {
             console.error("Error fetching PR data:", error);
         } finally {
@@ -68,26 +71,8 @@ export const PRSection: React.FC<PRSectionProps> = ({ workout, userId }) => {
         setShowEntryForm(true);
     };
 
-    // Opens form to log any PR (user picks reps)
-    const handleLogNewPR = () => {
-        setSelectedReps(null); // null means user will choose
-        setShowEntryForm(true);
-    };
-
-    const handlePRSaved = async (isNewRecord: boolean, savedReps: number) => {
+    const handlePRSaved = async (isNewRecord: boolean, _savedReps: number) => {
         setShowEntryForm(false);
-
-        // If user saved a custom rep count that we're not tracking yet, add it
-        if (!allRepCounts.includes(savedReps) && userId) {
-            const newCustomReps = [...customReps, savedReps].slice(0, 2); // max 2 custom
-            try {
-                await apiService.updateRepConfig(workout.id, userId, newCustomReps);
-                setCustomReps(newCustomReps);
-            } catch (error) {
-                console.error("Error saving custom rep config:", error);
-            }
-        }
-
         fetchData();
         if (isNewRecord) {
             setShowCelebration(true);
@@ -131,24 +116,16 @@ export const PRSection: React.FC<PRSectionProps> = ({ workout, userId }) => {
                 <Text style={[styles.loadingText, { color: theme.colors.subtext }]}>
                     Loading records...
                 </Text>
+            ) : presetRepCounts.length === 0 ? (
+                <Text style={[styles.loadingText, { color: theme.colors.subtext }]}>
+                    No rep-based presets configured for this exercise.
+                </Text>
             ) : (
-                <>
-                    <PRCurrentDisplay
-                        repCounts={allRepCounts}
-                        currentPRs={currentPRs}
-                        onAddPR={handleAddPR}
-                        customReps={customReps}
-                    />
-
-                    {/* Log New PR Button */}
-                    <TouchableOpacity
-                        style={[styles.logNewButton, { backgroundColor: theme.colors.accent }]}
-                        onPress={handleLogNewPR}
-                        activeOpacity={0.8}
-                    >
-                        <Text style={styles.logNewButtonText}>+ Log New PR</Text>
-                    </TouchableOpacity>
-                </>
+                <PRCurrentDisplay
+                    displayPRs={displayPRs}
+                    onAddPR={handleAddPR}
+                    unilateralLabel={unilateralLabel}
+                />
             )}
 
             <PREntryForm
@@ -156,7 +133,9 @@ export const PRSection: React.FC<PRSectionProps> = ({ workout, userId }) => {
                 workoutId={workout.id}
                 userId={userId}
                 initialReps={selectedReps}
-                existingReps={existingRepCounts}
+                repOptions={presetRepCounts}
+                existingReps={currentPRs.map((pr) => pr.reps)}
+                unilateralLabel={unilateralLabel}
                 onClose={() => setShowEntryForm(false)}
                 onSave={handlePRSaved}
             />
@@ -172,13 +151,13 @@ export const PRSection: React.FC<PRSectionProps> = ({ workout, userId }) => {
 const styles = StyleSheet.create({
     section: {
         paddingHorizontal: 20,
-        paddingVertical: 16,
+        paddingVertical: 12,
     },
     headerRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 12,
+        marginBottom: 8,
     },
     sectionTitle: {
         fontSize: 18,
@@ -196,17 +175,5 @@ const styles = StyleSheet.create({
     signInHint: {
         fontSize: 14,
         marginTop: 8,
-    },
-    logNewButton: {
-        marginTop: 16,
-        paddingVertical: 14,
-        paddingHorizontal: 20,
-        borderRadius: 12,
-        alignItems: "center",
-    },
-    logNewButtonText: {
-        color: "#FFFFFF",
-        fontSize: 15,
-        fontWeight: "600",
     },
 });

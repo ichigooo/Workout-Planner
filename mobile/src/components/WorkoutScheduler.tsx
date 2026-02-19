@@ -8,7 +8,7 @@ import {
     useColorScheme,
     Alert,
 } from "react-native";
-import { Workout, WorkoutPlan, PlanItem } from "../types";
+import { Workout, WorkoutPlan, PlanItem, getDefaultPreset } from "../types";
 import { apiService } from "../services/api";
 import { getTheme } from "../theme";
 
@@ -67,7 +67,7 @@ export const WorkoutScheduler: React.FC<WorkoutSchedulerProps> = ({ plan, onPlan
 
         try {
             const frequency = selectedDays.join(",");
-            const intensity = customIntensity || selectedWorkout.intensity;
+            const intensity = customIntensity || getDefaultPreset(selectedWorkout)?.intensityLabel;
 
             await apiService.addWorkoutToPlan(plan.id, {
                 workoutId: selectedWorkout.id,
@@ -153,8 +153,7 @@ export const WorkoutScheduler: React.FC<WorkoutSchedulerProps> = ({ plan, onPlan
                                                 { color: theme.colors.subtext },
                                             ]}
                                         >
-                                            {planItem.workout?.sets} sets × {planItem.workout?.reps}{" "}
-                                            reps
+                                            {(() => { if (!planItem.workout) return ""; const p = getDefaultPreset(planItem.workout); return p?.sets && p?.reps ? `${p.sets} sets × ${p.reps} reps` : p?.sets && p?.durationPerSet ? `${p.sets} sets × ${p.durationPerSet}s` : ""; })()}
                                         </Text>
                                         <Text
                                             style={[
@@ -302,7 +301,7 @@ export const WorkoutScheduler: React.FC<WorkoutSchedulerProps> = ({ plan, onPlan
                                 Custom Intensity (optional)
                             </Text>
                             <Text style={[styles.intensityHint, { color: theme.colors.subtext }]}>
-                                Default: {selectedWorkout.intensity}
+                                Default: {getDefaultPreset(selectedWorkout)?.intensityLabel ?? "N/A"}
                             </Text>
                         </View>
                     )}

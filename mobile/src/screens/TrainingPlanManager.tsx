@@ -16,7 +16,7 @@ import { Calendar } from "react-native-calendars";
 import { getTheme, typography } from "../theme";
 import { apiService } from "../services/api";
 import { planItemsCache } from "../services/planItemsCache";
-import { Workout } from "../types";
+import { Workout, getDefaultPreset } from "../types";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -158,7 +158,7 @@ export const TrainingPlanManager: React.FC = () => {
                             itemsForDate.push({
                                 id: ci.id,
                                 workout: ci.workout,
-                                intensity: ci.intensity || ci.workout.intensity,
+                                intensity: ci.intensity,
                             });
                         }
                     });
@@ -426,7 +426,7 @@ export const TrainingPlanManager: React.FC = () => {
                                             {it.workout.title}
                                         </Text>
                                         <Text style={{ color: theme.colors.textTertiary, marginTop: 4, fontFamily: typography.fonts.body }}>
-                                            {it.workout.sets} sets × {it.workout.reps} reps •{" "}
+                                            {(() => { const p = getDefaultPreset(it.workout); return p?.sets && p?.reps ? `${p.sets} sets × ${p.reps} reps` : p?.sets && p?.durationPerSet ? `${p.sets} sets × ${p.durationPerSet}s` : ""; })()} •{" "}
                                             {it.workout.category}
                                         </Text>
                                         {it.intensity ? (

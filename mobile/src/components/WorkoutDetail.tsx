@@ -14,8 +14,9 @@ import {
     Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Workout, CreateWorkoutRequest, PercentagePreset } from "../types";
+import { Workout, CreateWorkoutRequest, CurrentPR, getDefaultPreset } from "../types";
 import { PRSection } from "./personal-records";
+import { SetPlanCard } from "./SetPlanCard";
 import { getTheme, typography, radii } from "../theme";
 import { apiService } from "../services/api";
 import { getCurrentPlanId, getCurrentUserId } from "../state/session";
@@ -52,23 +53,36 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     const [planId, setPlanId] = useState<string | null>(null);
     const { isAdminModeActive } = useAdminMode();
     const [activeImageIndex, setActiveImageIndex] = useState(0);
-    // Preset toggle state for percentage_1rm workouts
-    const [activePreset, setActivePreset] = useState<PercentagePreset>(
-        workout.defaultPreset || "hypertrophy"
+    // Preset toggle state
+    const defaultPresetObj = getDefaultPreset(workout);
+    const [activePreset, setActivePreset] = useState(
+        defaultPresetObj?.preset || "default"
     );
     const windowWidth = Dimensions.get("window").width;
-    const heroHeight = Math.round(windowWidth * 0.75);
+    const heroHeight = Math.round(windowWidth * 0.6);
     const heroImages = useMemo(
         () => [workout.imageUrl, workout.imageUrl2].filter(Boolean) as string[],
         [workout.imageUrl, workout.imageUrl2],
     );
     const [recordUserId, setRecordUserId] = useState<string | null>(() => getCurrentUserId());
-
+    const [currentPRs, setCurrentPRs] = useState<CurrentPR[]>([]);
 
     useEffect(() => {
         setRecordUserId(getCurrentUserId());
     }, []);
 
+    useEffect(() => {
+        const has1rmPreset = workout.presets?.some(
+            (p) => p.inputType === "percentage_1rm",
+        );
+        if (!has1rmPreset || !recordUserId) return;
+        apiService
+            .getCurrentPRs(workout.id, recordUserId)
+            .then(setCurrentPRs)
+            .catch(() => {});
+    }, [workout.id, recordUserId]);
+
+    const oneRepMax = currentPRs.find((pr) => pr.reps === 1)?.weight ?? null;
 
     useEffect(() => {
         setActiveImageIndex(0);
@@ -183,7 +197,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                     <ScrollView
                         style={styles.content}
                         contentContainerStyle={{
-                            paddingBottom: insets.bottom + 32,
+                            paddingBottom: insets.bottom + 16,
                         }}
                         showsVerticalScrollIndicator={false}
                     >
@@ -253,179 +267,58 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
 
                             <View style={styles.section}>
                                 <View style={styles.detailPillRow}>
-                                    {workout.workoutType === "cardio" ? (
-                                        <>
-                                            <View
-                                                style={[
-                                                    styles.detailPill,
-                                                    {
-                                                        backgroundColor: theme.colors.glassWhite,
-                                                        borderColor: theme.colors.glassBorder,
-                                                    },
-                                                ]}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.detailPillLabel,
-                                                        { color: theme.colors.subtext },
-                                                    ]}
-                                                >
-                                                    Duration
-                                                </Text>
-                                                <Text
-                                                    style={[
-                                                        styles.detailPillValue,
-                                                        { color: theme.colors.text },
-                                                    ]}
-                                                >
-                                                    {workout.duration} min
-                                                </Text>
-                                            </View>
-                                            <View
-                                                style={[
-                                                    styles.detailPill,
-                                                    {
-                                                        backgroundColor: theme.colors.glassWhite,
-                                                        borderColor: theme.colors.glassBorder,
-                                                    },
-                                                ]}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.detailPillLabel,
-                                                        { color: theme.colors.subtext },
-                                                    ]}
-                                                >
-                                                    Intensity
-                                                </Text>
-                                                <Text
-                                                    style={[
-                                                        styles.detailPillValue,
-                                                        { color: theme.colors.text },
-                                                    ]}
-                                                    numberOfLines={1}
-                                                >
-                                                    {workout.intensity}
-                                                </Text>
-                                            </View>
-                                        </>
-                                    ) : workout.intensityModel === "percentage_1rm" ? (
+                                    {workout.presets?.length > 1 ? (
                                         <View style={styles.presetSliderSection}>
                                             <PresetSelector
+                                                presets={workout.presets}
                                                 selected={activePreset}
                                                 onSelect={setActivePreset}
                                             />
                                         </View>
-                                    ) : workout.intensityModel === "sets_time" ? (
+                                    ) : defaultPresetObj ? (
                                         <>
-                                            <View
-                                                style={[
-                                                    styles.detailPill,
-                                                    {
-                                                        backgroundColor: theme.colors.glassWhite,
-                                                        borderColor: theme.colors.glassBorder,
-                                                    },
-                                                ]}
-                                            >
-                                                <Text
+                                            {defaultPresetObj.sets != null && (
+                                                <View
                                                     style={[
-                                                        styles.detailPillLabel,
-                                                        { color: theme.colors.subtext },
+                                                        styles.detailPill,
+                                                        {
+                                                            backgroundColor: theme.colors.glassWhite,
+                                                            borderColor: theme.colors.glassBorder,
+                                                        },
                                                     ]}
                                                 >
-                                                    Sets
-                                                </Text>
-                                                <Text
+                                                    <Text style={[styles.detailPillLabel, { color: theme.colors.subtext }]}>Sets</Text>
+                                                    <Text style={[styles.detailPillValue, { color: theme.colors.text }]}>{defaultPresetObj.sets}</Text>
+                                                </View>
+                                            )}
+                                            {defaultPresetObj.inputType === "sets_time" && defaultPresetObj.durationPerSet != null ? (
+                                                <View
                                                     style={[
-                                                        styles.detailPillValue,
-                                                        { color: theme.colors.text },
+                                                        styles.detailPill,
+                                                        {
+                                                            backgroundColor: theme.colors.glassWhite,
+                                                            borderColor: theme.colors.glassBorder,
+                                                        },
                                                     ]}
                                                 >
-                                                    {workout.sets}
-                                                </Text>
-                                            </View>
-                                            <View
-                                                style={[
-                                                    styles.detailPill,
-                                                    {
-                                                        backgroundColor: theme.colors.glassWhite,
-                                                        borderColor: theme.colors.glassBorder,
-                                                    },
-                                                ]}
-                                            >
-                                                <Text
+                                                    <Text style={[styles.detailPillLabel, { color: theme.colors.subtext }]}>Duration</Text>
+                                                    <Text style={[styles.detailPillValue, { color: theme.colors.text }]}>{defaultPresetObj.durationPerSet}s</Text>
+                                                </View>
+                                            ) : defaultPresetObj.reps != null ? (
+                                                <View
                                                     style={[
-                                                        styles.detailPillLabel,
-                                                        { color: theme.colors.subtext },
+                                                        styles.detailPill,
+                                                        {
+                                                            backgroundColor: theme.colors.glassWhite,
+                                                            borderColor: theme.colors.glassBorder,
+                                                        },
                                                     ]}
                                                 >
-                                                    Duration
-                                                </Text>
-                                                <Text
-                                                    style={[
-                                                        styles.detailPillValue,
-                                                        { color: theme.colors.text },
-                                                    ]}
-                                                >
-                                                    {workout.durationPerSet}s
-                                                </Text>
-                                            </View>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <View
-                                                style={[
-                                                    styles.detailPill,
-                                                    {
-                                                        backgroundColor: theme.colors.glassWhite,
-                                                        borderColor: theme.colors.glassBorder,
-                                                    },
-                                                ]}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.detailPillLabel,
-                                                        { color: theme.colors.subtext },
-                                                    ]}
-                                                >
-                                                    Sets
-                                                </Text>
-                                                <Text
-                                                    style={[
-                                                        styles.detailPillValue,
-                                                        { color: theme.colors.text },
-                                                    ]}
-                                                >
-                                                    {workout.sets}
-                                                </Text>
-                                            </View>
-                                            <View
-                                                style={[
-                                                    styles.detailPill,
-                                                    {
-                                                        backgroundColor: theme.colors.glassWhite,
-                                                        borderColor: theme.colors.glassBorder,
-                                                    },
-                                                ]}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.detailPillLabel,
-                                                        { color: theme.colors.subtext },
-                                                    ]}
-                                                >
-                                                    Reps
-                                                </Text>
-                                                <Text
-                                                    style={[
-                                                        styles.detailPillValue,
-                                                        { color: theme.colors.text },
-                                                    ]}
-                                                >
-                                                    {workout.reps}
-                                                </Text>
-                                            </View>
-                                            {workout.intensity && (
+                                                    <Text style={[styles.detailPillLabel, { color: theme.colors.subtext }]}>Reps</Text>
+                                                    <Text style={[styles.detailPillValue, { color: theme.colors.text }]}>{defaultPresetObj.reps}</Text>
+                                                </View>
+                                            ) : null}
+                                            {defaultPresetObj.intensityLabel && (
                                                 <View
                                                     style={[
                                                         styles.detailPill,
@@ -435,29 +328,21 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                                                         },
                                                     ]}
                                                 >
-                                                    <Text
-                                                        style={[
-                                                            styles.detailPillLabel,
-                                                            { color: theme.colors.subtext },
-                                                        ]}
-                                                    >
-                                                        Intensity
-                                                    </Text>
-                                                    <Text
-                                                        style={[
-                                                            styles.detailPillValue,
-                                                            { color: theme.colors.text },
-                                                        ]}
-                                                        numberOfLines={1}
-                                                    >
-                                                        {workout.intensity}
-                                                    </Text>
+                                                    <Text style={[styles.detailPillLabel, { color: theme.colors.subtext }]}>Intensity</Text>
+                                                    <Text style={[styles.detailPillValue, { color: theme.colors.text }]} numberOfLines={1}>{defaultPresetObj.intensityLabel}</Text>
                                                 </View>
                                             )}
                                         </>
-                                    )}
+                                    ) : null}
                                 </View>
                             </View>
+
+                            {/* Set Plan - warm-up + working sets for percentage_1rm exercises */}
+                            <SetPlanCard
+                                workout={workout}
+                                activePreset={activePreset}
+                                oneRepMax={oneRepMax}
+                            />
 
                             {/* Personal Records Section - only show for tracked workouts */}
                             {workout.trackRecords && (
@@ -472,7 +357,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                     style={[
                         styles.stickyButtonContainer,
                         {
-                            paddingBottom: insets.bottom + 16,
+                            paddingBottom: insets.bottom + 8,
                             backgroundColor: theme.colors.bg,
                             borderTopColor: theme.colors.border,
                         },
@@ -540,7 +425,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                             onCancel={() => setShowEditModal(false)}
                             onSubmit={async (payload: CreateWorkoutRequest) => {
                                 try {
-                                    await apiService.updateWorkout(workout.id, payload);
+                                    await apiService.updateWorkout(workout.id, payload as Partial<Workout>);
                                     const refreshed = await apiService.getWorkout(workout.id);
                                     onEdit(refreshed);
                                     setShowEditModal(false);
@@ -621,7 +506,7 @@ const styles = StyleSheet.create({
         width: "100%",
         position: "relative",
         backgroundColor: "transparent",
-        marginBottom: 16,
+        marginBottom: 8,
     },
     heroImage: {
         width: "100%",
@@ -663,12 +548,12 @@ const styles = StyleSheet.create({
     },
     body: {
         paddingHorizontal: 20,
-        paddingTop: 24,
+        paddingTop: 16,
         paddingBottom: 16,
     },
     title: {
-        fontSize: typography.sizes.xl,
-        marginBottom: 12,
+        fontSize: typography.sizes.lg,
+        marginBottom: 8,
     },
     category: {
         fontSize: typography.sizes.md,
@@ -682,7 +567,7 @@ const styles = StyleSheet.create({
         paddingVertical: 3,
         borderRadius: radii.full,
         borderWidth: 1,
-        marginBottom: 10,
+        marginBottom: 6,
     },
     categoryPillText: {
         fontSize: typography.sizes.xs,
@@ -690,7 +575,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
     },
     section: {
-        marginBottom: 24,
+        marginBottom: 16,
     },
     sectionTitle: {
         fontSize: typography.sizes.lg,
@@ -698,9 +583,9 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     description: {
-        fontSize: typography.sizes.md,
+        fontSize: typography.sizes.sm,
         fontFamily: typography.fonts.body,
-        lineHeight: 24,
+        lineHeight: 20,
     },
     detailsGrid: {
         flexDirection: "row",
@@ -1024,28 +909,23 @@ const styles = StyleSheet.create({
     },
     stickyButtonContainer: {
         paddingHorizontal: 16,
-        paddingTop: 12,
-        borderTopWidth: 1,
+        paddingTop: 8,
+        borderTopWidth: StyleSheet.hairlineWidth,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 8,
+        shadowOffset: { width: 0, height: -1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+        elevation: 4,
     },
     addToPlanCTA: {
-        paddingVertical: 12,
+        paddingVertical: 10,
         borderRadius: radii.full,
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        elevation: 3,
     },
     addToPlanCTAText: {
         color: "#FFFFFF",
-        fontSize: typography.sizes.md,
+        fontSize: typography.sizes.sm,
         fontFamily: typography.fonts.bodySemibold,
         letterSpacing: 0.5,
     },

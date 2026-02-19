@@ -11,7 +11,7 @@ import {
     useColorScheme,
 } from "react-native";
 import { RenderItemParams } from "react-native-draggable-flatlist";
-import { WorkoutPlan, CreateWorkoutPlanRequest, Workout } from "../types";
+import { WorkoutPlan, CreateWorkoutPlanRequest, Workout, getDefaultPreset } from "../types";
 import { CalendarWidget } from "./CalendarWidget";
 import { apiService } from "../services/api";
 import { getCurrentPlanId } from "../state/session";
@@ -223,7 +223,6 @@ export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
                         await apiService.addWorkoutToPlan(plan.id, {
                             workoutId: workout.id,
                             frequency: workout.scheduledDays.join(","),
-                            intensity: workout.intensity,
                         });
                     }
                 }
@@ -262,7 +261,7 @@ export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
                         {item.title}
                     </Text>
                     <Text style={[styles.workoutDetails, { color: theme.colors.subtext }]}>
-                        {item.sets} sets × {item.reps} reps • {item.category}
+                        {(() => { const p = getDefaultPreset(item); return p?.sets && p?.reps ? `${p.sets} sets × ${p.reps} reps` : p?.sets && p?.durationPerSet ? `${p.sets} sets × ${p.durationPerSet}s` : ""; })()} • {item.category}
                     </Text>
                 </View>
 

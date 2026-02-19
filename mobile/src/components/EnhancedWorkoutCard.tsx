@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getTheme, spacing, radii, typography } from "../theme";
-import { Workout } from "../types";
+import { Workout, getDefaultPreset } from "../types";
 
 interface EnhancedWorkoutCardProps {
     workout: Workout;
@@ -52,19 +52,21 @@ export const EnhancedWorkoutCard: React.FC<EnhancedWorkoutCardProps> = ({
 
     const equipmentIcon = getEquipmentIconForTitle(workout.title);
 
+    const defaultPreset = getDefaultPreset(workout);
+
     // Determine intensity color - Neutral & Minimal design uses grays
     const getIntensityColor = (intensity: string) => {
         const lower = intensity.toLowerCase();
         if (lower.includes("max") || lower.includes("high") || lower.includes("hard")) {
-            return theme.colors.text; // #1A1A1A - dark for high intensity
+            return theme.colors.text;
         }
         if (lower.includes("medium") || lower.includes("moderate")) {
-            return theme.colors.textSecondary; // #666666 - medium gray
+            return theme.colors.textSecondary;
         }
-        return theme.colors.textTertiary; // #999999 - light gray for low
+        return theme.colors.textTertiary;
     };
 
-    const intensityColor = workout.intensity ? getIntensityColor(workout.intensity) : theme.colors.textSecondary;
+    const intensityColor = defaultPreset?.intensityLabel ? getIntensityColor(defaultPreset.intensityLabel) : theme.colors.textSecondary;
 
     return (
         <TouchableOpacity
@@ -167,29 +169,27 @@ export const EnhancedWorkoutCard: React.FC<EnhancedWorkoutCardProps> = ({
 
                 {/* Metadata Icons & Info */}
                 <View style={styles.metadata}>
-                    {workout.workoutType === "cardio" ? (
-                        workout.duration ? (
-                            <View style={styles.metadataItem}>
-                                <Ionicons name="time-outline" size={16} color={theme.colors.subtext} />
-                                <Text style={[styles.metadataText, { color: theme.colors.text }]}>
-                                    {workout.duration} min
-                                </Text>
-                            </View>
-                        ) : null
-                    ) : workout.sets && workout.reps ? (
+                    {defaultPreset?.sets && defaultPreset?.reps ? (
                         <View style={styles.metadataItem}>
                             <Ionicons name="fitness-outline" size={16} color={theme.colors.subtext} />
                             <Text style={[styles.metadataText, { color: theme.colors.text }]}>
-                                {workout.sets} sets × {workout.reps} reps
+                                {defaultPreset.sets} sets × {defaultPreset.reps} reps
+                            </Text>
+                        </View>
+                    ) : defaultPreset?.sets && defaultPreset?.durationPerSet ? (
+                        <View style={styles.metadataItem}>
+                            <Ionicons name="fitness-outline" size={16} color={theme.colors.subtext} />
+                            <Text style={[styles.metadataText, { color: theme.colors.text }]}>
+                                {defaultPreset.sets} sets × {defaultPreset.durationPerSet}s
                             </Text>
                         </View>
                     ) : null}
 
-                    {!!workout.intensity && (
+                    {!!defaultPreset?.intensityLabel && (
                         <View style={styles.metadataItem}>
                             <Ionicons name="flash-outline" size={16} color={intensityColor} />
                             <Text style={[styles.metadataText, { color: intensityColor }]}>
-                                {workout.intensity}
+                                {defaultPreset.intensityLabel}
                             </Text>
                         </View>
                     )}

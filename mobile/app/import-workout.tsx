@@ -9,944 +9,992 @@ import {
     ActivityIndicator,
     ScrollView,
     Image,
-    Alert,
     Animated,
     KeyboardAvoidingView,
     Platform as RNPlatform,
+    Switch,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getTheme, spacing, radii, typography } from "@/src/theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { getTheme, spacing, radii, typography, shadows } from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { apiService } from "@/src/services/api";
 import {
     getCurrentUserId,
     loadStoredUserId,
     setCurrentUserId as persistCurrentUserId,
+    getCurrentUser,
 } from "@/src/state/session";
 import { useAdminMode } from "@/src/hooks/useAdminMode";
-import { WorkoutImport } from "@/src/types";
-import { WorkoutImportPreview } from "@/src/components/WorkoutImportPreview";
+import { WorkoutImportPreview } from "@/src/types";
+import { WORKOUT_CATEGORIES, CATEGORY_ICONS } from "@/src/constants/workoutCategories";
 
-type ImportSource = "instagram" | "youtube" | "tiktok";
-type ImportSourceState = {
-    url: string;
-    result: WorkoutImport | null;
-    error: string | null;
-    loading: boolean;
+// --- Types & Constants ---
+
+type Phase = "input" | "loading" | "preview" | "saving" | "success" | "error";
+type DetectedPlatform = "instagram" | "youtube" | "tiktok" | null;
+
+const PLATFORM_META: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; label: string }> = {
+    instagram: { icon: "logo-instagram", color: "#E4405F", label: "Instagram" },
+    youtube: { icon: "logo-youtube", color: "#FF0000", label: "YouTube" },
+    tiktok: { icon: "logo-tiktok", color: "#000000", label: "TikTok" },
 };
 
-interface Platform {
-    id: ImportSource;
-    name: string;
-    icon: keyof typeof Ionicons.glyphMap;
-    color: string;
-    placeholder: string;
-    exampleUrl: string;
-    urlPattern: RegExp;
-    instructions: string[];
+function detectPlatform(text: string): DetectedPlatform {
+    if (/instagram\.com\/(reel|p)\//i.test(text)) return "instagram";
+    if (/youtube\.com\/(watch|shorts)|youtu\.be\//i.test(text)) return "youtube";
+    if (/tiktok\.com\/@.+\/video\//i.test(text)) return "tiktok";
+    return null;
 }
 
-const PLATFORMS: Platform[] = [
-    {
-        id: "instagram",
-        name: "Instagram",
-        icon: "logo-instagram",
-        color: "#E4405F",
-        placeholder: "https://www.instagram.com/reel/...",
-        exampleUrl: "instagram.com/reel/ABC123...",
-        urlPattern: /instagram\.com\/(reel|p)\//i,
-        instructions: [
-            "Open the Instagram app or website",
-            "Find the reel you want to import",
-            "Tap the three dots (...) menu",
-            "Select 'Copy link'",
-            "Paste the link here",
-        ],
-    },
-    {
-        id: "youtube",
-        name: "YouTube",
-        icon: "logo-youtube",
-        color: "#FF0000",
-        placeholder: "https://www.youtube.com/watch?v=...",
-        exampleUrl: "youtube.com/watch?v=ABC123...",
-        urlPattern: /youtube\.com\/(watch|shorts)|youtu\.be\//i,
-        instructions: [
-            "Open the YouTube app or website",
-            "Find the video you want to import",
-            "Tap the 'Share' button",
-            "Select 'Copy link'",
-            "Paste the link here",
-        ],
-    },
-    {
-        id: "tiktok",
-        name: "TikTok",
-        icon: "logo-tiktok",
-        color: "#000000",
-        placeholder: "https://www.tiktok.com/@user/video/...",
-        exampleUrl: "tiktok.com/@user/video/123...",
-        urlPattern: /tiktok\.com\/@.+\/video\//i,
-        instructions: [
-            "Open the TikTok app",
-            "Find the video you want to import",
-            "Tap the 'Share' button",
-            "Select 'Copy link'",
-            "Paste the link here",
-        ],
-    },
-];
+/** Strip "N likes, N comments - user on date:" prefix from IG OG descriptions */
+function cleanInstagramDescription(raw: string | null | undefined): string {
+    if (!raw) return "";
+    const match = raw.match(/^\d+\s+likes?,\s*\d+\s+comments?\s*[-–—]\s*.+?:\s*"?(.+)"?\s*$/s);
+    return match ? match[1].replace(/"$/, "").trim() : raw;
+}
+
+// --- Component ---
 
 export default function ImportWorkoutScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
-    const [selectedSource, setSelectedSource] = useState<ImportSource | null>(null);
-    const [showInstructions, setShowInstructions] = useState(false);
-    const [showPreview, setShowPreview] = useState(false);
-    const [previewWorkout, setPreviewWorkout] = useState<WorkoutImport | null>(null);
-    const [importStates, setImportStates] = useState<Record<ImportSource, ImportSourceState>>({
-        instagram: { url: "", result: null, error: null, loading: false },
-        youtube: { url: "", result: null, error: null, loading: false },
-        tiktok: { url: "", result: null, error: null, loading: false },
-    });
-    const [currentUserId, setCurrentUserIdState] = useState<string | null>(() => getCurrentUserId());
     const { isAdminModeActive } = useAdminMode();
 
-    // Animation values
-    const inputHeightAnim = useRef(new Animated.Value(0)).current;
-    const inputOpacityAnim = useRef(new Animated.Value(0)).current;
-    const instructionsHeightAnim = useRef(new Animated.Value(0)).current;
+    // State
+    const [url, setUrl] = useState("");
+    const [phase, setPhase] = useState<Phase>("input");
+    const [detectedPlatform, setDetectedPlatform] = useState<DetectedPlatform>(null);
+    const [preview, setPreview] = useState<WorkoutImportPreview | null>(null);
+    const [editableTitle, setEditableTitle] = useState("");
+    const [editableDescription, setEditableDescription] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [makePublic, setMakePublic] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [currentUserId, setCurrentUserIdState] = useState<string | null>(() => getCurrentUserId());
+    const [existingUrls, setExistingUrls] = useState<Set<string>>(new Set());
+    const [isDuplicate, setIsDuplicate] = useState(false);
+
+    // Animation for skeleton
+    const skeletonAnim = useRef(new Animated.Value(0.3)).current;
+    const latestUrlRef = useRef("");
 
     useEffect(() => {
-        if (currentUserId) return;
-        loadStoredUserId().then((storedId) => {
-            if (storedId) {
-                persistCurrentUserId(storedId);
-                setCurrentUserIdState(storedId);
+        // Load userId and initialize admin mode
+        getCurrentUser().then((user) => {
+            if (user) {
+                setCurrentUserIdState(user.id);
+            } else if (!currentUserId) {
+                loadStoredUserId().then((storedId) => {
+                    if (storedId) {
+                        persistCurrentUserId(storedId);
+                        setCurrentUserIdState(storedId);
+                    }
+                });
             }
         });
+    }, []);
+
+    // Fetch existing import URLs so we can detect duplicates
+    useEffect(() => {
+        if (!currentUserId) return;
+        apiService.getWorkoutImports(currentUserId).then((imports) => {
+            setExistingUrls(new Set(imports.map((i) => i.sourceUrl)));
+        }).catch(() => {/* silently ignore – duplicate check is best-effort */});
     }, [currentUserId]);
 
-
-    // Animate input field when platform is selected/deselected
+    // Auto-detect platform and auto-preview when URL changes
     useEffect(() => {
-        if (selectedSource) {
-            Animated.parallel([
-                Animated.timing(inputHeightAnim, {
-                    toValue: 1,
-                    duration: 300,
-                    useNativeDriver: false,
-                }),
-                Animated.timing(inputOpacityAnim, {
-                    toValue: 1,
-                    duration: 300,
-                    useNativeDriver: false,
-                }),
-            ]).start();
-        } else {
-            Animated.parallel([
-                Animated.timing(inputHeightAnim, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: false,
-                }),
-                Animated.timing(inputOpacityAnim, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: false,
-                }),
-            ]).start();
-        }
-    }, [selectedSource]);
+        const trimmed = url.trim();
+        const platform = detectPlatform(trimmed);
+        setDetectedPlatform(platform);
+        if (error) setError(null);
 
-    // Animate instructions panel
+        // Auto-preview when a valid supported platform is detected
+        if (platform && platform !== "tiktok" && trimmed.length > 0) {
+            const timer = setTimeout(() => {
+                handleAutoPreview(trimmed, platform);
+            }, 400);
+            return () => clearTimeout(timer);
+        } else if (phase === "preview" || phase === "loading") {
+            setPhase("input");
+            setPreview(null);
+        }
+    }, [url]);
+
+    // Skeleton pulse animation
     useEffect(() => {
-        Animated.timing(instructionsHeightAnim, {
-            toValue: showInstructions ? 1 : 0,
-            duration: 300,
-            useNativeDriver: false,
-        }).start();
-    }, [showInstructions]);
+        if (phase !== "loading") return;
+        const animation = Animated.loop(
+            Animated.sequence([
+                Animated.timing(skeletonAnim, { toValue: 0.7, duration: 800, useNativeDriver: true }),
+                Animated.timing(skeletonAnim, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+            ]),
+        );
+        animation.start();
+        return () => animation.stop();
+    }, [phase]);
 
-    const updateImportState = (source: ImportSource, next: Partial<ImportSourceState>) => {
-        setImportStates((prev) => ({
-            ...prev,
-            [source]: {
-                ...prev[source],
-                ...next,
-            },
-        }));
-    };
+    // --- Handlers ---
 
-    const validateUrl = (url: string, platform: Platform): boolean => {
-        if (!url.trim()) return false;
-        return platform.urlPattern.test(url);
-    };
+    const handleAutoPreview = async (trimmedUrl: string, platform: DetectedPlatform) => {
+        if (!platform || platform === "tiktok") return;
 
-    const handlePlatformSelect = (platformId: ImportSource) => {
-        if (selectedSource === platformId) {
-            // Deselect if already selected
-            setSelectedSource(null);
-            setShowInstructions(false);
-        } else {
-            setSelectedSource(platformId);
-            // Clear previous errors when switching platforms
-            updateImportState(platformId, { error: null });
-        }
-    };
-
-    const handleImport = async (source: ImportSource) => {
-        if (source === "tiktok" || source === "instagram") {
-            Alert.alert("Coming Soon", `${source === "tiktok" ? "TikTok" : "Instagram"} imports will be available soon!`);
-            return;
-        }
-
-        const state = importStates[source];
-        const trimmed = state.url.trim();
-        const platform = PLATFORMS.find((p) => p.id === source);
-
-        if (!trimmed) {
-            updateImportState(source, { error: "Please paste a valid link." });
-            return;
-        }
-
-        if (platform && !validateUrl(trimmed, platform)) {
-            updateImportState(source, {
-                error: `Please enter a valid ${platform.name} URL.`,
-            });
-            return;
-        }
-
-        const userId = currentUserId;
-        if (!userId) {
-            Alert.alert("Please sign in again", "We need your account to save the import.");
-            return;
-        }
-
-        updateImportState(source, { error: null, loading: true });
-        try {
-            let result: WorkoutImport;
-            // Only YouTube is currently supported
-            result = await apiService.importWorkoutFromYouTube({ userId, url: trimmed });
-            updateImportState(source, { result, loading: false });
-
-            // Show preview modal instead of auto-saving
-            setPreviewWorkout(result);
-            setShowPreview(true);
-        } catch (err: any) {
-            console.error(`[ImportWorkout] ${source} import failed`, err);
-            const message =
-                err?.message ||
-                "We couldn't fetch that link. Please verify the URL and try again.";
-            updateImportState(source, { error: message, loading: false });
-        }
-    };
-
-    const handleConfirmImport = async (category: string, makePublic: boolean) => {
-        if (!previewWorkout || !currentUserId) {
-            console.log("[ImportWorkout] Missing previewWorkout or currentUserId", {
-                previewWorkout,
-                currentUserId,
-            });
-            return;
-        }
-
-        console.log("[ImportWorkout] Confirming import with category:", category, "isGlobal:", makePublic);
-        console.log("[ImportWorkout] Preview workout:", previewWorkout);
+        latestUrlRef.current = trimmedUrl;
+        setPhase("loading");
+        setError(null);
 
         try {
-            // Since the backend doesn't support updating workout imports,
-            // we need to create a new import with the selected category
-            console.log("[ImportWorkout] Creating new import with category:", category);
+            const previewFn =
+                platform === "instagram"
+                    ? apiService.previewInstagramUrl.bind(apiService)
+                    : apiService.previewYouTubeUrl.bind(apiService);
 
-            // Use the appropriate import method based on platform
-            const platform = previewWorkout.sourcePlatform?.toLowerCase();
-            let finalWorkout: WorkoutImport;
+            const result = await previewFn(trimmedUrl);
 
-            if (platform?.includes("youtube")) {
-                finalWorkout = await apiService.importWorkoutFromYouTube({
-                    userId: currentUserId,
-                    url: previewWorkout.sourceUrl,
-                    category: category,
-                    isGlobal: makePublic,
-                });
-            } else if (platform?.includes("instagram")) {
-                finalWorkout = await apiService.importWorkoutFromInstagram({
-                    userId: currentUserId,
-                    url: previewWorkout.sourceUrl,
-                    category: category,
-                    isGlobal: makePublic,
-                });
-            } else {
-                // Generic import
-                finalWorkout = await apiService.importWorkoutFromYouTube({
-                    userId: currentUserId,
-                    url: previewWorkout.sourceUrl,
-                    category: category,
-                    isGlobal: makePublic,
-                });
-            }
+            // Guard against stale response if user changed URL while fetching
+            if (latestUrlRef.current !== trimmedUrl) return;
 
-            console.log("[ImportWorkout] Import successful with category:", finalWorkout);
-
-            // Close preview modal
-            setShowPreview(false);
-            setPreviewWorkout(null);
-
-            // Show success feedback
-            Alert.alert("Success!", "Workout saved to your library", [
-                {
-                    text: "View Library",
-                    onPress: () => {
-                        router.push(`/workout?category=${encodeURIComponent(category)}`);
-                    },
-                },
-                {
-                    text: "Import Another",
-                    onPress: () => {
-                        // Reset the form
-                        if (selectedSource) {
-                            handleClearUrl(selectedSource);
-                        }
-                    },
-                },
-            ]);
-        } catch (err: any) {
-            console.error("[ImportWorkout] Failed to save workout - Full error:", err);
-            console.error("[ImportWorkout] Error message:", err?.message);
-            console.error("[ImportWorkout] Error status:", err?.status);
-            console.error("[ImportWorkout] Error stack:", err?.stack);
-            Alert.alert(
-                "Error",
-                `Failed to save workout: ${err?.message || "Unknown error"}. Please try again.`,
+            setPreview(result);
+            setEditableTitle(result.title || "");
+            setEditableDescription(
+                result.sourcePlatform === "instagram"
+                    ? cleanInstagramDescription(result.description)
+                    : result.description || "",
             );
+            setIsDuplicate(existingUrls.has(result.sourceUrl));
+            setPhase("preview");
+        } catch (err: any) {
+            if (latestUrlRef.current !== trimmedUrl) return;
+            console.error(`[ImportWorkout] ${platform} preview failed`, err);
+            setError(err?.message || "Couldn't fetch that link. Please check the URL and try again.");
+            setPhase("error");
         }
     };
 
-    const handleCancelPreview = () => {
-        setShowPreview(false);
-        setPreviewWorkout(null);
+    const handleSave = async () => {
+        if (!preview || !currentUserId) return;
+
+        setPhase("saving");
+        try {
+            await apiService.createWorkoutImport({
+                userId: currentUserId,
+                sourceUrl: preview.sourceUrl,
+                sourcePlatform: preview.sourcePlatform,
+                title: editableTitle.trim() || preview.title || null,
+                description: editableDescription.trim() || preview.description || null,
+                thumbnailUrl: preview.thumbnailUrl,
+                html: preview.html,
+                metadata: preview.metadata,
+                category: selectedCategory,
+                isGlobal: makePublic,
+            });
+            setExistingUrls((prev) => new Set(prev).add(preview.sourceUrl));
+            setPhase("success");
+        } catch (err: any) {
+            console.error("[ImportWorkout] save failed", err);
+            setError(err?.message || "Failed to save. Please try again.");
+            setPhase("preview");
+        }
     };
 
-    const handleClearUrl = (source: ImportSource) => {
-        updateImportState(source, { url: "", error: null, result: null });
+    const handleReset = () => {
+        setUrl("");
+        setPhase("input");
+        setDetectedPlatform(null);
+        setPreview(null);
+        setEditableTitle("");
+        setEditableDescription("");
+        setSelectedCategory(null);
+        setMakePublic(false);
+        setError(null);
+        setIsDuplicate(false);
     };
 
-    const selectedPlatform = PLATFORMS.find((p) => p.id === selectedSource);
-    const selectedState = selectedSource ? importStates[selectedSource] : null;
-    const isUrlValid = selectedPlatform && selectedState
-        ? validateUrl(selectedState.url, selectedPlatform)
-        : false;
+    // --- Derived ---
 
-    return (
-        <View style={[styles.screenBackground, { backgroundColor: theme.colors.bg }]}>
-            <KeyboardAvoidingView
-                behavior={RNPlatform.OS === "ios" ? "padding" : "height"}
-                style={{ flex: 1 }}
-                keyboardVerticalOffset={RNPlatform.OS === "ios" ? 0 : 0}
-            >
-                <View
+    const platformInfo = detectedPlatform ? PLATFORM_META[detectedPlatform] : null;
+    const hasValidUrl = !!detectedPlatform && detectedPlatform !== "tiktok" && url.trim().length > 0;
+    const isSaving = phase === "saving";
+    const canSave = (phase === "preview" || isSaving) && !!preview && !isDuplicate;
+
+    // --- Render helpers ---
+
+    const renderPlatformBadge = (platform: string, size: "sm" | "md" = "sm") => {
+        const info = PLATFORM_META[platform];
+        if (!info) return null;
+        const iconSize = size === "sm" ? 14 : 18;
+        const fontSize = size === "sm" ? typography.sizes.xs : typography.sizes.sm;
+        return (
+            <View style={[styles.platformBadge, { backgroundColor: info.color + "18" }]}>
+                <Ionicons name={info.icon} size={iconSize} color={info.color} />
+                <Text style={[styles.platformBadgeText, { color: info.color, fontSize }]}>{info.label}</Text>
+            </View>
+        );
+    };
+
+    const renderSkeleton = () => (
+        <View style={[styles.previewCard, { backgroundColor: theme.colors.glassWhite, borderColor: theme.colors.glassBorder }]}>
+            <Animated.View
+                style={[styles.skeletonThumb, { backgroundColor: theme.colors.surface, opacity: skeletonAnim }]}
+            />
+            <View style={{ padding: spacing.md, gap: spacing.xs }}>
+                <Animated.View
+                    style={[styles.skeletonLine, { width: "60%", backgroundColor: theme.colors.surface, opacity: skeletonAnim }]}
+                />
+                <Animated.View
+                    style={[styles.skeletonLine, { width: "90%", backgroundColor: theme.colors.surface, opacity: skeletonAnim }]}
+                />
+                <Animated.View
+                    style={[styles.skeletonLine, { width: "40%", backgroundColor: theme.colors.surface, opacity: skeletonAnim }]}
+                />
+            </View>
+        </View>
+    );
+
+    const renderPreviewCard = () => {
+        if (!preview) return null;
+        const platform = preview.sourcePlatform?.toLowerCase() || detectedPlatform;
+        const raw = preview.metadata?.raw;
+        const ogUsername = raw?.ogFallback?.ogUsername;
+        const authorName = raw?.author_name || (ogUsername ? `@${ogUsername}` : null) || preview.description;
+        const displayTitle = preview.title || (authorName ? `Post by ${authorName}` : null);
+
+        // Extract reel/post type from URL for display
+        const contentType = preview.sourceUrl?.includes("/reel/") ? "Reel" : "Post";
+        const platformLabel = platformInfo?.label || (platform ? PLATFORM_META[platform]?.label : null) || "Social Media";
+
+        return (
+            <View style={[styles.previewCard, { backgroundColor: theme.colors.glassWhite, borderColor: theme.colors.glassBorder }, shadows.light.card]}>
+                {/* Thumbnail or branded placeholder */}
+                {preview.thumbnailUrl ? (
+                    <View style={styles.thumbnailContainer}>
+                        <Image
+                            source={{ uri: preview.thumbnailUrl }}
+                            style={styles.thumbnail}
+                            resizeMode="cover"
+                            onError={() => {
+                                setPreview((prev) => prev ? { ...prev, thumbnailUrl: null } : prev);
+                            }}
+                        />
+                        <LinearGradient
+                            colors={["transparent", "rgba(41,37,33,0.5)"]}
+                            style={styles.thumbnailGradient}
+                        />
+                        {platform && (
+                            <View style={styles.thumbnailBadge}>
+                                {renderPlatformBadge(platform, "md")}
+                            </View>
+                        )}
+                    </View>
+                ) : (
+                    <View style={[styles.brandedPlaceholder, { backgroundColor: (platform ? PLATFORM_META[platform]?.color : theme.colors.accent) + "12" }]}>
+                        <Ionicons
+                            name={platform ? PLATFORM_META[platform]?.icon || "link-outline" : "link-outline"}
+                            size={48}
+                            color={(platform ? PLATFORM_META[platform]?.color : theme.colors.accent) + "80"}
+                        />
+                        <Text style={[styles.placeholderLabel, { color: (platform ? PLATFORM_META[platform]?.color : theme.colors.textTertiary) }]}>
+                            {platformLabel} {contentType}
+                        </Text>
+                    </View>
+                )}
+
+                {/* Content */}
+                <View style={styles.previewContent}>
+                    {authorName && (
+                        <View style={styles.authorRow}>
+                            <Ionicons name="person-outline" size={14} color={theme.colors.textTertiary} />
+                            <Text style={[styles.authorText, { color: theme.colors.textTertiary }]}>
+                                {authorName}
+                            </Text>
+                        </View>
+                    )}
+                    <Text style={[styles.previewTitle, { color: theme.colors.text }]} numberOfLines={2}>
+                        {displayTitle || `${platformLabel} ${contentType}`}
+                    </Text>
+                    {preview.sourceUrl && (
+                        <Text style={[styles.sourceUrl, { color: theme.colors.accent }]} numberOfLines={1}>
+                            {preview.sourceUrl}
+                        </Text>
+                    )}
+                </View>
+            </View>
+        );
+    };
+
+    const renderCategoryChips = () => (
+        <View style={styles.categorySection}>
+            <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Category</Text>
+            <Text style={[styles.sectionSubtext, { color: theme.colors.textTertiary }]}>
+                Optional — skip if this covers multiple categories
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                {/* "None" chip */}
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedCategory(null)}
                     style={[
-                        styles.container,
-                        { paddingTop: insets.top, backgroundColor: "transparent" },
+                        styles.chip,
+                        selectedCategory === null
+                            ? { backgroundColor: theme.colors.accent }
+                            : { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border },
                     ]}
                 >
-                    {/* Header */}
-                    <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
-                        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                            <Text style={[styles.backText, { color: theme.colors.accent }]}>
-                                ‹ Back
+                    <Ionicons
+                        name="apps-outline"
+                        size={16}
+                        color={selectedCategory === null ? "#fff" : theme.colors.text}
+                    />
+                    <Text
+                        style={[
+                            styles.chipText,
+                            { color: selectedCategory === null ? "#fff" : theme.colors.text },
+                        ]}
+                    >
+                        None
+                    </Text>
+                </TouchableOpacity>
+
+                {WORKOUT_CATEGORIES.map((cat) => {
+                    const isSelected = selectedCategory === cat;
+                    const icon = CATEGORY_ICONS[cat];
+                    return (
+                        <TouchableOpacity
+                            key={cat}
+                            activeOpacity={0.8}
+                            onPress={() => setSelectedCategory(cat)}
+                            style={[
+                                styles.chip,
+                                isSelected
+                                    ? { backgroundColor: theme.colors.accent }
+                                    : { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border },
+                            ]}
+                        >
+                            <Ionicons name={icon} size={16} color={isSelected ? "#fff" : theme.colors.text} />
+                            <Text style={[styles.chipText, { color: isSelected ? "#fff" : theme.colors.text }]}>
+                                {cat}
                             </Text>
                         </TouchableOpacity>
-                        <Text style={[styles.title, { color: theme.colors.text }]}>Import Workout</Text>
-                        <View style={{ width: 60 }} />
-                    </View>
+                    );
+                })}
+            </ScrollView>
+        </View>
+    );
 
-                    <ScrollView
-                    contentContainerStyle={[
-                        styles.content,
-                        { paddingBottom: insets.bottom + 40 },
-                    ]}
+    const renderAdminToggle = () => {
+        if (!isAdminModeActive) return null;
+        return (
+            <View style={[styles.adminToggle, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <View style={{ flex: 1 }}>
+                    <Text style={[styles.adminLabel, { color: theme.colors.text }]}>Make Public</Text>
+                    <Text style={[styles.adminSubtext, { color: theme.colors.textTertiary }]}>
+                        Visible to all users
+                    </Text>
+                </View>
+                <Switch
+                    value={makePublic}
+                    onValueChange={setMakePublic}
+                    trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+                />
+            </View>
+        );
+    };
+
+    const renderSuccess = () => (
+        <View style={[styles.successCard, { backgroundColor: theme.colors.success + "15", borderColor: theme.colors.success + "40" }]}>
+            <Ionicons name="checkmark-circle" size={32} color={theme.colors.success} />
+            <Text style={[styles.successTitle, { color: theme.colors.text }]}>Saved to Library</Text>
+            <Text style={[styles.successSubtext, { color: theme.colors.textTertiary }]}>
+                {editableTitle || preview?.title || "Your workout"} has been imported
+            </Text>
+            <View style={styles.successActions}>
+                <TouchableOpacity
+                    activeOpacity={0.85}
+                    style={[styles.successBtn, { backgroundColor: theme.colors.accent }]}
+                    onPress={() => {
+                        if (selectedCategory) {
+                            router.push(`/workout?category=${encodeURIComponent(selectedCategory)}`);
+                        } else {
+                            router.push("/workout");
+                        }
+                    }}
+                >
+                    <Ionicons name="library-outline" size={18} color="#fff" />
+                    <Text style={styles.successBtnText}>View in Library</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    activeOpacity={0.85}
+                    style={[styles.successBtnOutline, { borderColor: theme.colors.border }]}
+                    onPress={handleReset}
+                >
+                    <Ionicons name="add-outline" size={18} color={theme.colors.text} />
+                    <Text style={[styles.successBtnOutlineText, { color: theme.colors.text }]}>Import Another</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+
+    // --- Main render ---
+
+    return (
+        <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
+            {/* Header */}
+            <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
+                <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+                </TouchableOpacity>
+                <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Import Workout</Text>
+                <View style={{ width: 24 }} />
+            </View>
+
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={RNPlatform.OS === "ios" ? "padding" : undefined}
+                keyboardVerticalOffset={0}
+            >
+                <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={[styles.content, { paddingBottom: phase === "preview" || phase === "saving" ? insets.bottom + 140 : spacing.xl }]}
+                    keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Section Header */}
-                    <Text style={[styles.sectionHeader, { color: theme.colors.text }]}>
-                        Choose your source
-                    </Text>
-                    <Text style={[styles.sectionSubtext, { color: theme.colors.textTertiary }]}>
-                        Select where you found the workout
+                    {/* Page headline */}
+                    <Text style={[styles.pageTitle, { color: theme.colors.text }]}>Save a workout</Text>
+                    <Text style={[styles.pageSubtitle, { color: theme.colors.textTertiary }]}>
+                        Paste a link from Instagram or YouTube
                     </Text>
 
-                    {/* Platform Cards */}
-                    <View style={styles.platformCards}>
-                        {PLATFORMS.map((platform) => {
-                            const isSelected = selectedSource === platform.id;
-
-                            return (
-                                <TouchableOpacity
-                                    key={platform.id}
-                                    style={[
-                                        styles.platformCard,
-                                        {
-                                            backgroundColor: isSelected
-                                                ? theme.colors.glassWhite
-                                                : theme.colors.glassWhite,
-                                            borderColor: isSelected
-                                                ? theme.colors.accent
-                                                : theme.colors.glassBorder,
-                                            borderWidth: isSelected ? 2 : 1,
-                                        },
-                                        isSelected && styles.platformCardSelected,
-                                    ]}
-                                    onPress={() => handlePlatformSelect(platform.id)}
-                                    activeOpacity={0.7}
-                                >
-                                    <View style={styles.platformCardContent}>
-                                        <View
-                                            style={[
-                                                styles.platformIconContainer,
-                                                {
-                                                    backgroundColor: isSelected
-                                                        ? `${platform.color}15`
-                                                        : theme.colors.surface,
-                                                },
-                                            ]}
-                                        >
-                                            <Ionicons
-                                                name={platform.icon}
-                                                size={32}
-                                                color={isSelected ? platform.color : theme.colors.text}
-                                            />
-                                        </View>
-                                        <View style={styles.platformInfo}>
-                                            <Text
-                                                style={[
-                                                    styles.platformName,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                            >
-                                                {platform.name}
-                                            </Text>
-                                            {(platform.id === "tiktok" || platform.id === "instagram") && (
-                                                <Text
-                                                    style={[
-                                                        styles.comingSoonBadge,
-                                                        { color: theme.colors.textTertiary },
-                                                    ]}
-                                                >
-                                                    Coming soon
-                                                </Text>
-                                            )}
-                                        </View>
-                                        {isSelected && (
-                                            <Ionicons
-                                                name="checkmark-circle"
-                                                size={24}
-                                                color={theme.colors.accent}
-                                            />
-                                        )}
-                                    </View>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-
-                    {/* Animated Input Section */}
-                    {selectedPlatform && (
-                        <Animated.View
+                    {/* URL Input */}
+                    <View style={styles.inputWrapper}>
+                        <View
                             style={[
-                                styles.inputSection,
+                                styles.inputContainer,
                                 {
-                                    maxHeight: inputHeightAnim.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [0, 1000],
-                                    }),
-                                    opacity: inputOpacityAnim,
+                                    borderColor:
+                                        error && phase === "error"
+                                            ? theme.colors.danger
+                                            : hasValidUrl
+                                                ? theme.colors.success
+                                                : theme.colors.border,
+                                    backgroundColor: theme.colors.glassWhite,
                                 },
                             ]}
                         >
-                            {/* Help Button */}
-                            <TouchableOpacity
-                                style={styles.helpButton}
-                                onPress={() => setShowInstructions(!showInstructions)}
-                            >
-                                <Ionicons
-                                    name="help-circle-outline"
-                                    size={20}
-                                    color={theme.colors.accent}
-                                />
-                                <Text style={[styles.helpButtonText, { color: theme.colors.accent }]}>
-                                    How to get the link
-                                </Text>
-                                <Ionicons
-                                    name={showInstructions ? "chevron-up" : "chevron-down"}
-                                    size={20}
-                                    color={theme.colors.accent}
-                                />
-                            </TouchableOpacity>
-
-                            {/* Instructions Panel */}
-                            {showInstructions && (
-                                <Animated.View
-                                    style={[
-                                        styles.instructionsPanel,
-                                        {
-                                            backgroundColor: `${theme.colors.accent}10`,
-                                            borderColor: theme.colors.accent,
-                                        },
-                                    ]}
+                            <Ionicons name="link-outline" size={20} color={theme.colors.textTertiary} style={{ marginLeft: spacing.sm }} />
+                            <TextInput
+                                style={[styles.input, { color: theme.colors.text }]}
+                                placeholder="Paste a workout link..."
+                                placeholderTextColor={theme.colors.textTertiary}
+                                value={url}
+                                onChangeText={setUrl}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                keyboardType="url"
+                                editable={phase === "input" || phase === "error" || phase === "preview"}
+                            />
+                            {url.length > 0 && (phase === "input" || phase === "error" || phase === "preview") && (
+                                <TouchableOpacity
+                                    onPress={() => { setUrl(""); setPhase("input"); setError(null); }}
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    style={{ paddingRight: platformInfo ? spacing.xxs : spacing.sm }}
                                 >
-                                    {selectedPlatform.instructions.map((instruction, index) => (
-                                        <View key={index} style={styles.instructionItem}>
-                                            <View
-                                                style={[
-                                                    styles.instructionNumber,
-                                                    { backgroundColor: theme.colors.accent },
-                                                ]}
-                                            >
-                                                <Text style={styles.instructionNumberText}>
-                                                    {index + 1}
-                                                </Text>
-                                            </View>
-                                            <Text
-                                                style={[
-                                                    styles.instructionText,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                            >
-                                                {instruction}
-                                            </Text>
-                                        </View>
-                                    ))}
-                                </Animated.View>
+                                    <Ionicons name="close-circle" size={20} color={theme.colors.textTertiary} />
+                                </TouchableOpacity>
                             )}
+                            {platformInfo && (
+                                <View style={[styles.inputBadge, { backgroundColor: platformInfo.color + "15" }]}>
+                                    <Ionicons name={platformInfo.icon} size={14} color={platformInfo.color} />
+                                </View>
+                            )}
+                        </View>
 
-                            {/* URL Input Label */}
-                            <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
-                                Paste your {selectedPlatform.name} link
+                        {/* Helper text / TikTok banner / Error */}
+                        {detectedPlatform === "tiktok" ? (
+                            <View style={[styles.tiktokBanner, { backgroundColor: theme.colors.warning + "18" }]}>
+                                <Ionicons name="time-outline" size={16} color={theme.colors.warning} />
+                                <Text style={[styles.tiktokText, { color: theme.colors.warning }]}>
+                                    TikTok support is coming soon. Try an Instagram or YouTube link.
+                                </Text>
+                            </View>
+                        ) : error ? (
+                            <View style={styles.errorRow}>
+                                <Ionicons name="alert-circle-outline" size={16} color={theme.colors.danger} />
+                                <Text style={[styles.errorText, { color: theme.colors.danger }]}>{error}</Text>
+                            </View>
+                        ) : (
+                            <Text style={[styles.helperText, { color: theme.colors.textTertiary }]}>
+                                Supports Instagram Reels, Posts, YouTube videos & Shorts
                             </Text>
+                        )}
+                    </View>
 
-                            {/* URL Input Field with Clear Button */}
-                            <View style={styles.inputContainer}>
+                    {/* Loading skeleton */}
+                    {phase === "loading" && renderSkeleton()}
+
+                    {/* Preview card */}
+                    {(phase === "preview" || phase === "saving") && renderPreviewCard()}
+
+                    {/* Duplicate warning */}
+                    {(phase === "preview") && isDuplicate && (
+                        <View style={[styles.duplicateBanner, { backgroundColor: theme.colors.warning + "18", borderColor: theme.colors.warning + "40" }]}>
+                            <Ionicons name="copy-outline" size={20} color={theme.colors.warning} />
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.duplicateTitle, { color: theme.colors.text }]}>Already in your library</Text>
+                                <Text style={[styles.duplicateSubtext, { color: theme.colors.textTertiary }]}>
+                                    This workout has already been imported.
+                                </Text>
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Editable title & description */}
+                    {(phase === "preview" || phase === "saving") && (
+                        <View style={styles.editFieldsSection}>
+                            <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Details</Text>
+                            <Text style={[styles.sectionSubtext, { color: theme.colors.textTertiary }]}>
+                                Edit the title and description for your library
+                            </Text>
+                            <View style={[styles.editFieldContainer, { borderColor: theme.colors.border, backgroundColor: theme.colors.glassWhite }]}>
                                 <TextInput
-                                    style={[
-                                        styles.input,
-                                        {
-                                            borderColor: selectedState?.error
-                                                ? theme.colors.danger
-                                                : isUrlValid
-                                                ? theme.colors.success
-                                                : theme.colors.glassBorder,
-                                            backgroundColor: theme.colors.glassWhite,
-                                            color: theme.colors.text,
-                                        },
-                                    ]}
-                                    placeholder={selectedPlatform.placeholder}
+                                    style={[styles.editFieldInput, styles.editFieldTitle, { color: theme.colors.text, flex: 1 }]}
+                                    value={editableTitle}
+                                    onChangeText={setEditableTitle}
+                                    placeholder="Workout title"
                                     placeholderTextColor={theme.colors.textTertiary}
-                                    value={selectedState?.url || ""}
-                                    onChangeText={(text) =>
-                                        updateImportState(selectedPlatform.id, {
-                                            url: text,
-                                            error: null,
-                                        })
-                                    }
-                                    autoCapitalize="none"
-                                    autoCorrect={false}
-                                    keyboardType="url"
+                                    editable={phase === "preview"}
+                                    selectTextOnFocus
                                 />
-                                {selectedState?.url ? (
+                                {editableTitle.length > 0 && phase === "preview" && (
                                     <TouchableOpacity
-                                        style={styles.clearButton}
-                                        onPress={() => handleClearUrl(selectedPlatform.id)}
+                                        onPress={() => setEditableTitle("")}
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                        style={{ paddingRight: spacing.sm }}
                                     >
-                                        <Ionicons
-                                            name="close-circle"
-                                            size={20}
-                                            color={theme.colors.textTertiary}
-                                        />
+                                        <Ionicons name="close-circle" size={18} color={theme.colors.textTertiary} />
                                     </TouchableOpacity>
-                                ) : null}
-                                {isUrlValid && (
-                                    <View style={styles.validIcon}>
-                                        <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
-                                    </View>
                                 )}
                             </View>
-
-                            {/* Example Format */}
-                            <Text style={[styles.exampleText, { color: theme.colors.textTertiary }]}>
-                                Example: {selectedPlatform.exampleUrl}
-                            </Text>
-
-                            {/* Error Message */}
-                            {selectedState?.error && (
-                                <View style={styles.errorContainer}>
-                                    <Ionicons
-                                        name="alert-circle"
-                                        size={16}
-                                        color={theme.colors.danger}
-                                    />
-                                    <Text style={[styles.errorText, { color: theme.colors.danger }]}>
-                                        {selectedState.error}
-                                    </Text>
-                                </View>
-                            )}
-
-                            {/* Import Button */}
-                            <TouchableOpacity
-                                style={[
-                                    styles.importButton,
-                                    {
-                                        backgroundColor: theme.colors.accent,
-                                        opacity:
-                                            selectedState?.loading || !isUrlValid ? 0.5 : 1,
-                                    },
-                                ]}
-                                onPress={() => handleImport(selectedPlatform.id)}
-                                disabled={selectedState?.loading || !isUrlValid}
-                            >
-                                {selectedState?.loading ? (
-                                    <View style={styles.loadingContainer}>
-                                        <ActivityIndicator color="#fff" size="small" />
-                                        <Text style={styles.importButtonText}>Importing...</Text>
-                                    </View>
-                                ) : (
-                                    <Text style={styles.importButtonText}>Import Workout</Text>
+                            <View style={[styles.editFieldContainer, { borderColor: theme.colors.border, backgroundColor: theme.colors.glassWhite }]}>
+                                <TextInput
+                                    style={[styles.editFieldInput, { color: theme.colors.text, flex: 1 }]}
+                                    value={editableDescription}
+                                    onChangeText={setEditableDescription}
+                                    placeholder="Description (optional)"
+                                    placeholderTextColor={theme.colors.textTertiary}
+                                    multiline
+                                    numberOfLines={3}
+                                    editable={phase === "preview"}
+                                    selectTextOnFocus
+                                />
+                                {editableDescription.length > 0 && phase === "preview" && (
+                                    <TouchableOpacity
+                                        onPress={() => setEditableDescription("")}
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                        style={{ paddingRight: spacing.sm, alignSelf: "flex-start", paddingTop: spacing.sm }}
+                                    >
+                                        <Ionicons name="close-circle" size={18} color={theme.colors.textTertiary} />
+                                    </TouchableOpacity>
                                 )}
-                            </TouchableOpacity>
-
-                            {/* Success Preview Card */}
-                            {selectedState?.result && (
-                                <View
-                                    style={[
-                                        styles.previewCard,
-                                        {
-                                            borderColor: theme.colors.glassBorder,
-                                            backgroundColor: theme.colors.glassWhite,
-                                        },
-                                    ]}
-                                >
-                                    <View style={styles.previewHeader}>
-                                        <Ionicons
-                                            name="checkmark-circle"
-                                            size={20}
-                                            color={theme.colors.success}
-                                        />
-                                        <Text
-                                            style={[
-                                                styles.previewHeaderText,
-                                                { color: theme.colors.success },
-                                            ]}
-                                        >
-                                            Successfully imported!
-                                        </Text>
-                                    </View>
-                                    <View style={styles.previewContent}>
-                                        {selectedState.result.thumbnailUrl && (
-                                            <Image
-                                                source={{ uri: selectedState.result.thumbnailUrl }}
-                                                style={styles.previewImage}
-                                            />
-                                        )}
-                                        <View style={styles.previewInfo}>
-                                            <Text
-                                                style={[
-                                                    styles.previewTitle,
-                                                    { color: theme.colors.text },
-                                                ]}
-                                                numberOfLines={2}
-                                            >
-                                                {selectedState.result.title || "Imported workout"}
-                                            </Text>
-                                            <Text
-                                                style={[
-                                                    styles.previewDescription,
-                                                    { color: theme.colors.textTertiary },
-                                                ]}
-                                                numberOfLines={3}
-                                            >
-                                                {selectedState.result.description ||
-                                                    selectedState.result.metadata?.description ||
-                                                    "No description available"}
-                                            </Text>
-                                            <Text
-                                                style={[
-                                                    styles.previewUrl,
-                                                    { color: theme.colors.accent },
-                                                ]}
-                                                numberOfLines={1}
-                                            >
-                                                {selectedState.result.sourceUrl}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                </View>
-                            )}
-                        </Animated.View>
+                            </View>
+                        </View>
                     )}
-                </ScrollView>
-            </View>
-            </KeyboardAvoidingView>
 
-            {/* Preview Modal */}
-            <WorkoutImportPreview
-                visible={showPreview}
-                workout={previewWorkout}
-                onConfirm={handleConfirmImport}
-                onCancel={handleCancelPreview}
-                isAdmin={isAdminModeActive}
-            />
+                    {/* Category chips */}
+                    {(phase === "preview" || phase === "saving") && renderCategoryChips()}
+
+                    {/* Admin toggle */}
+                    {(phase === "preview" || phase === "saving") && renderAdminToggle()}
+
+                    {/* Success state */}
+                    {phase === "success" && renderSuccess()}
+                </ScrollView>
+
+                {/* Sticky save button */}
+                {(phase === "preview" || phase === "saving") && (
+                    <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + spacing.sm, borderTopColor: theme.colors.border, backgroundColor: theme.colors.bg }]}>
+                        <TouchableOpacity
+                            activeOpacity={0.85}
+                            style={[
+                                styles.saveButton,
+                                { backgroundColor: canSave ? theme.colors.accent : theme.colors.accent + "50" },
+                            ]}
+                            onPress={handleSave}
+                            disabled={!canSave || isSaving}
+                        >
+                            {isSaving ? (
+                                <ActivityIndicator color="#fff" size="small" />
+                            ) : (
+                                <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                            )}
+                            <Text style={styles.saveButtonText}>
+                                {isSaving ? "Saving..." : "Save to Library"}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </KeyboardAvoidingView>
         </View>
     );
 }
 
+// --- Styles ---
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    screenBackground: {
-        flex: 1,
-    },
-    screenBackgroundImage: {
-        resizeMode: "cover",
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        borderBottomWidth: 1,
+        paddingBottom: spacing.sm,
     },
-    backButton: {
-        width: 60,
-    },
-    backText: {
-        fontSize: 16,
+    headerTitle: {
+        fontSize: typography.sizes.md,
         fontFamily: typography.fonts.bodySemibold,
-    },
-    title: {
-        fontSize: typography.sizes.lg,
-        fontFamily: typography.fonts.headline,
-        letterSpacing: 0.3,
     },
     content: {
-        flexGrow: 1,
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.xl,
+        paddingHorizontal: spacing.md,
+        paddingTop: spacing.lg,
     },
-    sectionHeader: {
-        fontSize: typography.sizes.lg,
+    pageTitle: {
+        fontSize: typography.sizes.xl,
         fontFamily: typography.fonts.headline,
-        marginBottom: spacing.xs,
-        letterSpacing: 0.3,
+        letterSpacing: typography.letterSpacing.tight,
+        lineHeight: typography.sizes.xl * typography.lineHeights.tight,
     },
-    sectionSubtext: {
-        fontSize: 15,
-        fontFamily: typography.fonts.body,
-        marginBottom: spacing.lg,
-    },
-    platformCards: {
-        gap: spacing.md,
-        marginBottom: spacing.lg,
-    },
-    platformCard: {
-        borderRadius: radii.lg,
-        padding: spacing.md,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 2,
-    },
-    platformCardSelected: {
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 4,
-    },
-    platformCardContent: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    platformIconContainer: {
-        width: 56,
-        height: 56,
-        borderRadius: radii.md,
-        alignItems: "center",
-        justifyContent: "center",
-        marginRight: spacing.md,
-    },
-    platformInfo: {
-        flex: 1,
-    },
-    platformName: {
-        fontSize: 18,
-        fontFamily: typography.fonts.bodySemibold,
-        letterSpacing: 0.2,
-    },
-    comingSoonBadge: {
-        fontSize: 12,
+    pageSubtitle: {
+        fontSize: typography.sizes.sm,
         fontFamily: typography.fonts.body,
         marginTop: spacing.xxs,
-        fontStyle: "italic",
+        marginBottom: spacing.lg,
     },
-    inputSection: {
-        overflow: "hidden",
-    },
-    helpButton: {
-        flexDirection: "row",
-        alignItems: "center",
+
+    // Input
+    inputWrapper: {
         gap: spacing.xs,
-        marginBottom: spacing.md,
-    },
-    helpButtonText: {
-        fontSize: 14,
-        fontFamily: typography.fonts.bodySemibold,
-    },
-    instructionsPanel: {
-        borderRadius: radii.md,
-        borderWidth: 1,
-        padding: spacing.md,
-        marginBottom: spacing.md,
-        gap: spacing.sm,
-    },
-    instructionItem: {
-        flexDirection: "row",
-        alignItems: "flex-start",
-        gap: spacing.sm,
-    },
-    instructionNumber: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    instructionNumberText: {
-        color: "#fff",
-        fontSize: 12,
-        fontWeight: "700",
-    },
-    instructionText: {
-        flex: 1,
-        fontSize: 14,
-        lineHeight: 20,
-    },
-    inputLabel: {
-        fontSize: 15,
-        fontFamily: typography.fonts.bodySemibold,
-        marginBottom: spacing.xs,
     },
     inputContainer: {
-        position: "relative",
-        marginBottom: spacing.xs,
-    },
-    input: {
+        flexDirection: "row",
+        alignItems: "center",
         borderWidth: 2,
         borderRadius: radii.md,
-        paddingHorizontal: spacing.md,
+        overflow: "hidden",
+    },
+    input: {
+        flex: 1,
+        fontSize: typography.sizes.md,
+        fontFamily: typography.fonts.body,
         paddingVertical: spacing.sm,
-        fontSize: 16,
-        paddingRight: 44,
+        paddingHorizontal: spacing.xs,
     },
-    clearButton: {
-        position: "absolute",
-        right: spacing.sm,
-        top: "50%",
-        transform: [{ translateY: -10 }],
+    inputBadge: {
+        paddingHorizontal: spacing.xs,
+        paddingVertical: spacing.xxs,
+        borderRadius: radii.sm,
+        marginRight: spacing.xs,
     },
-    validIcon: {
-        position: "absolute",
-        right: spacing.sm,
-        top: "50%",
-        transform: [{ translateY: -10 }],
+    helperText: {
+        fontSize: typography.sizes.xs,
+        fontFamily: typography.fonts.body,
+        marginLeft: spacing.xxs,
     },
-    exampleText: {
-        fontSize: 13,
-        marginBottom: spacing.md,
-        fontStyle: "italic",
-    },
-    errorContainer: {
+    tiktokBanner: {
         flexDirection: "row",
         alignItems: "center",
         gap: spacing.xs,
-        marginBottom: spacing.md,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: radii.sm,
+    },
+    tiktokText: {
+        flex: 1,
+        fontSize: typography.sizes.sm,
+        fontFamily: typography.fonts.bodyMedium,
+    },
+    errorRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.xxs,
+        marginLeft: spacing.xxs,
     },
     errorText: {
-        fontSize: 14,
+        fontSize: typography.sizes.sm,
+        fontFamily: typography.fonts.body,
         flex: 1,
     },
-    importButton: {
-        borderRadius: 9999,
-        paddingVertical: spacing.md,
+
+    // Editable fields
+    editFieldsSection: {
+        marginTop: spacing.lg,
+    },
+    editFieldContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        borderWidth: 1,
+        borderRadius: radii.md,
+        marginTop: spacing.xs,
+    },
+    editFieldInput: {
+        fontSize: typography.sizes.md,
+        fontFamily: typography.fonts.body,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.sm,
+    },
+    editFieldTitle: {
+        fontFamily: typography.fonts.bodySemibold,
+    },
+
+    // Preview card
+    previewCard: {
+        borderWidth: 1,
+        borderRadius: radii.lg,
+        overflow: "hidden",
+        marginTop: spacing.md,
+    },
+    thumbnailContainer: {
+        width: "100%",
+        height: 200,
+        position: "relative",
+    },
+    thumbnail: {
+        width: "100%",
+        height: "100%",
+    },
+    thumbnailGradient: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 80,
+    },
+    thumbnailPlaceholder: {
+        width: "100%",
+        height: 200,
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: spacing.lg,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        elevation: 3,
+        position: "relative",
     },
-    importButtonText: {
-        color: "#fff",
-        fontSize: 17,
-        fontFamily: typography.fonts.bodyBold,
-        letterSpacing: 0.5,
+    brandedPlaceholder: {
+        width: "100%",
+        height: 160,
+        alignItems: "center",
+        justifyContent: "center",
+        gap: spacing.xs,
     },
-    loadingContainer: {
+    placeholderLabel: {
+        fontSize: typography.sizes.sm,
+        fontFamily: typography.fonts.bodySemibold,
+    },
+    thumbnailBadge: {
+        position: "absolute",
+        top: spacing.sm,
+        left: spacing.sm,
+    },
+    previewContent: {
+        padding: spacing.md,
+        gap: spacing.xxs,
+    },
+    authorRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.xxs,
+    },
+    authorText: {
+        fontSize: typography.sizes.sm,
+        fontFamily: typography.fonts.bodyMedium,
+    },
+    previewTitle: {
+        fontSize: typography.sizes.lg,
+        fontFamily: typography.fonts.headlineSemibold,
+        lineHeight: typography.sizes.lg * typography.lineHeights.tight,
+    },
+    previewDescription: {
+        fontSize: typography.sizes.sm,
+        fontFamily: typography.fonts.body,
+        lineHeight: typography.sizes.sm * typography.lineHeights.normal,
+        marginTop: spacing.xxs,
+    },
+    sourceUrl: {
+        fontSize: typography.sizes.xs,
+        fontFamily: typography.fonts.body,
+        marginTop: spacing.xxs,
+    },
+
+    // Platform badge
+    platformBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.xxs,
+        paddingHorizontal: spacing.xs,
+        paddingVertical: spacing.xxs,
+        borderRadius: radii.full,
+    },
+    platformBadgeText: {
+        fontFamily: typography.fonts.bodySemibold,
+    },
+
+    // Skeleton
+    skeletonThumb: {
+        width: "100%",
+        height: 200,
+    },
+    skeletonLine: {
+        height: 14,
+        borderRadius: radii.sm,
+    },
+
+    // Category chips
+    categorySection: {
+        marginTop: spacing.lg,
+    },
+    sectionLabel: {
+        fontSize: typography.sizes.lg,
+        fontFamily: typography.fonts.headline,
+        letterSpacing: typography.letterSpacing.tight,
+    },
+    sectionSubtext: {
+        fontSize: typography.sizes.xs,
+        fontFamily: typography.fonts.body,
+        marginTop: spacing.xxs,
+        marginBottom: spacing.sm,
+    },
+    chipRow: {
+        flexDirection: "row",
+        gap: spacing.xs,
+        paddingVertical: spacing.xxs,
+    },
+    chip: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.xxs,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: radii.full,
+    },
+    chipText: {
+        fontSize: typography.sizes.sm,
+        fontFamily: typography.fonts.bodySemibold,
+    },
+
+    // Admin toggle
+    adminToggle: {
         flexDirection: "row",
         alignItems: "center",
         gap: spacing.sm,
+        padding: spacing.sm,
+        borderRadius: radii.md,
+        borderWidth: 1,
+        marginTop: spacing.md,
     },
-    previewCard: {
-        borderWidth: 2,
-        borderRadius: radii.lg,
-        padding: spacing.md,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
-    },
-    previewHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: spacing.xs,
-        marginBottom: spacing.md,
-    },
-    previewHeaderText: {
-        fontSize: 15,
+    adminLabel: {
+        fontSize: typography.sizes.md,
         fontFamily: typography.fonts.bodySemibold,
     },
-    previewContent: {
+    adminSubtext: {
+        fontSize: typography.sizes.xs,
+        fontFamily: typography.fonts.body,
+        marginTop: 2,
+    },
+
+    // Duplicate banner
+    duplicateBanner: {
         flexDirection: "row",
-        gap: spacing.md,
-    },
-    previewImage: {
-        width: 96,
-        height: 96,
+        alignItems: "center",
+        gap: spacing.sm,
+        padding: spacing.md,
         borderRadius: radii.md,
-        backgroundColor: "#00000015",
+        borderWidth: 1,
+        marginTop: spacing.md,
     },
-    previewInfo: {
-        flex: 1,
+    duplicateTitle: {
+        fontSize: typography.sizes.sm,
+        fontFamily: typography.fonts.bodySemibold,
     },
-    previewTitle: {
-        fontSize: 16,
+    duplicateSubtext: {
+        fontSize: typography.sizes.xs,
+        fontFamily: typography.fonts.body,
+        marginTop: 2,
+    },
+
+    // Success
+    successCard: {
+        alignItems: "center",
+        gap: spacing.sm,
+        padding: spacing.lg,
+        borderRadius: radii.lg,
+        borderWidth: 1,
+        marginTop: spacing.md,
+    },
+    successTitle: {
+        fontSize: typography.sizes.lg,
+        fontFamily: typography.fonts.headlineSemibold,
+    },
+    successSubtext: {
+        fontSize: typography.sizes.sm,
+        fontFamily: typography.fonts.body,
+        textAlign: "center",
+    },
+    successActions: {
+        flexDirection: "column",
+        gap: spacing.xs,
+        marginTop: spacing.sm,
+        width: "100%",
+    },
+    successBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: spacing.xs,
+        paddingVertical: spacing.sm,
+        borderRadius: radii.full,
+    },
+    successBtnText: {
+        color: "#fff",
+        fontSize: typography.sizes.md,
+        fontFamily: typography.fonts.bodySemibold,
+    },
+    successBtnOutline: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: spacing.xs,
+        paddingVertical: spacing.sm,
+        borderRadius: radii.full,
+        borderWidth: 1,
+    },
+    successBtnOutlineText: {
+        fontSize: typography.sizes.md,
+        fontFamily: typography.fonts.bodySemibold,
+    },
+
+    // Sticky footer
+    stickyFooter: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: spacing.md,
+        paddingTop: spacing.sm,
+        borderTopWidth: 1,
+    },
+    saveButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: spacing.xs,
+        paddingVertical: spacing.sm,
+        borderRadius: radii.full,
+        minHeight: 56,
+    },
+    saveButtonText: {
+        color: "#fff",
+        fontSize: typography.sizes.md,
         fontFamily: typography.fonts.bodyBold,
-        marginBottom: spacing.xxs,
-    },
-    previewDescription: {
-        fontSize: 14,
-        lineHeight: 18,
-        marginBottom: spacing.xs,
-    },
-    previewUrl: {
-        fontSize: 12,
-        fontWeight: "500",
     },
 });

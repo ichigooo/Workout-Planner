@@ -20,11 +20,7 @@ import {
 import { useAuth } from "@/src/state/AuthContext";
 import { apiService } from "@/src/services/api";
 import { planItemsCache } from "@/src/services/planItemsCache";
-import {
-    Workout,
-    PERCENTAGE_PRESETS,
-    PERCENTAGE_1RM_SETS,
-} from "@/src/types";
+import { Workout, getDefaultPreset } from "@/src/types";
 import { spacing, radii, typography } from "@/src/theme";
 import ConfirmationDialog from "@/src/components/ConfirmationDialog";
 import { StoryProgressBar } from "@/src/components/workout-session/StoryProgressBar";
@@ -64,21 +60,13 @@ type Action =
     | { type: "COMPLETE_SESSION" };
 
 function getTotalSets(workout: Workout): number {
-    if (workout.workoutType === "cardio") return 1;
-    if (workout.intensityModel === "percentage_1rm") return PERCENTAGE_1RM_SETS;
-    return workout.sets ?? 1;
+    const preset = getDefaultPreset(workout);
+    return preset?.sets ?? 1;
 }
 
 function getReps(workout: Workout): number | undefined {
-    if (workout.workoutType === "cardio") return undefined;
-    if (workout.intensityModel === "percentage_1rm") {
-        const preset =
-            workout.defaultPreset && PERCENTAGE_PRESETS[workout.defaultPreset]
-                ? PERCENTAGE_PRESETS[workout.defaultPreset]
-                : PERCENTAGE_PRESETS.hypertrophy;
-        return preset.reps;
-    }
-    return workout.reps ?? undefined;
+    const preset = getDefaultPreset(workout);
+    return preset?.reps ?? undefined;
 }
 
 function initState(): SessionState {
@@ -120,7 +108,7 @@ function reducer(state: SessionState, action: Action): SessionState {
                     title: workout.title,
                     setsCompleted: totalSets,
                     reps: getReps(workout),
-                    duration: workout.duration ?? undefined,
+                    duration: undefined,
                 };
                 // Update existing log if navigated back and re-completed
                 const existingIdx = state.exerciseLogs.findIndex(
@@ -240,7 +228,7 @@ export default function WorkoutSessionScreen() {
                         title: workout.title,
                         setsCompleted: completed,
                         reps: getReps(workout),
-                        duration: workout.duration ?? undefined,
+                        duration: undefined,
                     });
                 }
             });

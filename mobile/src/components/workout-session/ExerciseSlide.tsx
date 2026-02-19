@@ -13,11 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { getTheme, spacing, radii, typography } from "../../theme";
-import {
-    Workout,
-    PERCENTAGE_PRESETS,
-    PERCENTAGE_1RM_SETS,
-} from "../../types";
+import { Workout, getDefaultPreset } from "../../types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CYCLE_INTERVAL = 3000;
@@ -77,40 +73,29 @@ const setIndicatorStyles = StyleSheet.create({
 function getExerciseDetails(workout: Workout): {
     setsLabel: string;
     repsLabel: string;
+    intensityLabel: string;
 } {
-    const model = workout.intensityModel;
+    const preset = getDefaultPreset(workout);
+    if (!preset) return { setsLabel: "", repsLabel: "", intensityLabel: "" };
 
-    if (workout.workoutType === "cardio") {
-        return {
-            setsLabel: "",
-            repsLabel: workout.duration ? `${workout.duration} min` : "",
-        };
-    }
-
-    switch (model) {
-        case "percentage_1rm": {
-            const preset =
-                workout.defaultPreset && PERCENTAGE_PRESETS[workout.defaultPreset]
-                    ? PERCENTAGE_PRESETS[workout.defaultPreset]
-                    : PERCENTAGE_PRESETS.hypertrophy;
+    switch (preset.inputType) {
+        case "percentage_1rm":
             return {
-                setsLabel: `${PERCENTAGE_1RM_SETS} sets`,
-                repsLabel: `${preset.reps} reps @ ${preset.percentage}%`,
+                setsLabel: preset.sets ? `${preset.sets} sets` : "",
+                repsLabel: `${preset.reps} reps @ ${preset.intensityPct}%`,
+                intensityLabel: "",
             };
-        }
         case "sets_time":
             return {
-                setsLabel: workout.sets ? `${workout.sets} sets` : "",
-                repsLabel: workout.durationPerSet
-                    ? `${workout.durationPerSet}s each`
-                    : "",
+                setsLabel: preset.sets ? `${preset.sets} sets` : "",
+                repsLabel: preset.durationPerSet ? `${preset.durationPerSet}s each` : "",
+                intensityLabel: preset.intensityLabel || "",
             };
-        case "sets_reps":
-        case "legacy":
         default:
             return {
-                setsLabel: workout.sets ? `${workout.sets} sets` : "",
-                repsLabel: workout.reps ? `${workout.reps} reps` : "",
+                setsLabel: preset.sets ? `${preset.sets} sets` : "",
+                repsLabel: preset.reps ? `${preset.reps} reps` : "",
+                intensityLabel: preset.intensityLabel || "",
             };
     }
 }
@@ -147,7 +132,6 @@ export const ExerciseSlide: React.FC<ExerciseSlideProps> = ({
     const insets = useSafeAreaInsets();
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
-    const isCardio = workout.workoutType === "cardio";
     const details = getExerciseDetails(workout);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
 
@@ -298,11 +282,10 @@ export const ExerciseSlide: React.FC<ExerciseSlideProps> = ({
                                 </Text>
                             </View>
                         ) : null}
-                        {workout.intensity &&
-                        workout.intensityModel !== "percentage_1rm" ? (
+                        {details.intensityLabel ? (
                             <View style={styles.detailPill}>
                                 <Text style={styles.detailText}>
-                                    {workout.intensity}
+                                    {details.intensityLabel}
                                 </Text>
                             </View>
                         ) : null}
@@ -312,7 +295,7 @@ export const ExerciseSlide: React.FC<ExerciseSlideProps> = ({
                 <View style={styles.spacer} />
 
                 {/* Set indicator circles */}
-                {!isCardio && totalSets > 1 && (
+                {totalSets > 1 && (
                     <SetIndicator
                         completedSets={completedSets}
                         totalSets={totalSets}
@@ -346,9 +329,7 @@ export const ExerciseSlide: React.FC<ExerciseSlideProps> = ({
                         color="#FFFFFF"
                     />
                     <Text style={styles.completeButtonText}>
-                        {isCardio
-                            ? completedSets >= totalSets ? "Completed" : "Complete"
-                            : completedSets >= totalSets ? "All Sets Done" : "Complete Set"}
+                        {completedSets >= totalSets ? "All Sets Done" : "Complete Set"}
                     </Text>
                 </TouchableOpacity>
             </View>

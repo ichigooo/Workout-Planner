@@ -15,27 +15,28 @@ The Workout Library is the central hub for browsing, managing, and importing wor
 
 Standard workouts created by admins that appear for all users.
 
-**Schema** ([backend/prisma/schema.prisma:30-52](../../backend/prisma/schema.prisma)):
+**Schema** ([backend/prisma/schema.prisma](../../backend/prisma/schema.prisma)):
 
 ```prisma
 model Workout {
-  id          String   @id @default(cuid())
-  title       String
-  category    String
-  description String?
-  workoutType String
-  sets        Int?
-  reps        Int?
-  duration    Int?
-  intensity   String
-  imageUrl    String?
-  imageUrl2   String?
-  isGlobal    Boolean  @default(true)
-  createdBy   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  title        String
+  category     String
+  description  String?
+  workoutType  String          // "strength"
+  movementType String?         // "compound", "accessory", etc.
+  imageUrl     String?
+  imageUrl2    String?
+  isGlobal     Boolean  @default(true)
+  isUnilateral Boolean  @default(false)  // true for single-arm/leg exercises
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  presets      WorkoutPreset[] // Sets/reps/intensity stored in presets
 }
 ```
+
+Sets, reps, and intensity are stored in the `workout_presets` table. See [15-workout-presets.md](./15-workout-presets.md) for details.
 
 ### Imported Workouts (`workout_imports` table)
 
@@ -74,7 +75,6 @@ model WorkoutImport {
 - Created by regular users importing workouts for themselves
 - Only visible to the user who imported them
 - Appear in both their assigned category tab AND the "Custom" tab
-- Display a pink "IMPORTED" badge
 - User can delete their own personal imports
 
 ### Public Imports (`is_global = true`)
@@ -82,7 +82,6 @@ model WorkoutImport {
 - Created by admin users with the "Make Public" toggle enabled
 - Visible to ALL users in the app
 - Appear only in their assigned category tab (NOT in "Custom" tab)
-- No "IMPORTED" badge (appear like regular workouts)
 - Only the admin owner can delete them
 
 ## UI Components
@@ -146,44 +145,48 @@ const listData = showingCustom
 
 **File**: [mobile/app/import-workout.tsx](../../mobile/app/import-workout.tsx)
 
-Multi-step flow for importing workouts from external platforms.
+Single-screen, URL-first flow for importing workouts from external platforms. The UI is platform-agnostic — identical layout regardless of source, with auto-detected platform badge.
 
 **Supported Platforms**:
-- YouTube (fully implemented)
-- Instagram (implemented but may require API keys)
-- TikTok (coming soon)
+- YouTube (fully supported via oEmbed)
+- Instagram (fully supported via oEmbed + OG tag scraping fallback)
+- TikTok (inline "coming soon" banner when detected)
 
-**Import Flow**:
-1. User selects platform (YouTube/Instagram/TikTok)
-2. User pastes URL
-3. App validates URL format
-4. Backend fetches metadata via oEmbed API
-5. Preview modal shows extracted data
-6. User selects category
-7. (Admin only) User can toggle "Make Public"
-8. On confirm, workout is saved to `workout_imports`
-
-### Import Preview Modal
-
-**File**: [mobile/src/components/WorkoutImportPreview.tsx](../../mobile/src/components/WorkoutImportPreview.tsx)
-
-Modal shown after URL validation, displaying extracted metadata.
-
-**Props**:
+**Phase-Based State**:
 
 ```typescript
-interface WorkoutImportPreviewProps {
-    visible: boolean;
-    workout: WorkoutImport | null;
-    onConfirm: (category: string, isGlobal: boolean) => void;
-    onCancel: () => void;
-    isAdmin?: boolean;  // Shows "Make Public" toggle when true
-}
+type Phase = "input" | "loading" | "preview" | "saving" | "success" | "error";
 ```
 
-**Admin Toggle**:
+**Two-Phase API Flow**:
+1. **Preview**: User pastes URL → taps "Preview Workout" → backend fetches metadata via oEmbed (creates DB record without category) → inline preview card appears
+2. **Save**: User optionally picks category → taps "Save to Library" → calls `PUT /api/workout-imports/:id` to update category/isGlobal
 
-When `isAdmin=true`, shows a "Make Public" switch that sets `is_global=true` on the import.
+**Platform Auto-Detection** (runs on URL change):
+
+```typescript
+const detectPlatform = (text: string) => {
+    if (/instagram\.com\/(reel|p)\//i.test(text)) return "instagram";
+    if (/youtube\.com\/(watch|shorts)|youtu\.be\//i.test(text)) return "youtube";
+    if (/tiktok\.com\/@.+\/video\//i.test(text)) return "tiktok";
+    return null;
+};
+```
+
+**UI Elements**:
+- **URL input**: Auto-detected platform badge appears inside the input when a valid URL is detected
+- **Preview button**: Accent pill button, appears below input when valid URL detected (not auto-fetch)
+- **Inline preview card**: Glass card with large video thumbnail, platform badge, title (Fraunces), author, description (DM Sans)
+- **Category chips**: Horizontal scroll, pill shape. First chip = "None" (selected by default, for multi-exercise imports). Category is optional — `null` category is valid
+- **Admin toggle**: Inline surface card with "Make Public" label + Switch (shown only for admin users)
+- **Loading state**: Animated skeleton card (pulsing placeholder rectangles)
+- **Success state**: Inline card with checkmark + "Saved to Library" + navigation buttons
+
+**Instagram Metadata Resolution**:
+
+The backend uses a two-tier approach for Instagram metadata:
+1. **oEmbed API** (`graph.facebook.com/v22.0/instagram_oembed`): Returns embed HTML but often returns null for thumbnail/author/title
+2. **OG tag scraping fallback**: When oEmbed returns incomplete data, the server fetches the Instagram page with a Googlebot user-agent and parses Open Graph meta tags (`og:image`, `og:title`, `og:description`). Extracts username from the description pattern.
 
 ### Custom Import Detail Screen
 
@@ -194,7 +197,6 @@ Full-screen detail view for imported workouts.
 **Features**:
 - Large thumbnail with play overlay
 - Platform badge (YouTube/Instagram icon)
-- "IMPORTED" badge (only for personal imports)
 - Title, author, and metadata
 - "Open in [Platform]" button
 - "Add to Plan" button
@@ -232,31 +234,41 @@ Import a workout from YouTube.
 ```json
 {
     "userId": "user-id",
-    "url": "https://youtube.com/watch?v=...",
-    "category": "Cardio",
-    "isGlobal": false
+    "url": "https://youtube.com/watch?v=..."
 }
 ```
 
-**Admin Check**: If `isGlobal=true`, backend verifies user has `isAdmin=true`.
-
-**Response**: `WorkoutImport`
+**Response**: `WorkoutImport` (created without category — category is added via PUT on save)
 
 ### POST `/api/workout-imports/instagram`
 
-Import a workout from Instagram.
+Import a workout from Instagram. Uses oEmbed API with OG tag scraping fallback for metadata.
 
 **Request**:
 ```json
 {
     "userId": "user-id",
-    "url": "https://instagram.com/reel/...",
-    "category": "Strength",
+    "url": "https://instagram.com/reel/..."
+}
+```
+
+**Response**: `WorkoutImport` (created without category — category is added via PUT on save)
+
+### PUT `/api/workout-imports/:id`
+
+Update an imported workout (category, isGlobal, title, description). Used after preview to save user's category selection and admin settings.
+
+**Request**:
+```json
+{
+    "category": "Upper Body - Pull",
     "isGlobal": false
 }
 ```
 
-**Response**: `WorkoutImport`
+Only provided fields are updated (sparse update pattern).
+
+**Response**: Updated `WorkoutImport`
 
 ### DELETE `/api/workout-imports/:id`
 
@@ -337,21 +349,24 @@ export interface WorkoutImport {
 | Custom | Personal imports only |
 | Category | Global workouts + matching imports (personal + public) |
 
-| Import Type | "IMPORTED" Badge | "CUSTOM" Tag | Appears in Custom Tab |
-|-------------|------------------|--------------|----------------------|
-| Personal | Yes | Yes | Yes |
-| Public | No | No | No |
+| Import Type | "CUSTOM" Tag | Appears in Custom Tab |
+|-------------|--------------|----------------------|
+| Personal | Yes | Yes |
+| Public | No | No |
 
 ## Testing Checklist
 
 ### Import Flow
 
-- [ ] YouTube URL validation works
-- [ ] Preview modal shows correct metadata
-- [ ] Category selection persists
+- [ ] YouTube URL auto-detected, platform badge appears
+- [ ] Instagram URL auto-detected, platform badge appears
+- [ ] TikTok URL shows "coming soon" banner
+- [ ] Preview button fetches metadata and shows inline preview card
+- [ ] Category chips work (including "None" default)
 - [ ] (Admin) "Make Public" toggle appears
 - [ ] (Admin) Public import visible to other users
-- [ ] Success alert appears after import
+- [ ] Save button creates/updates import with selected category
+- [ ] Success state shows inline with navigation options
 
 ### Workout Library Display
 
@@ -360,8 +375,7 @@ export interface WorkoutImport {
 - [ ] Personal imports show in category tabs
 - [ ] Public imports show in category tabs
 - [ ] Public imports do NOT show in "Custom" tab
-- [ ] Personal imports have "IMPORTED" badge
-- [ ] Public imports do NOT have "IMPORTED" badge
+- [ ] Personal imports show in correct category tabs
 
 ### Delete Permissions
 

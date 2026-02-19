@@ -397,6 +397,22 @@ async function uploadWorkoutImageToStorage(workoutId, input) {
  * @param {Object} row - raw DB row
  * @returns {Object} mapped workout object
  */
+function mapPresetRow(row) {
+    if (!row) return row;
+    return {
+        id: row.id,
+        preset: row.preset,
+        sets: row.sets ?? null,
+        reps: row.reps ?? null,
+        intensityPct: row.intensityPct ?? null,
+        intensityLabel: row.intensityLabel ?? null,
+        restSeconds: row.restSeconds ?? null,
+        durationPerSet: row.durationPerSet ?? null,
+        isDefault: row.isDefault ?? false,
+        inputType: row.inputType ?? "sets_reps",
+    };
+}
+
 function mapWorkoutRow(row) {
     if (!row) return row;
     return {
@@ -405,18 +421,16 @@ function mapWorkoutRow(row) {
         category: row.category,
         description: row.description,
         workoutType: row.workoutType,
-        sets: row.sets ?? null,
-        reps: row.reps ?? null,
-        duration: row.duration ?? null,
-        intensity: row.intensity,
+        movementType: row.movementType ?? null,
+        presets: (row.workout_presets || []).map(mapPresetRow),
         imageUrl: row.imageUrl ?? null,
         imageUrl2: row.imageUrl2 ?? null,
         isGlobal: row.isGlobal !== undefined ? row.isGlobal : true,
         createdBy: row.createdBy ?? null,
         trackRecords: row.trackRecords ?? false,
-        intensityModel: row.intensityModel ?? "legacy",
-        defaultPreset: row.defaultPreset ?? null,
-        durationPerSet: row.durationPerSet ?? null,
+        isUnilateral: row.isUnilateral ?? false,
+        sourceUrl: row.sourceUrl ?? null,
+        sourcePlatform: row.sourcePlatform ?? null,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
@@ -638,12 +652,72 @@ function normalizeYouTubeUrl(input) {
     return parsed.toString();
 }
 
+/**
+ * Fetch Open Graph meta tags from an Instagram page as a fallback
+ * when oEmbed doesn't return thumbnail/author data.
+ */
+async function fetchInstagramOgTags(url) {
+    try {
+        const res = await fetch(url, {
+            headers: {
+                "user-agent":
+                    "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+                accept: "text/html",
+            },
+            redirect: "follow",
+        });
+        if (!res.ok) return {};
+        const html = await res.text();
+
+        const decodeEntities = (str) =>
+            str
+                ? str
+                      .replace(/&amp;/g, "&")
+                      .replace(/&lt;/g, "<")
+                      .replace(/&gt;/g, ">")
+                      .replace(/&quot;/g, '"')
+                      .replace(/&#x([0-9a-f]+);/gi, (_, hex) =>
+                          String.fromCodePoint(parseInt(hex, 16))
+                      )
+                      .replace(/&#(\d+);/g, (_, dec) =>
+                          String.fromCodePoint(parseInt(dec, 10))
+                      )
+                : null;
+
+        const extract = (property) => {
+            const re = new RegExp(
+                `<meta[^>]+(?:property|name)=["']${property}["'][^>]+content=["']([^"']+)["']`,
+                "i"
+            );
+            const altRe = new RegExp(
+                `<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${property}["']`,
+                "i"
+            );
+            return decodeEntities((html.match(re) || html.match(altRe) || [])[1] || null);
+        };
+
+        // Extract username from description: "N likes, N comments - USERNAME on DATE:"
+        const desc = extract("og:description");
+        const usernameMatch = desc ? desc.match(/comments\s*-\s*(\w+)\s+on\s/) : null;
+
+        return {
+            ogImage: extract("og:image"),
+            ogTitle: extract("og:title"),
+            ogDescription: desc,
+            ogUsername: usernameMatch ? usernameMatch[1] : null,
+        };
+    } catch (err) {
+        console.warn("OG tag fallback failed:", err.message);
+        return {};
+    }
+}
+
 async function fetchInstagramMetadata(instagramUrl) {
     if (!facebookAppId || !facebookAppSecret) {
         throw new Error("INSTAGRAM_OEMBED_NOT_CONFIGURED");
     }
     const normalizedUrl = normalizeInstagramUrl(instagramUrl);
-    const endpoint = new URL("https://graph.facebook.com/v19.0/instagram_oembed");
+    const endpoint = new URL("https://graph.facebook.com/v22.0/instagram_oembed");
     endpoint.searchParams.set("url", normalizedUrl);
     endpoint.searchParams.set("access_token", `${facebookAppId}|${facebookAppSecret}`);
     endpoint.searchParams.set("omitscript", "true");
@@ -667,15 +741,40 @@ async function fetchInstagramMetadata(instagramUrl) {
         throw new Error("INSTAGRAM_OEMBED_INVALID_RESPONSE");
     }
 
+    // If oEmbed didn't return thumbnail or author, try OG tags from the page
+    let ogFallback = {};
+    if (!payload.thumbnail_url || !payload.author_name) {
+        console.log("oEmbed missing thumbnail/author, trying OG tag fallback...");
+        ogFallback = await fetchInstagramOgTags(normalizedUrl);
+        console.log("OG fallback result:", JSON.stringify(ogFallback));
+    }
+
+    const thumbnailUrl = payload.thumbnail_url || ogFallback.ogImage || null;
+    const authorName = payload.author_name || ogFallback.ogUsername || null;
+
+    // Clean OG title: remove " | Instagram" suffix and author prefix like "Author Name | ..."
+    let ogTitle = ogFallback.ogTitle || null;
+    if (ogTitle) {
+        ogTitle = ogTitle.replace(/\s*\|\s*Instagram\s*$/, "");
+        // If title starts with "Author Name | caption...", extract just the caption
+        const pipeIdx = ogTitle.indexOf(" | ");
+        if (pipeIdx > 0 && pipeIdx < 60) {
+            ogTitle = ogTitle.substring(pipeIdx + 3);
+        }
+    }
+
+    const title = payload.title || ogTitle || (authorName ? `Post by @${authorName}` : null);
+    const description = ogFallback.ogDescription || authorName || null;
+
     return {
         normalizedUrl,
-        title: payload.title || payload.author_name || null,
-        description: payload.author_name || null,
-        thumbnailUrl: payload.thumbnail_url || null,
-        mediaUrl: payload.thumbnail_url || null,
+        title,
+        description,
+        thumbnailUrl,
+        mediaUrl: thumbnailUrl,
         ogType: payload.provider_name || null,
         html: payload.html || null,
-        raw: payload,
+        raw: { ...payload, ogFallback },
     };
 }
 
@@ -794,7 +893,7 @@ app.get("/api/workouts", async (req, res) => {
     try {
         const { data, error } = await supabase
             .from("workouts")
-            .select("*")
+            .select("*, workout_presets(*)")
             .order("createdAt", { ascending: false });
 
         if (error) throw error;
@@ -810,9 +909,6 @@ app.post("/api/workouts", async (req, res) => {
     console.log("[POST /api/workouts] received request");
     try {
         const body = req.body || {};
-
-        // Auto-detect workout type based on category
-        const workoutType = body.category === "Cardio" ? "cardio" : "strength";
 
         // Pre-generate id so we can use it for storage path
         const workoutId = require("crypto").randomUUID();
@@ -849,18 +945,12 @@ app.post("/api/workouts", async (req, res) => {
             title: body.title,
             category: body.category,
             description: body.description ?? null,
-            workoutType: workoutType, // Auto-determined (camelCase column)
-            sets: body.sets ?? null,
-            reps: body.reps ?? null,
-            duration: body.duration ?? null,
-            intensity: body.intensity,
+            workoutType: "strength",
+            movementType: body.movementType ?? null,
             imageUrl: imageUrl,
             imageUrl2: imageUrl2,
             isGlobal: true, // All workouts are global by default
-            createdBy: body.createdBy ?? null, // Optional: who created this workout
-            intensityModel: body.intensityModel ?? "legacy",
-            defaultPreset: body.defaultPreset ?? null,
-            durationPerSet: body.durationPerSet ?? null,
+            createdBy: body.createdBy ?? null,
             sourceUrl: body.sourceUrl ?? null,
             sourcePlatform: body.sourcePlatform ?? null,
         };
@@ -869,10 +959,39 @@ app.post("/api/workouts", async (req, res) => {
         insert.createdAt = new Date().toISOString();
         insert.updatedAt = new Date().toISOString();
 
-        const { data, error } = await supabase.from("workouts").insert([insert]).select().single();
+        const { error } = await supabase.from("workouts").insert([insert]).select().single();
 
         if (error) throw error;
-        res.status(201).json(mapWorkoutRow(data));
+
+        // Insert presets if provided
+        if (Array.isArray(body.presets) && body.presets.length > 0) {
+            const presetRows = body.presets.map((p) => ({
+                workoutId: workoutId,
+                preset: p.preset,
+                sets: p.sets ?? null,
+                reps: p.reps ?? null,
+                intensityPct: p.intensityPct ?? null,
+                intensityLabel: p.intensityLabel ?? null,
+                restSeconds: p.restSeconds ?? null,
+                durationPerSet: p.durationPerSet ?? null,
+                isDefault: p.isDefault ?? false,
+                inputType: p.inputType ?? "sets_reps",
+            }));
+            const { error: presetError } = await supabase
+                .from("workout_presets")
+                .insert(presetRows);
+            if (presetError) console.error("Error inserting presets:", presetError);
+        }
+
+        // Re-fetch with presets for response
+        const { data: full, error: fetchError } = await supabase
+            .from("workouts")
+            .select("*, workout_presets(*)")
+            .eq("id", workoutId)
+            .single();
+
+        if (fetchError) throw fetchError;
+        res.status(201).json(mapWorkoutRow(full));
     } catch (error) {
         console.error("Error creating workout:", error);
         res.status(500).json({ error: "Failed to create workout" });
@@ -883,7 +1002,7 @@ app.get("/api/workouts/:id", async (req, res) => {
     try {
         const { data, error } = await supabase
             .from("workouts")
-            .select("*")
+            .select("*, workout_presets(*)")
             .eq("id", req.params.id)
             .single();
 
@@ -901,8 +1020,6 @@ app.get("/api/workouts/:id", async (req, res) => {
 app.put("/api/workouts/:id", requireAdmin, async (req, res) => {
     try {
         const body = req.body || {};
-        // Auto-detect workout type based on category
-        const workoutType = body.category === "Cardio" ? "cardio" : "strength";
 
         const workoutId = req.params.id;
 
@@ -941,32 +1058,52 @@ app.put("/api/workouts/:id", requireAdmin, async (req, res) => {
             title: body.title,
             category: body.category,
             description: body.description ?? null,
-            workoutType: workoutType, // Auto-determined
-            sets: body.sets ?? null,
-            reps: body.reps ?? null,
-            duration: body.duration ?? null,
-            intensity: body.intensity,
+            workoutType: "strength",
             imageUrl: computedImageUrl,
             imageUrl2: computedImageUrl2,
-            // Only update trackRecords if explicitly provided in request
             ...(body.trackRecords !== undefined && { trackRecords: body.trackRecords }),
-            // Intensity model fields
-            ...(body.intensityModel !== undefined && { intensityModel: body.intensityModel }),
-            ...(body.defaultPreset !== undefined && { defaultPreset: body.defaultPreset }),
-            ...(body.durationPerSet !== undefined && { durationPerSet: body.durationPerSet }),
-            // Note: is_global and created_by are not updated here to maintain data integrity
+            ...(body.movementType !== undefined && { movementType: body.movementType }),
             updatedAt: new Date().toISOString(),
         };
 
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from("workouts")
             .update(update)
-            .eq("id", req.params.id)
+            .eq("id", workoutId)
             .select()
             .single();
 
         if (error) throw error;
-        res.json(mapWorkoutRow(data));
+
+        // Update presets if provided
+        if (Array.isArray(body.presets)) {
+            await supabase.from("workout_presets").delete().eq("workoutId", workoutId);
+            if (body.presets.length > 0) {
+                const presetRows = body.presets.map((p) => ({
+                    workoutId: workoutId,
+                    preset: p.preset,
+                    sets: p.sets ?? null,
+                    reps: p.reps ?? null,
+                    intensityPct: p.intensityPct ?? null,
+                    intensityLabel: p.intensityLabel ?? null,
+                    restSeconds: p.restSeconds ?? null,
+                    durationPerSet: p.durationPerSet ?? null,
+                    isDefault: p.isDefault ?? false,
+                    inputType: p.inputType ?? "sets_reps",
+                }));
+                await supabase.from("workout_presets").insert(presetRows);
+            }
+        }
+
+        // Re-fetch with presets
+        const { data: full, error: fetchError } = await supabase
+            .from("workouts")
+            .select("*, workout_presets(*)")
+            .eq("id", workoutId)
+            .single();
+
+        if (fetchError) throw fetchError;
+        res.json(mapWorkoutRow(full));
     } catch (error) {
         console.error("Error updating workout:", error);
         res.status(500).json({ error: "Failed to update workout" });
@@ -1330,7 +1467,7 @@ app.get("/api/users/:userId/all-prs", async (req, res) => {
         // Get all workouts with trackRecords = true
         const { data: trackedWorkouts, error: workoutsError } = await supabase
             .from("workouts")
-            .select("id, title, category, imageUrl")
+            .select("id, title, category, imageUrl, isUnilateral")
             .eq("trackRecords", true);
 
         if (workoutsError) throw workoutsError;
@@ -1377,6 +1514,7 @@ app.get("/api/users/:userId/all-prs", async (req, res) => {
                     title: workout.title,
                     category: workout.category,
                     imageUrl: workout.imageUrl,
+                    isUnilateral: workout.isUnilateral ?? false,
                 },
                 currentRecords,
                 customReps: config?.customReps ?? [],
@@ -1975,6 +2113,76 @@ app.post("/api/workout-imports", async (req, res) => {
     }
 });
 
+// Preview-only endpoints (metadata fetch, no DB write)
+app.post("/api/workout-imports/preview/instagram", async (req, res) => {
+    try {
+        const { url } = req.body || {};
+        if (!url || typeof url !== "string") {
+            return res.status(400).json({ error: "url is required" });
+        }
+
+        let metadata;
+        try {
+            metadata = await fetchInstagramMetadata(url);
+        } catch (err) {
+            console.error("Failed to fetch Instagram metadata:", err);
+            if (err && err.message === "INSTAGRAM_OEMBED_NOT_CONFIGURED") {
+                return res.status(500).json({
+                    error: "Instagram import is not configured on the server.",
+                });
+            }
+            return res
+                .status(400)
+                .json({ error: "Unable to fetch Instagram metadata for that URL." });
+        }
+
+        res.json({
+            sourceUrl: metadata.normalizedUrl || url,
+            sourcePlatform: "instagram",
+            title: metadata.title ?? null,
+            description: metadata.description ?? null,
+            thumbnailUrl: metadata.thumbnailUrl ?? null,
+            html: metadata.html ?? null,
+            metadata,
+        });
+    } catch (error) {
+        console.error("Error previewing Instagram URL:", error);
+        res.status(500).json({ error: "Failed to preview Instagram URL" });
+    }
+});
+
+app.post("/api/workout-imports/preview/youtube", async (req, res) => {
+    try {
+        const { url } = req.body || {};
+        if (!url || typeof url !== "string") {
+            return res.status(400).json({ error: "url is required" });
+        }
+
+        let metadata;
+        try {
+            metadata = await fetchYouTubeMetadata(url);
+        } catch (err) {
+            console.error("Failed to fetch YouTube metadata:", err);
+            return res
+                .status(400)
+                .json({ error: "Unable to fetch YouTube metadata for that URL." });
+        }
+
+        res.json({
+            sourceUrl: metadata.normalizedUrl || url,
+            sourcePlatform: "youtube",
+            title: metadata.title ?? null,
+            description: metadata.description ?? null,
+            thumbnailUrl: metadata.thumbnailUrl ?? null,
+            html: metadata.html ?? null,
+            metadata,
+        });
+    } catch (error) {
+        console.error("Error previewing YouTube URL:", error);
+        res.status(500).json({ error: "Failed to preview YouTube URL" });
+    }
+});
+
 app.post("/api/workout-imports/instagram", async (req, res) => {
     try {
         const body = req.body || {};
@@ -2128,6 +2336,35 @@ app.get("/api/users/:userId/workout-imports", async (req, res) => {
     } catch (error) {
         console.error("Error fetching workout imports:", error);
         res.status(500).json({ error: "Failed to fetch workout imports" });
+    }
+});
+
+// Update a workout import (e.g. add category after preview)
+app.put("/api/workout-imports/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { category, isGlobal, title, description } = req.body;
+
+        const updates = { updated_at: new Date().toISOString() };
+        if (category !== undefined) updates.category = category;
+        if (isGlobal !== undefined) updates.is_global = isGlobal;
+        if (title !== undefined) updates.title = title;
+        if (description !== undefined) updates.description = description;
+
+        const { data, error } = await supabase
+            .from("workout_imports")
+            .update(updates)
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        if (!data) return res.status(404).json({ error: "Import not found" });
+
+        res.json(mapWorkoutImportRow(data));
+    } catch (error) {
+        console.error("Error updating workout import:", error);
+        res.status(500).json({ error: "Failed to update workout import" });
     }
 });
 

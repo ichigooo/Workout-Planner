@@ -11,6 +11,7 @@ import {
     WorkoutPlanTemplate,
     WorkoutDayTemplate,
     WorkoutImport,
+    WorkoutImportPreview,
     PersonalRecordEntry,
     CurrentPR,
     CreatePREntryRequest,
@@ -445,6 +446,38 @@ class ApiService {
             }
             throw err;
         }
+    }
+
+    async previewInstagramUrl(url: string): Promise<WorkoutImportPreview> {
+        return this.request<WorkoutImportPreview>("/workout-imports/preview/instagram", {
+            method: "POST",
+            body: JSON.stringify({ url }),
+        });
+    }
+
+    async previewYouTubeUrl(url: string): Promise<WorkoutImportPreview> {
+        return this.request<WorkoutImportPreview>("/workout-imports/preview/youtube", {
+            method: "POST",
+            body: JSON.stringify({ url }),
+        });
+    }
+
+    async createWorkoutImport(payload: {
+        userId: string;
+        sourceUrl: string;
+        sourcePlatform: string;
+        title?: string | null;
+        description?: string | null;
+        thumbnailUrl?: string | null;
+        html?: string | null;
+        metadata?: Record<string, any> | null;
+        category?: string | null;
+        isGlobal?: boolean;
+    }): Promise<WorkoutImport> {
+        return this.request<WorkoutImport>("/workout-imports", {
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
     }
 
     async importWorkoutFromInstagram(payload: {

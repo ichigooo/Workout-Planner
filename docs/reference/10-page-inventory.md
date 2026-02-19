@@ -246,12 +246,13 @@ Trainichi uses **Expo Router v4** file-based routing. This document lists every 
 | Purpose | Import from social media |
 
 **Features:**
-- Platform selection (Instagram, YouTube, TikTok)
-- URL input
-- Step-by-step instructions
-- Import validation
-- Preview card
-- YouTube support active
+- URL-first input with auto-detected platform badge (Instagram, YouTube)
+- TikTok detection with "coming soon" banner
+- Phase-based state: input → loading → preview → saving → success
+- Inline preview card with thumbnail, title, author
+- Category chips (horizontal scroll, optional — "None" default)
+- Admin "Make Public" toggle
+- Two-phase API: preview creates record, save updates category
 
 ---
 
@@ -266,11 +267,10 @@ Trainichi uses **Expo Router v4** file-based routing. This document lists every 
 **Features:**
 - Hero image with play overlay
 - Platform badge
-- "IMPORTED" badge
-- Metadata display
+- Metadata display (title, author, description)
 - "Open in [Platform]" link
 - "Add to Plan" button
-- Delete option
+- Delete option (owner only)
 
 ---
 

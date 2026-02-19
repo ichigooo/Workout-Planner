@@ -95,6 +95,9 @@ export default function MyPRsPage() {
                     {workouts.map((item) => {
                         const pr1RM = getPRForReps(item.currentRecords, 1);
                         const pr6RM = getPRForReps(item.currentRecords, 6);
+                        const uniLabel = item.workout.isUnilateral
+                            ? item.workout.category === "Legs" ? "per leg" : "per arm"
+                            : undefined;
 
                         return (
                             <TouchableOpacity
@@ -150,6 +153,11 @@ export default function MyPRsPage() {
                                         <Text style={[styles.prValue, { color: theme.colors.text }]}>
                                             {pr1RM ? `${pr1RM.weight} lbs` : "—"}
                                         </Text>
+                                        {pr1RM && uniLabel && (
+                                            <Text style={[styles.prUnilateral, { color: theme.colors.textTertiary }]}>
+                                                {uniLabel}
+                                            </Text>
+                                        )}
                                     </View>
                                     <View
                                         style={[styles.prDivider, { backgroundColor: theme.colors.border }]}
@@ -161,6 +169,11 @@ export default function MyPRsPage() {
                                         <Text style={[styles.prValue, { color: theme.colors.text }]}>
                                             {pr6RM ? `${pr6RM.weight} lbs` : "—"}
                                         </Text>
+                                        {pr6RM && uniLabel && (
+                                            <Text style={[styles.prUnilateral, { color: theme.colors.textTertiary }]}>
+                                                {uniLabel}
+                                            </Text>
+                                        )}
                                     </View>
                                 </View>
 
@@ -292,6 +305,11 @@ const styles = StyleSheet.create({
     prValue: {
         fontSize: 18,
         fontFamily: typography.fonts.headlineSemibold,
+    },
+    prUnilateral: {
+        fontSize: 10,
+        fontFamily: typography.fonts.bodyMedium,
+        marginTop: 2,
     },
     prDivider: {
         width: 1,

@@ -20,16 +20,12 @@ import {
     Workout,
     CreateWorkoutRequest,
     WorkoutCategory,
-    WorkoutType,
-    IntensityModel,
-    PercentagePreset,
-    PERCENTAGE_PRESETS,
-    PERCENTAGE_1RM_SETS,
+    InputType,
+    getDefaultPreset,
 } from "../types";
 import {
     WORKOUT_CATEGORIES,
     WORKOUT_CATEGORY_DESCRIPTIONS,
-    WORKOUT_TYPES,
 } from "../constants/workoutCategories";
 import { PresetSelector } from "./PresetSelector";
 
@@ -43,39 +39,30 @@ interface WorkoutFormProps {
 }
 
 export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onCancel }) => {
+    // Initialize from existing workout preset if editing
+    const existingPreset = workout ? getDefaultPreset(workout) : undefined;
+
     const [title, setTitle] = useState(workout?.title || "");
     const [category, setCategory] = useState<WorkoutCategory | "">(workout?.category || "");
-    // Auto-detect workout type based on category
-    const getWorkoutType = (category: WorkoutCategory | ""): WorkoutType => {
-        return category === "Cardio" ? WORKOUT_TYPES.CARDIO : WORKOUT_TYPES.STRENGTH;
-    };
-
-    const workoutType = useMemo<WorkoutType>(
-        () => workout?.workoutType || getWorkoutType(category as WorkoutCategory),
-        [workout?.workoutType, category],
-    );
     const [description, setDescription] = useState(workout?.description || "");
-    const [sets, setSets] = useState(workout?.sets?.toString() || "");
-    const [reps, setReps] = useState(workout?.reps?.toString() || "");
-    const [duration, setDuration] = useState(workout?.duration?.toString() || "");
-    const [intensity, setIntensity] = useState(workout?.intensity || "");
+    const [sets, setSets] = useState(existingPreset?.sets?.toString() || "");
+    const [reps, setReps] = useState(existingPreset?.reps?.toString() || "");
+    const [intensity, setIntensity] = useState(existingPreset?.intensityLabel || "");
     const [imageUrl, setImageUrl] = useState(workout?.imageUrl || "");
     const [imageUrl2, setImageUrl2] = useState(workout?.imageUrl2 || "");
     const [trackRecords, setTrackRecords] = useState(workout?.trackRecords || false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
 
-    // Intensity model state
-    const [intensityModel, setIntensityModel] = useState<IntensityModel>(
-        workout?.intensityModel || "legacy"
+    // Input type state (replaces intensityModel)
+    const [inputType, setInputType] = useState<InputType>(
+        existingPreset?.inputType || "sets_reps"
     );
-    const [defaultPreset, setDefaultPreset] = useState<PercentagePreset>(
-        workout?.defaultPreset || "hypertrophy"
+    const [defaultPreset, setDefaultPreset] = useState(
+        existingPreset?.preset || "hypertrophy"
     );
     const [durationPerSet, setDurationPerSet] = useState(
-        workout?.durationPerSet?.toString() || ""
+        existingPreset?.durationPerSet?.toString() || ""
     );
-
-    // workoutType is derived from category (and initial workout), no effect needed
 
     const handleSubmit = () => {
         if (!title || !category) {
@@ -83,72 +70,59 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
             return;
         }
 
-        // Validate based on workout type and intensity model
-        if (workoutType === WORKOUT_TYPES.STRENGTH) {
-            if (intensityModel === "legacy" || intensityModel === "sets_reps") {
-                if (!sets || !reps) {
-                    Alert.alert("Error", "Please fill in sets and reps");
-                    return;
-                }
-                if (!intensity && intensityModel === "legacy") {
-                    Alert.alert("Error", "Please fill in intensity");
-                    return;
-                }
-            } else if (intensityModel === "sets_time") {
-                if (!sets || !durationPerSet) {
-                    Alert.alert("Error", "Please fill in sets and seconds per set");
-                    return;
-                }
-            }
-            // percentage_1rm doesn't need additional validation - preset is always set
-        } else if (workoutType === WORKOUT_TYPES.CARDIO) {
-            if (!duration) {
-                Alert.alert("Error", "Please fill in duration for cardio workouts");
+        // Validate based on input type
+        if (inputType === "sets_reps") {
+            if (!sets || !reps) {
+                Alert.alert("Error", "Please fill in sets and reps");
                 return;
             }
-            if (!intensity) {
-                Alert.alert("Error", "Please fill in intensity");
+        } else if (inputType === "sets_time") {
+            if (!sets || !durationPerSet) {
+                Alert.alert("Error", "Please fill in sets and seconds per set");
                 return;
             }
         }
+        // percentage_1rm doesn't need additional validation - preset is always set
 
-        // Build intensity string based on model
-        let finalIntensity = intensity;
-        if (intensityModel === "percentage_1rm") {
-            const preset = PERCENTAGE_PRESETS[defaultPreset];
-            finalIntensity = `${preset.reps} reps @ ${preset.percentage}% 1RM`;
-        } else if (intensityModel === "sets_reps") {
-            finalIntensity = `${sets} sets × ${reps} reps`;
-        } else if (intensityModel === "sets_time") {
-            finalIntensity = `${sets} sets × ${durationPerSet}s`;
+        // Build presets array based on input type
+        const presets: CreateWorkoutRequest["presets"] = [];
+
+        if (inputType === "percentage_1rm") {
+            // Create 3 presets for percentage_1rm
+            presets.push(
+                { preset: "high", sets: 3, reps: 1, intensityPct: 95, intensityLabel: "High Intensity", isDefault: defaultPreset === "high", inputType: "percentage_1rm" },
+                { preset: "medium", sets: 3, reps: 5, intensityPct: 85, intensityLabel: "Medium Intensity", isDefault: defaultPreset === "medium", inputType: "percentage_1rm" },
+                { preset: "hypertrophy", sets: 3, reps: 8, intensityPct: 80, intensityLabel: "Hypertrophy", isDefault: defaultPreset === "hypertrophy", inputType: "percentage_1rm" },
+            );
+        } else if (inputType === "sets_time") {
+            presets.push({
+                preset: "default",
+                sets: parseInt(sets),
+                durationPerSet: parseInt(durationPerSet),
+                intensityLabel: intensity || undefined,
+                isDefault: true,
+                inputType: "sets_time",
+            });
+        } else {
+            presets.push({
+                preset: "default",
+                sets: parseInt(sets),
+                reps: parseInt(reps),
+                intensityLabel: intensity || undefined,
+                isDefault: true,
+                inputType: "sets_reps",
+            });
         }
 
         const workoutData: CreateWorkoutRequest = {
             title,
             category: category as WorkoutCategory,
-            workoutType,
             description,
-            sets:
-                intensityModel === "percentage_1rm"
-                    ? PERCENTAGE_1RM_SETS
-                    : workoutType === WORKOUT_TYPES.STRENGTH
-                      ? parseInt(sets)
-                      : undefined,
-            reps:
-                intensityModel === "percentage_1rm"
-                    ? PERCENTAGE_PRESETS[defaultPreset].reps
-                    : intensityModel === "sets_reps"
-                      ? parseInt(reps)
-                      : undefined,
-            duration: workoutType === WORKOUT_TYPES.CARDIO ? parseInt(duration) : undefined,
-            intensity: finalIntensity,
+            presets,
             imageUrl: imageUrl || undefined,
             imageUrl2: imageUrl2 || undefined,
             createdBy: workout?.createdBy || undefined,
             trackRecords,
-            intensityModel,
-            defaultPreset: intensityModel === "percentage_1rm" ? defaultPreset : undefined,
-            durationPerSet: intensityModel === "sets_time" ? parseInt(durationPerSet) : undefined,
         };
 
         onSubmit(workoutData);
@@ -196,27 +170,6 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
                     </TouchableOpacity>
                 </View>
 
-                {/* Workout type is automatically determined by category */}
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Workout Type</Text>
-                    <View style={styles.typeDisplay}>
-                        <Text
-                            style={[
-                                styles.typeDisplayText,
-                                {
-                                    color:
-                                        workoutType === WORKOUT_TYPES.CARDIO
-                                            ? "#C49560"
-                                            : "#366299",
-                                },
-                            ]}
-                        >
-                            {workoutType === WORKOUT_TYPES.CARDIO ? "Cardio" : "Strength"}
-                            {category && ` (Auto-detected from ${category})`}
-                        </Text>
-                    </View>
-                </View>
-
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Description</Text>
                     <TextInput
@@ -229,170 +182,149 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ workout, onSubmit, onC
                     />
                 </View>
 
-                {workoutType === WORKOUT_TYPES.STRENGTH ? (
-                    <>
-                        {/* Intensity Model Selector */}
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Intensity Model</Text>
-                            <View style={styles.intensityModelSelector}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.modelOption,
-                                        intensityModel === "percentage_1rm" &&
-                                            styles.modelOptionActive,
-                                    ]}
-                                    onPress={() => setIntensityModel("percentage_1rm")}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.modelOptionText,
-                                            intensityModel === "percentage_1rm" &&
-                                                styles.modelOptionTextActive,
-                                        ]}
-                                    >
-                                        % 1RM
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.modelOption,
-                                        intensityModel === "sets_reps" && styles.modelOptionActive,
-                                    ]}
-                                    onPress={() => setIntensityModel("sets_reps")}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.modelOptionText,
-                                            intensityModel === "sets_reps" &&
-                                                styles.modelOptionTextActive,
-                                        ]}
-                                    >
-                                        Sets × Reps
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.modelOption,
-                                        intensityModel === "sets_time" && styles.modelOptionActive,
-                                    ]}
-                                    onPress={() => setIntensityModel("sets_time")}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.modelOptionText,
-                                            intensityModel === "sets_time" &&
-                                                styles.modelOptionTextActive,
-                                        ]}
-                                    >
-                                        Sets × Time
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+                {/* Input Type Selector */}
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Intensity Model</Text>
+                    <View style={styles.intensityModelSelector}>
+                        <TouchableOpacity
+                            style={[
+                                styles.modelOption,
+                                inputType === "percentage_1rm" &&
+                                    styles.modelOptionActive,
+                            ]}
+                            onPress={() => setInputType("percentage_1rm")}
+                        >
+                            <Text
+                                style={[
+                                    styles.modelOptionText,
+                                    inputType === "percentage_1rm" &&
+                                        styles.modelOptionTextActive,
+                                ]}
+                            >
+                                % 1RM
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[
+                                styles.modelOption,
+                                inputType === "sets_reps" && styles.modelOptionActive,
+                            ]}
+                            onPress={() => setInputType("sets_reps")}
+                        >
+                            <Text
+                                style={[
+                                    styles.modelOptionText,
+                                    inputType === "sets_reps" &&
+                                        styles.modelOptionTextActive,
+                                ]}
+                            >
+                                Sets × Reps
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[
+                                styles.modelOption,
+                                inputType === "sets_time" && styles.modelOptionActive,
+                            ]}
+                            onPress={() => setInputType("sets_time")}
+                        >
+                            <Text
+                                style={[
+                                    styles.modelOptionText,
+                                    inputType === "sets_time" &&
+                                        styles.modelOptionTextActive,
+                                ]}
+                            >
+                                Sets × Time
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
 
-                        {/* percentage_1rm: Show preset selector */}
-                        {intensityModel === "percentage_1rm" && (
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Default Preset</Text>
-                                <PresetSelector
-                                    selected={defaultPreset}
-                                    onSelect={setDefaultPreset}
-                                />
-                                <Text style={styles.hintText}>
-                                    Users can toggle between presets when viewing this workout
-                                </Text>
-                            </View>
-                        )}
+                {/* percentage_1rm: Show preset selector */}
+                {inputType === "percentage_1rm" && (
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Default Preset</Text>
+                        <PresetSelector
+                            presets={[
+                                { id: "form-high", preset: "high", sets: 3, reps: 1, intensityPct: 95, intensityLabel: "High Intensity", isDefault: defaultPreset === "high", inputType: "percentage_1rm" },
+                                { id: "form-medium", preset: "medium", sets: 3, reps: 5, intensityPct: 85, intensityLabel: "Medium Intensity", isDefault: defaultPreset === "medium", inputType: "percentage_1rm" },
+                                { id: "form-hypertrophy", preset: "hypertrophy", sets: 3, reps: 8, intensityPct: 80, intensityLabel: "Hypertrophy", isDefault: defaultPreset === "hypertrophy", inputType: "percentage_1rm" },
+                            ]}
+                            selected={defaultPreset}
+                            onSelect={setDefaultPreset}
+                        />
+                        <Text style={styles.hintText}>
+                            Users can toggle between presets when viewing this workout
+                        </Text>
+                    </View>
+                )}
 
-                        {/* sets_reps: Show standard sets + reps inputs */}
-                        {(intensityModel === "sets_reps" || intensityModel === "legacy") && (
-                            <View style={styles.row}>
-                                <View style={[styles.inputGroup, styles.halfWidth]}>
-                                    <Text style={styles.label}>Sets *</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={sets}
-                                        onChangeText={setSets}
-                                        placeholder="3"
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-
-                                <View style={[styles.inputGroup, styles.halfWidth]}>
-                                    <Text style={styles.label}>Reps *</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={reps}
-                                        onChangeText={setReps}
-                                        placeholder="10"
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-                            </View>
-                        )}
-
-                        {/* sets_time: Show sets + duration per set */}
-                        {intensityModel === "sets_time" && (
-                            <View style={styles.row}>
-                                <View style={[styles.inputGroup, styles.halfWidth]}>
-                                    <Text style={styles.label}>Sets *</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={sets}
-                                        onChangeText={setSets}
-                                        placeholder="3"
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-
-                                <View style={[styles.inputGroup, styles.halfWidth]}>
-                                    <Text style={styles.label}>Seconds per Set *</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={durationPerSet}
-                                        onChangeText={setDurationPerSet}
-                                        placeholder="40"
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-                            </View>
-                        )}
-
-                        {/* Legacy intensity input */}
-                        {intensityModel === "legacy" && (
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Intensity *</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    value={intensity}
-                                    onChangeText={setIntensity}
-                                    placeholder="e.g., 50kg, RPE 8, bodyweight"
-                                />
-                            </View>
-                        )}
-                    </>
-                ) : (
-                    <>
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Duration (minutes) *</Text>
+                {/* sets_reps: Show standard sets + reps inputs */}
+                {inputType === "sets_reps" && (
+                    <View style={styles.row}>
+                        <View style={[styles.inputGroup, styles.halfWidth]}>
+                            <Text style={styles.label}>Sets *</Text>
                             <TextInput
                                 style={styles.input}
-                                value={duration}
-                                onChangeText={setDuration}
-                                placeholder="30"
+                                value={sets}
+                                onChangeText={setSets}
+                                placeholder="3"
                                 keyboardType="numeric"
                             />
                         </View>
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Intensity *</Text>
+
+                        <View style={[styles.inputGroup, styles.halfWidth]}>
+                            <Text style={styles.label}>Reps *</Text>
                             <TextInput
                                 style={styles.input}
-                                value={intensity}
-                                onChangeText={setIntensity}
-                                placeholder="e.g., 8:30/mile, 150 BPM, moderate"
+                                value={reps}
+                                onChangeText={setReps}
+                                placeholder="10"
+                                keyboardType="numeric"
                             />
                         </View>
-                    </>
+                    </View>
+                )}
+
+                {/* sets_time: Show sets + duration per set */}
+                {inputType === "sets_time" && (
+                    <View style={styles.row}>
+                        <View style={[styles.inputGroup, styles.halfWidth]}>
+                            <Text style={styles.label}>Sets *</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={sets}
+                                onChangeText={setSets}
+                                placeholder="3"
+                                keyboardType="numeric"
+                            />
+                        </View>
+
+                        <View style={[styles.inputGroup, styles.halfWidth]}>
+                            <Text style={styles.label}>Seconds per Set *</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={durationPerSet}
+                                onChangeText={setDurationPerSet}
+                                placeholder="40"
+                                keyboardType="numeric"
+                            />
+                        </View>
+                    </View>
+                )}
+
+                {/* Intensity label for non-percentage models */}
+                {inputType !== "percentage_1rm" && (
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Intensity Label</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={intensity}
+                            onChangeText={setIntensity}
+                            placeholder="e.g., 50kg, RPE 8, bodyweight"
+                        />
+                    </View>
                 )}
 
                 <View style={styles.inputGroup}>

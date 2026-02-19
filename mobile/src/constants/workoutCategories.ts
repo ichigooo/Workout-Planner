@@ -1,4 +1,16 @@
+import { Ionicons } from "@expo/vector-icons";
 import { WorkoutCategory } from "../types";
+
+export const CATEGORY_ICONS: Record<WorkoutCategory, keyof typeof Ionicons.glyphMap> = {
+    "Upper Body - Pull": "arrow-down-outline",
+    "Upper Body - Push": "arrow-up-outline",
+    "Legs": "walk-outline",
+    "Core": "body-outline",
+    "Climbing - Power": "flash-outline",
+    "Climbing - Endurance": "trending-up-outline",
+    "Climbing - Warm Up": "flame-outline",
+    "Mobility": "fitness-outline",
+};
 
 export const WORKOUT_CATEGORIES: WorkoutCategory[] = [
     "Upper Body - Pull",
@@ -8,7 +20,6 @@ export const WORKOUT_CATEGORIES: WorkoutCategory[] = [
     "Climbing - Power",
     "Climbing - Endurance",
     "Climbing - Warm Up",
-    "Cardio",
     "Mobility",
 ];
 
@@ -20,7 +31,6 @@ export const WORKOUT_CATEGORY_LABELS: Record<WorkoutCategory, string> = {
     "Climbing - Power": "Climbing - Power",
     "Climbing - Endurance": "Climbing - Endurance",
     "Climbing - Warm Up": "Climbing - Warm Up",
-    "Cardio": "Cardio",
     "Mobility": "Mobility",
 };
 
@@ -32,20 +42,5 @@ export const WORKOUT_CATEGORY_DESCRIPTIONS: Record<WorkoutCategory, string> = {
     "Climbing - Power": "High-intensity climbing movements and power training",
     "Climbing - Endurance": "Sustained climbing and endurance training",
     "Climbing - Warm Up": "Climbing-specific warm-up and mobility exercises",
-    "Cardio": "Cardiovascular exercises (running, cycling, swimming, etc.)",
     "Mobility": "Flexibility and mobility exercises to improve range of motion",
 };
-
-export const WORKOUT_TYPES = {
-    STRENGTH: "strength" as const,
-    CARDIO: "cardio" as const,
-} as const;
-
-export const INTENSITY_TYPES = {
-    WEIGHT: "weight",
-    RPE: "RPE (Rate of Perceived Exertion)",
-    BODYWEIGHT: "bodyweight",
-    PACE: "pace",
-    HEART_RATE: "heart rate",
-    TIME: "time",
-} as const;

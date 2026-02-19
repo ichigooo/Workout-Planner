@@ -1,27 +1,21 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from "react-native";
-import { CurrentPR } from "../../types";
+import { DisplayPR } from "../../utils/epley";
 import { getTheme } from "../../theme";
 
 interface PRCurrentDisplayProps {
-    repCounts: number[];
-    currentPRs: CurrentPR[];
-    customReps: number[];
+    displayPRs: DisplayPR[];
     onAddPR: (reps: number) => void;
+    unilateralLabel?: string;
 }
 
 export const PRCurrentDisplay: React.FC<PRCurrentDisplayProps> = ({
-    repCounts,
-    currentPRs,
-    customReps,
+    displayPRs,
     onAddPR,
+    unilateralLabel,
 }) => {
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
-
-    const getPRForReps = (reps: number): CurrentPR | undefined => {
-        return currentPRs.find((pr) => pr.reps === reps);
-    };
 
     const formatRepLabel = (reps: number): string => {
         if (reps === 1) return "1RM";
@@ -33,64 +27,83 @@ export const PRCurrentDisplay: React.FC<PRCurrentDisplayProps> = ({
         return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     };
 
-    const isCustom = (reps: number): boolean => {
-        return customReps.includes(reps);
-    };
-
     return (
-        <View style={styles.container}>
-            {repCounts.map((reps) => {
-                const pr = getPRForReps(reps);
-                const isCustomRep = isCustom(reps);
-
-                return (
+        <View
+            style={[
+                styles.container,
+                {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.border,
+                },
+            ]}
+        >
+            {displayPRs.map((item, index) => (
+                <React.Fragment key={item.reps}>
+                    {index > 0 && (
+                        <View
+                            style={[
+                                styles.separator,
+                                { backgroundColor: theme.colors.border },
+                            ]}
+                        />
+                    )}
                     <TouchableOpacity
-                        key={reps}
-                        style={[
-                            styles.prCard,
-                            {
-                                backgroundColor: theme.colors.surface,
-                                borderColor: theme.colors.border,
-                            },
-                        ]}
-                        onPress={() => onAddPR(reps)}
+                        style={styles.cell}
+                        onPress={() => onAddPR(item.reps)}
                         activeOpacity={0.7}
                     >
-                        <View style={styles.cardHeader}>
-                            <Text style={[styles.repLabel, { color: theme.colors.text }]}>
-                                {formatRepLabel(reps)}
-                            </Text>
-                            {isCustomRep && (
-                                <View style={[styles.customBadge, { backgroundColor: theme.colors.accent + "20" }]}>
-                                    <Text style={[styles.customBadgeText, { color: theme.colors.accent }]}>
-                                        Custom
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
+                        <Text style={[styles.repLabel, { color: theme.colors.subtext }]}>
+                            {formatRepLabel(item.reps)}
+                        </Text>
 
-                        {pr ? (
-                            <>
-                                <Text style={[styles.weightValue, { color: theme.colors.text }]}>
-                                    {pr.weight} lbs
-                                </Text>
-                                <Text style={[styles.dateText, { color: theme.colors.subtext }]}>
-                                    {formatDate(pr.dateAchieved)}
-                                </Text>
-                            </>
+                        {item.weight > 0 ? (
+                            item.isEstimate ? (
+                                <>
+                                    <Text
+                                        style={[
+                                            styles.estimatedWeight,
+                                            { color: theme.colors.subtext },
+                                        ]}
+                                    >
+                                        ~{item.weight} lbs
+                                    </Text>
+                                    {unilateralLabel && (
+                                        <Text style={[styles.unilateralLabel, { color: theme.colors.subtext }]}>
+                                            {unilateralLabel}
+                                        </Text>
+                                    )}
+                                    <Text
+                                        style={[
+                                            styles.estimatedLabel,
+                                            { color: theme.colors.subtext },
+                                        ]}
+                                    >
+                                        est.
+                                    </Text>
+                                </>
+                            ) : (
+                                <>
+                                    <Text style={[styles.weightValue, { color: theme.colors.text }]}>
+                                        {item.weight} lbs
+                                    </Text>
+                                    {unilateralLabel && (
+                                        <Text style={[styles.unilateralLabel, { color: theme.colors.subtext }]}>
+                                            {unilateralLabel}
+                                        </Text>
+                                    )}
+                                    <Text style={[styles.dateText, { color: theme.colors.subtext }]}>
+                                        {formatDate(item.dateAchieved!)}
+                                    </Text>
+                                </>
+                            )
                         ) : (
-                            <>
-                                <Text style={[styles.noRecordText, { color: theme.colors.subtext }]}>
-                                    No record
-                                </Text>
-                                <Text style={[styles.tapToAddText, { color: theme.colors.accent }]}>
-                                    Tap to add
-                                </Text>
-                            </>
+                            <Text style={[styles.tapToAddText, { color: theme.colors.accent }]}>
+                                Tap to add
+                            </Text>
                         )}
                     </TouchableOpacity>
-                );
-            })}
+                </React.Fragment>
+            ))}
         </View>
     );
 };
@@ -98,50 +111,55 @@ export const PRCurrentDisplay: React.FC<PRCurrentDisplayProps> = ({
 const styles = StyleSheet.create({
     container: {
         flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 12,
-    },
-    prCard: {
-        minWidth: 100,
-        flex: 1,
-        padding: 14,
         borderRadius: 12,
         borderWidth: StyleSheet.hairlineWidth,
+        overflow: "hidden",
     },
-    cardHeader: {
-        flexDirection: "row",
+    cell: {
+        flex: 1,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
         alignItems: "center",
-        marginBottom: 8,
-        gap: 6,
+    },
+    separator: {
+        width: StyleSheet.hairlineWidth,
+        alignSelf: "stretch",
     },
     repLabel: {
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: "600",
-    },
-    customBadge: {
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    customBadgeText: {
-        fontSize: 10,
-        fontWeight: "600",
+        marginBottom: 2,
     },
     weightValue: {
-        fontSize: 22,
+        fontSize: 16,
         fontWeight: "700",
         fontFamily: "Fraunces_700Bold",
     },
     dateText: {
-        fontSize: 12,
-        marginTop: 4,
-    },
-    noRecordText: {
-        fontSize: 14,
+        fontSize: 11,
+        marginTop: 1,
     },
     tapToAddText: {
         fontSize: 12,
-        marginTop: 4,
         fontWeight: "500",
+    },
+    estimatedWeight: {
+        fontSize: 15,
+        fontWeight: "500",
+        fontFamily: "DMSans_500Medium",
+        opacity: 0.7,
+    },
+    unilateralLabel: {
+        fontSize: 10,
+        fontWeight: "500",
+        fontFamily: "DMSans_500Medium",
+        marginTop: 1,
+    },
+    estimatedLabel: {
+        fontSize: 10,
+        fontWeight: "400",
+        fontFamily: "DMSans_400Regular",
+        opacity: 0.5,
+        marginTop: 1,
     },
 });

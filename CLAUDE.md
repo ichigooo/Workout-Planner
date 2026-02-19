@@ -27,6 +27,7 @@ All comprehensive documentation is in [docs/reference/](docs/reference/):
 - [09-testing-guidelines.md](docs/reference/09-testing-guidelines.md) - Testing requirements
 - [10-page-inventory.md](docs/reference/10-page-inventory.md) - Screen documentation
 - [11-common-tasks.md](docs/reference/11-common-tasks.md) - Quick tasks reference
+- [15-workout-presets.md](docs/reference/15-workout-presets.md) - Workout preset system (sets/reps/intensity)
 
 ## Design Guidelines
 

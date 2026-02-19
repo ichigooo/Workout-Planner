@@ -143,16 +143,12 @@ export default function WorkoutScreen() {
         title: item.title || "Imported workout",
         category: (item.category || null) as Workout["category"],
         description: item.description || "",
-        workoutType: "cardio",
-        duration: undefined,
-        sets: undefined,
-        reps: undefined,
-        intensity: item.sourcePlatform || "custom",
+        workoutType: "strength",
+        presets: [],
         imageUrl: item.thumbnailUrl || undefined,
         imageUrl2: undefined,
         isGlobal: false,
         createdBy: undefined,
-        intensityModel: "legacy",
         createdAt: item.createdAt || new Date().toISOString(),
         updatedAt: item.updatedAt || item.createdAt || new Date().toISOString(),
     });
@@ -259,6 +255,28 @@ export default function WorkoutScreen() {
                 onDelete={canDelete ? () => handleDeleteCustomWorkout(item.id) : undefined}
                 showQuickActions={false}
             />
+        );
+    };
+
+    const renderListFooter = () => {
+        if (showingCustom && listData.length === 0) return null;
+        return (
+            <TouchableOpacity
+                style={[styles.importPrompt, { borderColor: theme.colors.glassBorder, backgroundColor: theme.colors.glassWhite }]}
+                activeOpacity={0.7}
+                onPress={() => router.push("/import-workout")}
+            >
+                <Ionicons name="cloud-upload-outline" size={24} color={theme.colors.accent} />
+                <View style={{ flex: 1 }}>
+                    <Text style={[styles.importPromptTitle, { color: theme.colors.text }]}>
+                        Can't find the workout?
+                    </Text>
+                    <Text style={{ fontSize: 13, fontFamily: typography.fonts.body, color: theme.colors.textTertiary }}>
+                        Import from social media
+                    </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
         );
     };
 
@@ -439,6 +457,7 @@ export default function WorkoutScreen() {
                             paddingBottom: insets.bottom + 16,
                         }}
                         showsVerticalScrollIndicator={false}
+                        ListFooterComponent={renderListFooter}
                         ListEmptyComponent={renderListEmpty}
                     />
                 )}
@@ -459,7 +478,7 @@ export default function WorkoutScreen() {
                             style={[
                                 styles.menuContainer,
                                 {
-                                    backgroundColor: theme.colors.glassWhite,
+                                    backgroundColor: theme.colors.cream,
                                     borderColor: theme.colors.glassBorder,
                                 },
                             ]}
@@ -557,6 +576,7 @@ const styles = StyleSheet.create({
     filterText: { fontSize: 14, fontFamily: typography.fonts.bodySemibold },
     importPrompt: {
         marginTop: 16,
+        marginHorizontal: 16,
         borderWidth: 1,
         borderRadius: 24,
         padding: 16,
@@ -587,7 +607,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(0, 0, 0, 0.5)",
         justifyContent: "flex-start",
         alignItems: "flex-end",
-        paddingTop: 60,
+        paddingTop: 140,
         paddingRight: 16,
     },
     menuContainer: {

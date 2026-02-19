@@ -1,18 +1,19 @@
 import React, { useRef, useEffect } from "react";
-import { View, Text, StyleSheet, Animated, PanResponder, Dimensions } from "react-native";
-import { PercentagePreset, PERCENTAGE_PRESETS } from "../types";
+import { View, Text, StyleSheet, Animated, PanResponder } from "react-native";
+import { WorkoutPreset } from "../types";
 
 interface PresetSelectorProps {
-    selected: PercentagePreset;
-    onSelect: (preset: PercentagePreset) => void;
+    presets: WorkoutPreset[];
+    selected: string;
+    onSelect: (presetName: string) => void;
     disabled?: boolean;
 }
 
-const presetOrder: PercentagePreset[] = ["high", "medium", "hypertrophy"];
 const SLIDER_PADDING = 16;
 const THUMB_SIZE = 28;
 
 export const PresetSelector: React.FC<PresetSelectorProps> = ({
+    presets,
     selected,
     onSelect,
     disabled = false,
@@ -20,13 +21,17 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
     const containerWidth = useRef(0);
     const translateX = useRef(new Animated.Value(0)).current;
 
-    const getPositionForPreset = (preset: PercentagePreset, width: number): number => {
+    const presetOrder = presets.map((p) => p.preset);
+
+    const getPositionForPreset = (preset: string, width: number): number => {
         const index = presetOrder.indexOf(preset);
+        if (presetOrder.length <= 1) return SLIDER_PADDING;
         const trackWidth = width - SLIDER_PADDING * 2 - THUMB_SIZE;
-        return SLIDER_PADDING + (trackWidth * index) / (presetOrder.length - 1);
+        return SLIDER_PADDING + (trackWidth * Math.max(0, index)) / (presetOrder.length - 1);
     };
 
-    const getPresetForPosition = (x: number, width: number): PercentagePreset => {
+    const getPresetForPosition = (x: number, width: number): string => {
+        if (presetOrder.length <= 1) return presetOrder[0] ?? "default";
         const trackWidth = width - SLIDER_PADDING * 2 - THUMB_SIZE;
         const relativeX = x - SLIDER_PADDING;
         const ratio = Math.max(0, Math.min(1, relativeX / trackWidth));
@@ -51,7 +56,6 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
             onStartShouldSetPanResponder: () => !disabled,
             onMoveShouldSetPanResponder: () => !disabled,
             onPanResponderGrant: () => {
-                // Get current value and set offset
                 translateX.extractOffset();
             },
             onPanResponderMove: (_, gestureState) => {
@@ -60,7 +64,6 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
             },
             onPanResponderRelease: (_, gestureState) => {
                 translateX.flattenOffset();
-                // Calculate final position
                 const width = containerWidth.current;
                 const currentPos = getPositionForPreset(selected, width) + gestureState.dx;
                 const newPreset = getPresetForPosition(currentPos + THUMB_SIZE / 2, width);
@@ -76,83 +79,90 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
         translateX.setValue(pos);
     };
 
-    const handleStopPress = (preset: PercentagePreset) => {
+    const handleStopPress = (preset: string) => {
         if (!disabled) {
             onSelect(preset);
         }
     };
 
-    const selectedConfig = PERCENTAGE_PRESETS[selected];
+    const selectedPreset = presets.find((p) => p.preset === selected) ?? presets[0];
+
+    if (!selectedPreset) return null;
+
+    const displayLabel = selectedPreset.intensityLabel ?? selectedPreset.preset;
+    const displayDescription = selectedPreset.intensityPct
+        ? `${selectedPreset.sets ?? 3} sets × ${selectedPreset.reps} ${selectedPreset.reps === 1 ? "rep" : "reps"} @ ${selectedPreset.intensityPct}% 1RM`
+        : `${selectedPreset.sets ?? 3} sets × ${selectedPreset.reps} reps`;
 
     return (
         <View style={styles.container}>
             {/* Current value display */}
             <View style={styles.valueDisplay}>
-                <Text style={styles.valueLabel}>{selectedConfig.label}</Text>
-                <Text style={styles.valueDescription}>
-                    3 sets × {selectedConfig.reps} {selectedConfig.reps === 1 ? "rep" : "reps"} @ {selectedConfig.percentage}% 1RM
-                </Text>
+                <Text style={styles.valueLabel}>{displayLabel}</Text>
+                <Text style={styles.valueDescription}>{displayDescription}</Text>
             </View>
 
-            {/* Slider track */}
-            <View style={styles.sliderContainer} onLayout={handleLayout}>
-                {/* Track background */}
-                <View style={styles.track} />
+            {/* Slider track - only show for multiple presets */}
+            {presets.length > 1 && (
+                <>
+                    <View style={styles.sliderContainer} onLayout={handleLayout}>
+                        <View style={styles.track} />
 
-                {/* Stop markers and labels */}
-                <View style={styles.stopsContainer}>
-                    {presetOrder.map((preset, index) => {
-                        const isSelected = selected === preset;
-                        return (
-                            <View
-                                key={preset}
-                                style={[
-                                    styles.stopWrapper,
-                                    index === 0 && styles.stopWrapperFirst,
-                                    index === presetOrder.length - 1 && styles.stopWrapperLast,
-                                ]}
-                            >
-                                <View
-                                    style={[
-                                        styles.stopDot,
-                                        isSelected && styles.stopDotActive,
-                                    ]}
-                                    onTouchEnd={() => handleStopPress(preset)}
-                                />
-                                <Text
-                                    style={[
-                                        styles.stopLabel,
-                                        isSelected && styles.stopLabelActive,
-                                    ]}
-                                >
-                                    {PERCENTAGE_PRESETS[preset].percentage}%
-                                </Text>
-                            </View>
-                        );
-                    })}
-                </View>
+                        <View style={styles.stopsContainer}>
+                            {presets.map((preset, index) => {
+                                const isSelected = selected === preset.preset;
+                                return (
+                                    <View
+                                        key={preset.preset}
+                                        style={[
+                                            styles.stopWrapper,
+                                            index === 0 && styles.stopWrapperFirst,
+                                            index === presets.length - 1 && styles.stopWrapperLast,
+                                        ]}
+                                    >
+                                        <View
+                                            style={[
+                                                styles.stopDot,
+                                                isSelected && styles.stopDotActive,
+                                            ]}
+                                            onTouchEnd={() => handleStopPress(preset.preset)}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.stopLabel,
+                                                isSelected && styles.stopLabelActive,
+                                            ]}
+                                        >
+                                            {preset.intensityPct ? `${preset.intensityPct}%` : preset.preset}
+                                        </Text>
+                                    </View>
+                                );
+                            })}
+                        </View>
 
-                {/* Draggable thumb */}
-                <Animated.View
-                    style={[
-                        styles.thumb,
-                        disabled && styles.thumbDisabled,
-                        { transform: [{ translateX }] },
-                    ]}
-                    {...panResponder.panHandlers}
-                >
-                    <Text style={styles.thumbText}>
-                        {PERCENTAGE_PRESETS[selected].reps}
-                    </Text>
-                </Animated.View>
-            </View>
+                        <Animated.View
+                            style={[
+                                styles.thumb,
+                                disabled && styles.thumbDisabled,
+                                { transform: [{ translateX }] },
+                            ]}
+                            {...panResponder.panHandlers}
+                        >
+                            <Text style={styles.thumbText}>
+                                {selectedPreset.reps ?? ""}
+                            </Text>
+                        </Animated.View>
+                    </View>
 
-            {/* Rep labels below */}
-            <View style={styles.repLabelsContainer}>
-                <Text style={styles.repLabel}>1 rep</Text>
-                <Text style={styles.repLabel}>5 reps</Text>
-                <Text style={styles.repLabel}>8 reps</Text>
-            </View>
+                    <View style={styles.repLabelsContainer}>
+                        {presets.map((p) => (
+                            <Text key={p.preset} style={styles.repLabel}>
+                                {p.reps} {p.reps === 1 ? "rep" : "reps"}
+                            </Text>
+                        ))}
+                    </View>
+                </>
+            )}
         </View>
     );
 };

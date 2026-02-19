@@ -12,18 +12,18 @@ import {
     Platform,
     ScrollView,
 } from "react-native";
+
 import { getTheme } from "../../theme";
 import { apiService } from "../../services/api";
-
-// Standard rep options for quick selection
-const QUICK_REPS = [1, 3, 5, 6, 8, 10, 12];
 
 interface PREntryFormProps {
     visible: boolean;
     workoutId: string;
     userId: string;
     initialReps?: number | null; // null means user can choose, number means pre-selected
+    repOptions?: number[]; // Preset-derived rep counts for selection
     existingReps?: number[]; // Rep counts that already have records (for highlighting)
+    unilateralLabel?: string;
     onClose: () => void;
     onSave: (isNewRecord: boolean, reps: number) => void;
 }
@@ -33,7 +33,9 @@ export const PREntryForm: React.FC<PREntryFormProps> = ({
     workoutId,
     userId,
     initialReps = null,
+    repOptions = [],
     existingReps = [],
+    unilateralLabel,
     onClose,
     onSave,
 }) => {
@@ -41,18 +43,14 @@ export const PREntryForm: React.FC<PREntryFormProps> = ({
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
 
     const [selectedReps, setSelectedReps] = useState<number | null>(initialReps);
-    const [customRepsInput, setCustomRepsInput] = useState("");
     const [weight, setWeight] = useState("");
     const [saving, setSaving] = useState(false);
-    const [showCustomInput, setShowCustomInput] = useState(false);
 
     // Reset form when opened
     useEffect(() => {
         if (visible) {
             setSelectedReps(initialReps);
-            setCustomRepsInput("");
             setWeight("");
-            setShowCustomInput(false);
         }
     }, [visible, initialReps]);
 
@@ -63,18 +61,6 @@ export const PREntryForm: React.FC<PREntryFormProps> = ({
 
     const handleSelectReps = (reps: number) => {
         setSelectedReps(reps);
-        setShowCustomInput(false);
-        setCustomRepsInput("");
-    };
-
-    const handleCustomRepsChange = (value: string) => {
-        setCustomRepsInput(value);
-        const parsed = parseInt(value, 10);
-        if (!isNaN(parsed) && parsed >= 1 && parsed <= 20) {
-            setSelectedReps(parsed);
-        } else {
-            setSelectedReps(null);
-        }
     };
 
     const handleSave = async () => {
@@ -111,8 +97,6 @@ export const PREntryForm: React.FC<PREntryFormProps> = ({
     const handleClose = () => {
         setWeight("");
         setSelectedReps(null);
-        setCustomRepsInput("");
-        setShowCustomInput(false);
         onClose();
     };
 
@@ -162,7 +146,7 @@ export const PREntryForm: React.FC<PREntryFormProps> = ({
                                 style={styles.repsScrollView}
                                 contentContainerStyle={styles.repsContainer}
                             >
-                                {QUICK_REPS.map((reps) => (
+                                {repOptions.map((reps) => (
                                     <TouchableOpacity
                                         key={reps}
                                         style={[
@@ -195,61 +179,7 @@ export const PREntryForm: React.FC<PREntryFormProps> = ({
                                         )}
                                     </TouchableOpacity>
                                 ))}
-                                <TouchableOpacity
-                                    style={[
-                                        styles.repButton,
-                                        styles.customRepButton,
-                                        {
-                                            backgroundColor: showCustomInput
-                                                ? theme.colors.accent
-                                                : theme.colors.surface,
-                                            borderColor: theme.colors.border,
-                                        },
-                                    ]}
-                                    onPress={() => {
-                                        setShowCustomInput(true);
-                                        setSelectedReps(null);
-                                    }}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.repButtonText,
-                                            {
-                                                color: showCustomInput
-                                                    ? "#FFFFFF"
-                                                    : theme.colors.text,
-                                            },
-                                        ]}
-                                    >
-                                        Other
-                                    </Text>
-                                </TouchableOpacity>
                             </ScrollView>
-
-                            {showCustomInput && (
-                                <View style={styles.customInputRow}>
-                                    <TextInput
-                                        style={[
-                                            styles.customRepsInput,
-                                            {
-                                                backgroundColor: theme.colors.surface,
-                                                borderColor: theme.colors.border,
-                                                color: theme.colors.text,
-                                            },
-                                        ]}
-                                        placeholder="Enter reps (1-20)"
-                                        placeholderTextColor={theme.colors.subtext}
-                                        value={customRepsInput}
-                                        onChangeText={handleCustomRepsChange}
-                                        keyboardType="number-pad"
-                                        maxLength={2}
-                                        autoFocus
-                                    />
-                                    <Text style={[styles.repsLabel, { color: theme.colors.subtext }]}>
-                                        reps
-                                    </Text>
-                                </View>
-                            )}
                         </>
                     )}
 
@@ -267,7 +197,7 @@ export const PREntryForm: React.FC<PREntryFormProps> = ({
 
                     {/* Weight Input */}
                     <Text style={[styles.label, { color: theme.colors.subtext, marginTop: 20 }]}>
-                        Weight (lbs)
+                        Weight (lbs){unilateralLabel ? ` — ${unilateralLabel}` : ""}
                     </Text>
                     <TextInput
                         style={[
@@ -292,6 +222,11 @@ export const PREntryForm: React.FC<PREntryFormProps> = ({
                             <Text style={[styles.summaryText, { color: theme.colors.text }]}>
                                 {weight} lbs × {selectedReps} {selectedReps === 1 ? "rep" : "reps"}
                             </Text>
+                            {unilateralLabel && (
+                                <Text style={[styles.summarySubtext, { color: theme.colors.subtext }]}>
+                                    {unilateralLabel}
+                                </Text>
+                            )}
                         </View>
                     )}
 
@@ -363,10 +298,6 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         position: "relative",
     },
-    customRepButton: {
-        width: 70,
-        borderRadius: 26,
-    },
     repButtonText: {
         fontSize: 16,
         fontWeight: "600",
@@ -377,24 +308,6 @@ const styles = StyleSheet.create({
         width: 6,
         height: 6,
         borderRadius: 3,
-    },
-    customInputRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: 8,
-        gap: 10,
-    },
-    customRepsInput: {
-        flex: 1,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        fontSize: 18,
-    },
-    repsLabel: {
-        fontSize: 16,
-        fontWeight: "500",
     },
     preSelectedReps: {
         marginBottom: 8,
@@ -424,6 +337,12 @@ const styles = StyleSheet.create({
     summaryText: {
         fontSize: 16,
         fontWeight: "600",
+    },
+    summarySubtext: {
+        fontSize: 12,
+        fontWeight: "500",
+        fontFamily: "DMSans_500Medium",
+        marginTop: 2,
     },
     saveButton: {
         marginTop: 20,

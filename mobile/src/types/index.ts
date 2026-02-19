@@ -17,65 +17,58 @@ export type WorkoutCategory =
     | "Climbing - Power"
     | "Climbing - Endurance"
     | "Climbing - Warm Up"
-    | "Cardio"
     | "Mobility";
 
-export type WorkoutType = "strength" | "cardio";
+export type MovementType = "compound" | "accessory" | "isolation" | "plyometric" | "technique" | "warmup";
 
-export type IntensityModel = "legacy" | "percentage_1rm" | "sets_reps" | "sets_time";
-export type PercentagePreset = "high" | "medium" | "hypertrophy";
+export type InputType = "sets_reps" | "sets_time" | "percentage_1rm";
 
-export interface PresetConfig {
-    label: string;
-    reps: number;
-    percentage: number;
-    description: string;
+export interface WorkoutPreset {
+    id: string;
+    preset: string;
+    sets?: number;
+    reps?: number;
+    intensityPct?: number;
+    intensityLabel?: string;
+    restSeconds?: number;
+    durationPerSet?: number;
+    isDefault: boolean;
+    inputType: InputType;
 }
 
-export const PERCENTAGE_PRESETS: Record<PercentagePreset, PresetConfig> = {
-    high: {
-        label: "High Intensity",
-        reps: 1,
-        percentage: 95,
-        description: "1 rep @ 95% 1RM",
-    },
-    medium: {
-        label: "Medium Intensity",
-        reps: 5,
-        percentage: 85,
-        description: "5 reps @ 85% 1RM",
-    },
-    hypertrophy: {
-        label: "Hypertrophy",
-        reps: 8,
-        percentage: 80,
-        description: "8 reps @ 80% 1RM",
-    },
-};
+export function getDefaultPreset(workout: Workout): WorkoutPreset | undefined {
+    return workout.presets?.find((p) => p.isDefault) ?? workout.presets?.[0];
+}
 
-// All percentage_1rm workouts show 3 sets as the recommended value
-export const PERCENTAGE_1RM_SETS = 3;
+export function getPresetByName(workout: Workout, name: string): WorkoutPreset | undefined {
+    return workout.presets?.find((p) => p.preset === name);
+}
+
+export const SEQUENCE_PRIORITY: Record<MovementType, number> = {
+    warmup: 0,
+    technique: 5,
+    compound: 10,
+    plyometric: 20,
+    accessory: 30,
+    isolation: 50,
+};
 
 export interface Workout {
     id: string;
     title: string;
     category: WorkoutCategory;
     description?: string;
-    workoutType: WorkoutType;
-    sets?: number; // Only for strength workouts
-    reps?: number; // Only for strength workouts
-    duration?: number; // Only for cardio workouts (in minutes)
-    intensity: string;
+    workoutType: string;
+    movementType?: MovementType;
+    presets: WorkoutPreset[];
     imageUrl?: string;
-    imageUrl2?: string; // camelCase column name
-    isGlobal: boolean; // Global workout library - shared across all users
-    createdBy?: string; // Optional: who created this workout (for admin purposes)
-    trackRecords?: boolean; // Enable PR tracking for this workout
-    intensityModel: IntensityModel; // Intensity model type
-    defaultPreset?: PercentagePreset; // Default preset for percentage_1rm model
-    durationPerSet?: number; // Duration per set in seconds (for sets_time model)
-    sourceUrl?: string; // Original source URL for imported workouts
-    sourcePlatform?: string; // Platform name (e.g. "YouTube", "Instagram")
+    imageUrl2?: string;
+    isGlobal: boolean;
+    createdBy?: string;
+    trackRecords?: boolean;
+    isUnilateral?: boolean;
+    sourceUrl?: string;
+    sourcePlatform?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -107,13 +100,13 @@ export interface WorkoutLog {
     workoutId: string;
     userId: string;
     date: string;
-    sets?: number; // Only for strength workouts
-    reps?: number; // Only for strength workouts
-    duration?: number; // Only for cardio workouts (in minutes)
-    weight?: number; // For strength workouts
-    rpe?: number; // Rate of Perceived Exertion (1-10)
-    pace?: string; // For cardio workouts (e.g., "8:30/mile")
-    heartRate?: number; // For cardio workouts (BPM)
+    sets?: number;
+    reps?: number;
+    duration?: number;
+    weight?: number;
+    rpe?: number;
+    pace?: string;
+    heartRate?: number;
     notes?: string;
     createdAt: string;
     updatedAt: string;
@@ -170,7 +163,7 @@ export interface UserWorkoutRepConfig {
 }
 
 export interface WorkoutPRSummary {
-    workout: Pick<Workout, "id" | "title" | "category" | "imageUrl">;
+    workout: Pick<Workout, "id" | "title" | "category" | "imageUrl" | "isUnilateral">;
     currentRecords: CurrentPR[];
     customReps: number[];
 }
@@ -201,20 +194,14 @@ export interface CreateWorkoutRequest {
     title: string;
     category: WorkoutCategory;
     description?: string;
-    workoutType?: WorkoutType; // Optional - auto-determined from category
-    sets?: number; // Only for strength workouts
-    reps?: number; // Only for strength workouts
-    duration?: number; // Only for cardio workouts (in minutes)
-    intensity: string;
+    movementType?: MovementType;
+    presets?: Omit<WorkoutPreset, "id">[];
     imageUrl?: string;
     imageUrl2?: string;
-    createdBy?: string; // Optional: who created this workout (for admin purposes)
-    trackRecords?: boolean; // Enable PR tracking for this workout
-    intensityModel?: IntensityModel; // Intensity model type (defaults to "legacy")
-    defaultPreset?: PercentagePreset; // Default preset for percentage_1rm model
-    durationPerSet?: number; // Duration per set in seconds (for sets_time model)
-    sourceUrl?: string; // Original source URL for imported workouts
-    sourcePlatform?: string; // Platform name (e.g. "YouTube", "Instagram")
+    createdBy?: string;
+    trackRecords?: boolean;
+    sourceUrl?: string;
+    sourcePlatform?: string;
 }
 
 export interface CreateWorkoutPlanRequest {
@@ -251,4 +238,14 @@ export interface WorkoutImport {
     isGlobal: boolean;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface WorkoutImportPreview {
+    sourceUrl: string;
+    sourcePlatform: string;
+    title: string | null;
+    description: string | null;
+    thumbnailUrl: string | null;
+    html: string | null;
+    metadata: Record<string, any> | null;
 }

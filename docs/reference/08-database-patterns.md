@@ -40,26 +40,49 @@ model User {
 #### Workouts
 ```prisma
 model Workout {
-    id          String   @id @default(uuid())
-    title       String
-    category    String   // "Upper Body - Pull", "Legs", etc.
-    description String?
-    workoutType String   // "strength" or "cardio"
-    sets        Int?     // Only for strength
-    reps        Int?     // Only for strength
-    duration    Int?     // Only for cardio (minutes)
-    intensity   String   // "weight", "RPE", "bodyweight", etc.
-    imageUrl    String?
-    imageUrl2   String?
-    isGlobal    Boolean  @default(true)
-    createdBy   String?
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+    id           String   @id @default(cuid())
+    title        String
+    category     String   // "Upper Body - Pull", "Legs", etc.
+    description  String?
+    workoutType  String   // "strength"
+    movementType String?  // "compound", "accessory", "isolation", etc.
+    imageUrl     String?
+    imageUrl2    String?
+    isGlobal     Boolean  @default(true)
+    isUnilateral Boolean  @default(false)  // true for single-arm/leg exercises
+    createdBy    String?
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
 
     // Relations
-    planItems      PlanItem[]
-    workoutLogs    WorkoutLog[]
+    presets         WorkoutPreset[]
+    planItems       PlanItem[]
+    workoutLogs     WorkoutLog[]
     personalRecords WorkoutPersonalRecord[]
+}
+```
+
+#### Workout Presets
+
+Sets, reps, and intensity are stored per-preset rather than directly on the workout. See [15-workout-presets.md](./15-workout-presets.md) for full documentation.
+
+```prisma
+model WorkoutPreset {
+    id             String  @id @default(dbgenerated("gen_random_uuid()::text"))
+    workoutId      String
+    preset         String        // "default", "strength", "5rm"
+    sets           Int?
+    reps           Int?
+    intensityPct   Int?
+    intensityLabel String?
+    restSeconds    Int?
+    durationPerSet Int?
+    isDefault      Boolean @default(false)
+    inputType      String  @default("sets_reps")
+    workout        Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+    @@unique([workoutId, preset])
+    @@map("workout_presets")
 }
 ```
 
@@ -132,7 +155,6 @@ const { data, error } = await supabase
         title: "New Workout",
         category: "Legs",
         workoutType: "strength",
-        intensity: "weight",
     })
     .select()
     .single();
@@ -307,9 +329,7 @@ const { data } = await supabase
     .select(`
         *,
         workout:workouts(
-            id, title, category, description,
-            sets, reps, duration, intensity,
-            imageUrl, workoutType
+            *, workout_presets(*)
         )
     `)
     .eq("workoutPlanId", planId)

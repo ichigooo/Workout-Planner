@@ -9,7 +9,7 @@ import {
     ScrollView,
 } from "react-native";
 import DraggableFlatList, { RenderItemParams } from "react-native-draggable-flatlist";
-import { Workout, WorkoutPlan } from "../types";
+import { Workout, WorkoutPlan, getDefaultPreset } from "../types";
 import { apiService } from "../services/api";
 import { getCurrentPlanId } from "../state/session";
 import { getTheme } from "../theme";
@@ -136,7 +136,6 @@ export const DragDropWorkoutPlanner: React.FC<DragDropWorkoutPlannerProps> = ({
                     await apiService.addWorkoutToPlan(plan.id, {
                         workoutId: workout.id,
                         frequency: workout.scheduledDays.join(","),
-                        intensity: workout.intensity,
                     });
                 }
             }
@@ -173,7 +172,7 @@ export const DragDropWorkoutPlanner: React.FC<DragDropWorkoutPlannerProps> = ({
                         {item.title}
                     </Text>
                     <Text style={[styles.workoutDetails, { color: theme.colors.subtext }]}>
-                        {item.sets} sets × {item.reps} reps • {item.category}
+                        {(() => { const p = getDefaultPreset(item); return p?.sets && p?.reps ? `${p.sets} sets × ${p.reps} reps` : p?.sets && p?.durationPerSet ? `${p.sets} sets × ${p.durationPerSet}s` : ""; })()} • {item.category}
                     </Text>
                 </View>
 

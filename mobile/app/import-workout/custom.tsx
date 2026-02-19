@@ -121,10 +121,8 @@ export default function CustomImportScreen() {
             const workoutRequest: CreateWorkoutRequest = {
                 title: data.title || "Imported Workout",
                 description: data.description || undefined,
-                category: (data.category as WorkoutCategory) || "Cardio",
-                intensity: data.metadata?.intensity || "Medium",
+                category: (data.category as WorkoutCategory) || "Upper Body - Pull",
                 imageUrl: data.thumbnailUrl || undefined,
-                workoutType: "cardio", // Default, can be adjusted based on category
                 createdBy: userId,
                 sourceUrl: data.sourceUrl || undefined,
                 sourcePlatform: data.sourcePlatform || undefined,
@@ -238,7 +236,6 @@ export default function CustomImportScreen() {
                                 style={[styles.heroImage, { width: windowWidth, height: heroHeight }]}
                                 resizeMode="cover"
                             />
-                            {/* Play overlay if video */}
                             <View style={styles.playOverlay}>
                                 <View style={styles.playButton}>
                                     <Ionicons name="play" size={32} color="#fff" />
@@ -264,11 +261,6 @@ export default function CustomImportScreen() {
                                     {(data.sourcePlatform || "Custom").toUpperCase()}
                                 </Text>
                             </View>
-                            {!data.isGlobal && (
-                                <View style={[styles.customBadge, { backgroundColor: "#F0C2C2" }]}>
-                                    <Text style={styles.customBadgeText}>IMPORTED</Text>
-                                </View>
-                            )}
                         </View>
 
                         {/* Title */}
@@ -488,7 +480,7 @@ const styles = StyleSheet.create({
     },
     heroContainer: {
         width: "100%",
-        position: "relative",
+        position: "relative" as const,
         backgroundColor: "#111827",
         marginBottom: spacing.md,
     },
@@ -530,17 +522,6 @@ const styles = StyleSheet.create({
     platformBadgeText: {
         fontSize: 11,
         fontFamily: typography.fonts.bodyBold,
-        letterSpacing: 0.5,
-    },
-    customBadge: {
-        paddingHorizontal: spacing.sm,
-        paddingVertical: 4,
-        borderRadius: radii.sm,
-    },
-    customBadgeText: {
-        fontSize: 11,
-        fontFamily: typography.fonts.bodyBold,
-        color: "#fff",
         letterSpacing: 0.5,
     },
     title: {
@@ -612,8 +593,8 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        gap: spacing.xs,
-        paddingVertical: spacing.md,
+        gap: spacing.xxs,
+        paddingVertical: spacing.sm,
         borderRadius: 9999,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
@@ -623,24 +604,22 @@ const styles = StyleSheet.create({
     },
     primaryButtonText: {
         color: "#FFFFFF",
-        fontSize: 16,
+        fontSize: 15,
         fontFamily: typography.fonts.bodyBold,
-        letterSpacing: 0.3,
     },
     secondaryButton: {
         flex: 1,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        gap: spacing.xs,
-        paddingVertical: spacing.md,
+        gap: spacing.xxs,
+        paddingVertical: spacing.sm,
         borderRadius: 9999,
         borderWidth: 1,
     },
     secondaryButtonText: {
-        fontSize: 16,
+        fontSize: 15,
         fontFamily: typography.fonts.bodySemibold,
-        letterSpacing: 0.3,
     },
     backButton: {
         marginTop: 16,

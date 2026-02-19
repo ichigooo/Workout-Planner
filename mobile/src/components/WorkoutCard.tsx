@@ -9,7 +9,7 @@ import {
     ImageSourcePropType,
 } from "react-native";
 import { getTheme, spacing, radii, typography } from "../theme";
-import { Workout } from "../types";
+import { Workout, getDefaultPreset } from "../types";
 
 interface WorkoutCardProps {
     workout: Workout;
@@ -149,54 +149,63 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
                 )}
                 <View style={styles.details}>
                     <View style={styles.detailMeta}>
-                        {workout.workoutType === "cardio" ? (
-                            workout.duration ? (
-                                <Text
-                                    style={[
-                                        styles.detailText,
-                                        {
-                                            color: theme.colors.text,
-                                            fontFamily: typography.fonts.bodyMedium,
-                                            fontSize: typography.sizes.sm,
-                                        },
-                                    ]}
-                                >
-                                    {`${workout.duration} min`}
-                                </Text>
-                            ) : null
-                        ) : (
-                            workout.sets && workout.reps ? (
-                                <Text
-                                    style={[
-                                        styles.detailText,
-                                        {
-                                            color: theme.colors.text,
-                                            fontFamily: typography.fonts.bodyMedium,
-                                            fontSize: typography.sizes.sm,
-                                        },
-                                    ]}
-                                >
-                                    {`${workout.sets} sets × ${workout.reps} reps`}
-                                </Text>
-                            ) : null
-                        )}
+                        {(() => {
+                            const preset = getDefaultPreset(workout);
+                            if (!preset) return null;
+                            if (preset.sets && preset.reps) {
+                                return (
+                                    <Text
+                                        style={[
+                                            styles.detailText,
+                                            {
+                                                color: theme.colors.text,
+                                                fontFamily: typography.fonts.bodyMedium,
+                                                fontSize: typography.sizes.sm,
+                                            },
+                                        ]}
+                                    >
+                                        {`${preset.sets} sets × ${preset.reps} reps`}
+                                    </Text>
+                                );
+                            }
+                            if (preset.sets && preset.durationPerSet) {
+                                return (
+                                    <Text
+                                        style={[
+                                            styles.detailText,
+                                            {
+                                                color: theme.colors.text,
+                                                fontFamily: typography.fonts.bodyMedium,
+                                                fontSize: typography.sizes.sm,
+                                            },
+                                        ]}
+                                    >
+                                        {`${preset.sets} sets × ${preset.durationPerSet}s`}
+                                    </Text>
+                                );
+                            }
+                            return null;
+                        })()}
                     </View>
-                    {!!workout.intensity && (
-                        <View style={styles.detailIntensityContainer}>
-                            <Text
-                                style={[
-                                    styles.detailIntensityText,
-                                    {
-                                        color: theme.colors.textSecondary,
-                                        fontFamily: typography.fonts.bodyMedium,
-                                        fontSize: typography.sizes.sm,
-                                    },
-                                ]}
-                            >
-                                {workout.intensity}
-                            </Text>
-                        </View>
-                    )}
+                    {(() => {
+                        const preset = getDefaultPreset(workout);
+                        return preset?.intensityLabel ? (
+                            <View style={styles.detailIntensityContainer}>
+                                <Text
+                                    style={[
+                                        styles.detailIntensityText,
+                                        {
+                                            color: theme.colors.textSecondary,
+                                            fontFamily: typography.fonts.bodyMedium,
+                                            fontSize: typography.sizes.sm,
+                                        },
+                                    ]}
+                                >
+                                    {preset.intensityLabel}
+                                </Text>
+                            </View>
+                        ) : null;
+                    })()}
                 </View>
             </View>
         </TouchableOpacity>

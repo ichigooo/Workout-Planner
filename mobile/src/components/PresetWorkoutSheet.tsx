@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { getTheme, spacing, radii, typography, hexToRgba } from "../theme";
 import { planItemsCache } from "../services/planItemsCache";
-import { Workout } from "../types";
+import { Workout, getDefaultPreset } from "../types";
 
 interface PresetWorkoutSheetProps {
     visible: boolean;
@@ -218,28 +218,35 @@ const PresetWorkoutSheet: React.FC<PresetWorkoutSheetProps> = ({
                                                         {workout.category.toUpperCase()}
                                                     </Text>
                                                 </View>
-                                                {workout.sets !== undefined &&
-                                                    workout.reps !== undefined && (
-                                                        <Text
-                                                            style={[
-                                                                styles.exerciseStats,
-                                                                { color: theme.colors.textSecondary },
-                                                            ]}
-                                                        >
-                                                            {workout.sets} sets x {workout.reps} reps
-                                                        </Text>
-                                                    )}
-                                                {workout.duration !== undefined &&
-                                                    workout.workoutType === "cardio" && (
-                                                        <Text
-                                                            style={[
-                                                                styles.exerciseStats,
-                                                                { color: theme.colors.textSecondary },
-                                                            ]}
-                                                        >
-                                                            {workout.duration} min
-                                                        </Text>
-                                                    )}
+                                                {(() => {
+                                                    const preset = getDefaultPreset(workout);
+                                                    if (!preset) return null;
+                                                    if (preset.sets && preset.reps) {
+                                                        return (
+                                                            <Text
+                                                                style={[
+                                                                    styles.exerciseStats,
+                                                                    { color: theme.colors.textSecondary },
+                                                                ]}
+                                                            >
+                                                                {preset.sets} sets x {preset.reps} reps
+                                                            </Text>
+                                                        );
+                                                    }
+                                                    if (preset.sets && preset.durationPerSet) {
+                                                        return (
+                                                            <Text
+                                                                style={[
+                                                                    styles.exerciseStats,
+                                                                    { color: theme.colors.textSecondary },
+                                                                ]}
+                                                            >
+                                                                {preset.sets} sets x {preset.durationPerSet}s
+                                                            </Text>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
                                             </View>
                                         </View>
                                     </View>
