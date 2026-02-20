@@ -65,6 +65,7 @@ Trainichi uses **Expo Router v4** file-based routing. This document lists every 
 
 **Features:**
 - Email/password inputs
+- Google OAuth sign-in (via Supabase OAuth + expo-web-browser)
 - Form validation
 - Forgot password link
 - Sign up link
@@ -83,6 +84,7 @@ Trainichi uses **Expo Router v4** file-based routing. This document lists every 
 **Features:**
 - Name, email, password fields
 - Password confirmation
+- Google OAuth sign-up (via Supabase OAuth + expo-web-browser)
 - Form validation
 - Auto-creates backend profile
 
@@ -97,7 +99,11 @@ Trainichi uses **Expo Router v4** file-based routing. This document lists every 
 | Purpose | Password reset |
 
 **Features:**
-- Coming soon placeholder
+- Email input for password reset
+- Sends reset link via `supabase.auth.resetPasswordForEmail()`
+- Two-state UI: form state and success confirmation
+- "Send again" option on success screen
+- Password reset completed on Supabase hosted page
 
 ---
 

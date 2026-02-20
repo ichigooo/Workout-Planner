@@ -35,6 +35,13 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6755701029",
+        "ascApiKeyPath": "./keys/AuthKey_N262RY3C7M.p8",
+        "ascApiKeyIssuerId": "db35e52a-bec8-4661-a532-e2740d0396ba",
+        "ascApiKeyId": "N262RY3C7M"
+      }
+    }
   }
 }
