@@ -17,7 +17,7 @@ import {
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { getTheme, spacing, radii, typography, shadows } from "@/src/theme";
+import { getTheme, spacing, radii, typography, shadows, TAB_BAR_HEIGHT } from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { apiService } from "@/src/services/api";
 import {
@@ -417,9 +417,9 @@ export default function ImportWorkoutScreen() {
                     style={[styles.successBtn, { backgroundColor: theme.colors.accent }]}
                     onPress={() => {
                         if (selectedCategory) {
-                            router.push(`/workout?category=${encodeURIComponent(selectedCategory)}`);
+                            router.push(`/(tabs)/library/workout?category=${encodeURIComponent(selectedCategory)}`);
                         } else {
-                            router.push("/workout");
+                            router.push("/(tabs)/library/workout");
                         }
                     }}
                 >
@@ -458,7 +458,7 @@ export default function ImportWorkoutScreen() {
             >
                 <ScrollView
                     style={{ flex: 1 }}
-                    contentContainerStyle={[styles.content, { paddingBottom: phase === "preview" || phase === "saving" ? insets.bottom + 140 : spacing.xl }]}
+                    contentContainerStyle={[styles.content, { paddingBottom: phase === "preview" || phase === "saving" ? insets.bottom + TAB_BAR_HEIGHT + 140 : spacing.xl + TAB_BAR_HEIGHT }]}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
@@ -615,7 +615,7 @@ export default function ImportWorkoutScreen() {
 
                 {/* Sticky save button */}
                 {(phase === "preview" || phase === "saving") && (
-                    <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + spacing.sm, borderTopColor: theme.colors.border, backgroundColor: theme.colors.bg }]}>
+                    <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + TAB_BAR_HEIGHT + spacing.sm, borderTopColor: theme.colors.border, backgroundColor: theme.colors.bg }]}>
                         <TouchableOpacity
                             activeOpacity={0.85}
                             style={[

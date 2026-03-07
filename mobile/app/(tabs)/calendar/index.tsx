@@ -211,7 +211,7 @@ export default function CalendarScreen() {
                                     }}
                                     onPress={() =>
                                         router.push(
-                                            `/workout-detail?id=${encodeURIComponent(s.workout.id)}`,
+                                            `/(tabs)/calendar/workout-detail?id=${encodeURIComponent(s.workout.id)}`,
                                         )
                                     }
                                 >

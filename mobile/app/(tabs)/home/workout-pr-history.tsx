@@ -12,10 +12,11 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LineChart } from "react-native-chart-kit";
-import { getTheme, typography } from "../src/theme";
-import { apiService } from "../src/services/api";
-import { getCurrentUserId } from "../src/state/session";
-import { PersonalRecordEntry, CurrentPR } from "../src/types";
+import { getTheme, typography, TAB_BAR_HEIGHT } from "@/src/theme";
+import { apiService } from "@/src/services/api";
+import { getCurrentUserId } from "@/src/state/session";
+import { PersonalRecordEntry, CurrentPR } from "@/src/types";
+import { PR_REP_COUNTS } from "@/src/constants/personalRecords";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -35,8 +36,7 @@ export default function WorkoutPRHistory() {
     const [selectedReps, setSelectedReps] = useState<number>(1);
     const [userId] = useState<string | null>(() => getCurrentUserId());
 
-    // Get unique rep counts from entries
-    const repCounts = [...new Set(entries.map((e) => e.reps))].sort((a, b) => a - b);
+    const repCounts = PR_REP_COUNTS;
 
     const fetchData = useCallback(async () => {
         if (!userId || !workoutId) return;
@@ -294,7 +294,7 @@ export default function WorkoutPRHistory() {
                             })}
                     </View>
 
-                    <View style={{ height: insets.bottom + 20 }} />
+                    <View style={{ height: insets.bottom + TAB_BAR_HEIGHT + 20 }} />
                 </ScrollView>
             )}
         </View>

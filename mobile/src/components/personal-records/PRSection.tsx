@@ -9,11 +9,12 @@ import {
 import { Workout, CurrentPR } from "../../types";
 import { buildDisplayPRs } from "../../utils/epley";
 import { getTheme } from "../../theme";
+import { PR_REP_COUNTS } from "../../constants/personalRecords";
 import { apiService } from "../../services/api";
 import { PRCurrentDisplay } from "./PRCurrentDisplay";
 import { PREntryForm } from "./PREntryForm";
 import { PRCelebration } from "./PRCelebration";
-import { useRouter } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 
 interface PRSectionProps {
     workout: Workout;
@@ -24,6 +25,7 @@ export const PRSection: React.FC<PRSectionProps> = ({ workout, userId }) => {
     const scheme = useColorScheme();
     const theme = getTheme(scheme === "dark" ? "dark" : "light");
     const router = useRouter();
+    const segments = useSegments();
 
     const [currentPRs, setCurrentPRs] = useState<CurrentPR[]>([]);
     const [loading, setLoading] = useState(true);
@@ -31,12 +33,7 @@ export const PRSection: React.FC<PRSectionProps> = ({ workout, userId }) => {
     const [selectedReps, setSelectedReps] = useState<number | null>(null);
     const [showCelebration, setShowCelebration] = useState(false);
 
-    // Derive tracked rep counts from workout presets
-    const presetRepCounts = [...new Set(
-        workout.presets
-            ?.filter((p) => p.reps != null)
-            .map((p) => p.reps!) ?? []
-    )].sort((a, b) => a - b);
+    const presetRepCounts = PR_REP_COUNTS;
 
     const displayPRs = useMemo(
         () => buildDisplayPRs(currentPRs, presetRepCounts),
@@ -80,8 +77,10 @@ export const PRSection: React.FC<PRSectionProps> = ({ workout, userId }) => {
     };
 
     const handleViewHistory = () => {
+        // Navigate within the current tab so back returns to workout detail
+        const currentTab = segments[1] || "home";
         router.push({
-            pathname: "/workout-pr-history",
+            pathname: `/(tabs)/${currentTab}/workout-pr-history`,
             params: { workoutId: workout.id, workoutTitle: workout.title },
         });
     };
@@ -115,10 +114,6 @@ export const PRSection: React.FC<PRSectionProps> = ({ workout, userId }) => {
             {loading ? (
                 <Text style={[styles.loadingText, { color: theme.colors.subtext }]}>
                     Loading records...
-                </Text>
-            ) : presetRepCounts.length === 0 ? (
-                <Text style={[styles.loadingText, { color: theme.colors.subtext }]}>
-                    No rep-based presets configured for this exercise.
                 </Text>
             ) : (
                 <PRCurrentDisplay

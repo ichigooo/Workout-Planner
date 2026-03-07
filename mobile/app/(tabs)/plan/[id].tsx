@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useColorScheme } from "react-native";
-import { getTheme, typography } from "@/src/theme";
+import { getTheme, typography, TAB_BAR_HEIGHT } from "@/src/theme";
 import type { WorkoutPlanTemplate, Workout } from "@/src/types";
 import { planItemsCache } from "@/src/services/planItemsCache";
 import { PlanSetupModal } from "@/src/components/plan/PlanSetupModal";
@@ -105,7 +105,7 @@ export default function PlanDetailScreen() {
 
     return (
         <ImageBackground
-            source={require("../../assets/images/bg3.png")}
+            source={require("../../../assets/images/bg3.png")}
             style={styles.bg}
             imageStyle={styles.bgImage}
         >
@@ -117,7 +117,7 @@ export default function PlanDetailScreen() {
                 contentContainerStyle={{
                     paddingHorizontal: 20,
                     paddingTop: insets.top + 12,
-                    paddingBottom: insets.bottom + 32,
+                    paddingBottom: insets.bottom + TAB_BAR_HEIGHT + 32,
                     gap: 16,
                 }}
                 contentInsetAdjustmentBehavior="never"
@@ -216,7 +216,7 @@ export default function PlanDetailScreen() {
                 onClose={() => setShowSetup(false)}
                 onPlanCreated={() => {
                     setShowSetup(false);
-                    router.push("/calendar");
+                    router.navigate("/(tabs)/calendar");
                 }}
             />
         </ImageBackground>

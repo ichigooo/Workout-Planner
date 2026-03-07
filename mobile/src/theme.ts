@@ -8,6 +8,10 @@ export const spacing = {
     xxl: 64,
 } as const;
 
+/** Default height of the bottom tab bar (position: absolute). Use this to add
+ *  extra bottom padding on screens rendered inside the tab navigator. */
+export const TAB_BAR_HEIGHT = 49;
+
 export const radii = {
     sm: 8, // Buttons, badges
     md: 14, // Inputs, small cards

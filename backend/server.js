@@ -96,6 +96,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const facebookAppId = process.env.FACEBOOK_APP_ID;
 const facebookAppSecret = process.env.FACEBOOK_APP_SECRET;
 
+const ALLOWED_PR_REPS = [1, 5, 8];
+
 // Helpers
 /**
  * mapUserRow
@@ -1238,6 +1240,7 @@ app.get("/api/workouts/:workoutId/pr-entries", async (req, res) => {
             .select("*")
             .eq("workoutId", workoutId)
             .eq("userId", userId)
+            .in("reps", ALLOWED_PR_REPS)
             .order("dateAchieved", { ascending: false });
 
         if (error) throw error;
@@ -1260,12 +1263,13 @@ app.get("/api/workouts/:workoutId/pr-entries/current", async (req, res) => {
         const ok = await ensureUserExistsOrRespond(userId, res);
         if (!ok) return;
 
-        // Get all entries for this workout and user
+        // Get all entries for this workout and user (only allowed rep counts)
         const { data: entries, error } = await supabase
             .from("personal_record_entries")
             .select("*")
             .eq("workoutId", workoutId)
-            .eq("userId", userId);
+            .eq("userId", userId)
+            .in("reps", ALLOWED_PR_REPS);
 
         if (error) throw error;
 
@@ -1299,8 +1303,8 @@ app.post("/api/workouts/:workoutId/pr-entries", async (req, res) => {
     if (!userId) {
         return res.status(400).json({ error: "userId is required" });
     }
-    if (typeof reps !== "number" || reps < 1 || reps > 20) {
-        return res.status(400).json({ error: "reps must be a number between 1 and 20" });
+    if (typeof reps !== "number" || !ALLOWED_PR_REPS.includes(reps)) {
+        return res.status(400).json({ error: `reps must be one of: ${ALLOWED_PR_REPS.join(", ")}` });
     }
     if (typeof weight !== "number" || weight <= 0) {
         return res.status(400).json({ error: "weight must be a positive number" });
@@ -1424,8 +1428,8 @@ app.put("/api/workouts/:workoutId/rep-config", async (req, res) => {
     if (!Array.isArray(customReps) || customReps.length > 2) {
         return res.status(400).json({ error: "customReps must be an array with max 2 items" });
     }
-    if (customReps.some((r) => typeof r !== "number" || r < 1 || r > 20)) {
-        return res.status(400).json({ error: "Each rep count must be a number between 1 and 20" });
+    if (customReps.some((r) => typeof r !== "number" || !ALLOWED_PR_REPS.includes(r))) {
+        return res.status(400).json({ error: `Each rep count must be one of: ${ALLOWED_PR_REPS.join(", ")}` });
     }
 
     try {
@@ -1472,11 +1476,12 @@ app.get("/api/users/:userId/all-prs", async (req, res) => {
 
         if (workoutsError) throw workoutsError;
 
-        // Get all PR entries for this user
+        // Get all PR entries for this user (only allowed rep counts)
         const { data: allEntries, error: entriesError } = await supabase
             .from("personal_record_entries")
             .select("*")
-            .eq("userId", userId);
+            .eq("userId", userId)
+            .in("reps", ALLOWED_PR_REPS);
 
         if (entriesError) throw entriesError;
 
@@ -2541,6 +2546,7 @@ app.post("/api/workout-logs/batch", async (req, res) => {
 
         const now = new Date().toISOString();
         const rows = logs.map((l) => ({
+            id: uuidv4(),
             workoutId: l.workoutId,
             userId: l.userId,
             date: l.date || now,

@@ -20,6 +20,7 @@ import { supabase } from "@/src/lib/supabase";
 import initApp from "@/src/services/startup";
 import { setCurrentUserId } from "@/src/state/session";
 import { apiService } from "@/src/services/api";
+import { signInWithGoogle } from "@/src/lib/auth";
 
 export default function SignInScreen() {
     const router = useRouter();
@@ -84,7 +85,7 @@ export default function SignInScreen() {
 
             // Fully initialize the app (plan id, cache, etc.) then go to main content.
             await initApp();
-            router.replace("/(tabs)");
+            router.replace("/(tabs)/home");
         } catch (e) {
             console.error("[SignIn] Unexpected error during sign-in:", e);
             setError("Something went wrong while signing in. Please try again.");
@@ -93,8 +94,23 @@ export default function SignInScreen() {
         }
     };
 
-    const handleGoogleSignIn = () => {
-        Alert.alert("Google auth not wired yet");
+    const handleGoogleSignIn = async () => {
+        setError(null);
+        setIsLoading(true);
+
+        try {
+            await signInWithGoogle();
+            router.replace("/(tabs)/home");
+        } catch (e: any) {
+            console.error("[SignIn] Google sign-in failed:", e);
+            setError(
+                e?.message === "Google sign-in was cancelled or failed"
+                    ? "Sign-in was cancelled."
+                    : "Google sign-in failed. Please try again.",
+            );
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -260,9 +276,11 @@ export default function SignInScreen() {
                                 backgroundColor: theme.colors.glassWhite,
                                 borderColor: theme.colors.glassBorder,
                                 borderRadius: radii.full,
+                                opacity: isLoading ? 0.6 : 1,
                             },
                         ]}
                         onPress={handleGoogleSignIn}
+                        disabled={isLoading}
                         activeOpacity={0.8}
                     >
                         <Ionicons name="logo-google" size={20} color={theme.colors.text} />

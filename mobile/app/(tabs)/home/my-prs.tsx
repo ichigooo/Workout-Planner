@@ -11,10 +11,11 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getTheme, typography } from "../src/theme";
-import { apiService } from "../src/services/api";
-import { getCurrentUserId } from "../src/state/session";
-import { WorkoutPRSummary, CurrentPR } from "../src/types";
+import { getTheme, typography, TAB_BAR_HEIGHT } from "@/src/theme";
+import { apiService } from "@/src/services/api";
+import { getCurrentUserId } from "@/src/state/session";
+import { WorkoutPRSummary, CurrentPR } from "@/src/types";
+import { PR_REP_COUNTS } from "@/src/constants/personalRecords";
 
 export default function MyPRsPage() {
     const router = useRouter();
@@ -55,7 +56,7 @@ export default function MyPRsPage() {
 
     const handleWorkoutPress = (workout: WorkoutPRSummary) => {
         router.push({
-            pathname: "/workout-pr-history",
+            pathname: "/(tabs)/home/workout-pr-history",
             params: { workoutId: workout.workout.id, workoutTitle: workout.workout.title },
         });
     };
@@ -93,8 +94,6 @@ export default function MyPRsPage() {
                     showsVerticalScrollIndicator={false}
                 >
                     {workouts.map((item) => {
-                        const pr1RM = getPRForReps(item.currentRecords, 1);
-                        const pr6RM = getPRForReps(item.currentRecords, 6);
                         const uniLabel = item.workout.isUnilateral
                             ? item.workout.category === "Legs" ? "per leg" : "per arm"
                             : undefined;
@@ -146,35 +145,31 @@ export default function MyPRsPage() {
                                 </View>
 
                                 <View style={styles.prContainer}>
-                                    <View style={styles.prItem}>
-                                        <Text style={[styles.prLabel, { color: theme.colors.textTertiary }]}>
-                                            1RM
-                                        </Text>
-                                        <Text style={[styles.prValue, { color: theme.colors.text }]}>
-                                            {pr1RM ? `${pr1RM.weight} lbs` : "—"}
-                                        </Text>
-                                        {pr1RM && uniLabel && (
-                                            <Text style={[styles.prUnilateral, { color: theme.colors.textTertiary }]}>
-                                                {uniLabel}
-                                            </Text>
-                                        )}
-                                    </View>
-                                    <View
-                                        style={[styles.prDivider, { backgroundColor: theme.colors.border }]}
-                                    />
-                                    <View style={styles.prItem}>
-                                        <Text style={[styles.prLabel, { color: theme.colors.textTertiary }]}>
-                                            6RM
-                                        </Text>
-                                        <Text style={[styles.prValue, { color: theme.colors.text }]}>
-                                            {pr6RM ? `${pr6RM.weight} lbs` : "—"}
-                                        </Text>
-                                        {pr6RM && uniLabel && (
-                                            <Text style={[styles.prUnilateral, { color: theme.colors.textTertiary }]}>
-                                                {uniLabel}
-                                            </Text>
-                                        )}
-                                    </View>
+                                    {PR_REP_COUNTS.map((reps, index) => {
+                                        const pr = getPRForReps(item.currentRecords, reps);
+                                        return (
+                                            <React.Fragment key={reps}>
+                                                {index > 0 && (
+                                                    <View
+                                                        style={[styles.prDivider, { backgroundColor: theme.colors.border }]}
+                                                    />
+                                                )}
+                                                <View style={styles.prItem}>
+                                                    <Text style={[styles.prLabel, { color: theme.colors.textTertiary }]}>
+                                                        {reps === 1 ? "1RM" : `${reps}RM`}
+                                                    </Text>
+                                                    <Text style={[styles.prValue, { color: theme.colors.text }]}>
+                                                        {pr ? `${pr.weight} lbs` : "\u2014"}
+                                                    </Text>
+                                                    {pr && uniLabel && (
+                                                        <Text style={[styles.prUnilateral, { color: theme.colors.textTertiary }]}>
+                                                            {uniLabel}
+                                                        </Text>
+                                                    )}
+                                                </View>
+                                            </React.Fragment>
+                                        );
+                                    })}
                                 </View>
 
                                 <View style={styles.chevron}>
@@ -186,7 +181,7 @@ export default function MyPRsPage() {
                         );
                     })}
 
-                    <View style={{ height: insets.bottom + 20 }} />
+                    <View style={{ height: insets.bottom + TAB_BAR_HEIGHT + 20 }} />
                 </ScrollView>
             )}
         </View>

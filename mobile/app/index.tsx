@@ -58,7 +58,7 @@ export default function Index() {
             await initApp();
 
             // Navigate to main app
-            router.replace("/(tabs)");
+            router.replace("/(tabs)/home");
         } catch (error) {
             console.error("[Index] Failed to initialize or navigate:", error);
             // On error, redirect to sign-in as fallback

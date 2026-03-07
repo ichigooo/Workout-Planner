@@ -107,31 +107,6 @@ function RootLayoutNav() {
                     options={{ headerShown: false, gestureEnabled: true }}
                 />
                 <Stack.Screen
-                    name="workout"
-                    options={{ headerShown: false, gestureEnabled: true }}
-                />
-                <Stack.Screen
-                    name="workout-detail"
-                    options={{ headerShown: false, gestureEnabled: true }}
-                />
-                <Stack.Screen
-                    name="profile"
-                    options={{ headerShown: false, gestureEnabled: true }}
-                />
-                <Stack.Screen
-                    name="import-workout"
-                    options={{ headerShown: false, gestureEnabled: true }}
-                />
-                <Stack.Screen
-                    name="import-workout/custom"
-                    options={{ headerShown: false, gestureEnabled: true }}
-                />
-                <Stack.Screen
-                    name="plan/[id]"
-                    options={{ headerShown: false, gestureEnabled: true }}
-                />
-
-                <Stack.Screen
                     name="workout-session"
                     options={{
                         headerShown: false,

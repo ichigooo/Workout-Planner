@@ -1,4 +1,4 @@
-// app/(tabs)/index.tsx
+// app/(tabs)/home/index.tsx
 import React from "react";
 import { useRouter } from "expo-router";
 import Home from "@/src/screens/Home";
@@ -8,15 +8,15 @@ export default function HomeTabScreen() {
 
     return (
         <Home
-            onOpenCalendar={() => router.push("/calendar")}
-            onOpenProfile={() => router.push("/profile")}
+            onOpenCalendar={() => router.navigate("/(tabs)/calendar")}
+            onOpenProfile={() => router.push("/(tabs)/home/profile")}
             onOpenLibrary={(category?: string) =>
-                router.push({
-                    pathname: "/library",
+                router.navigate({
+                    pathname: "/(tabs)/library",
                     params: category ? { category } : undefined,
                 })
             }
-            onOpenRoutine={() => router.push("/library")}
+            onOpenRoutine={() => router.navigate("/(tabs)/library")}
         />
     );
 }

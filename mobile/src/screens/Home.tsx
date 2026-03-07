@@ -500,14 +500,14 @@ export const Home: React.FC<HomeProps> = ({
                             <View style={styles.heroBannerActions}>
                                 <TouchableOpacity
                                     style={styles.heroBannerPrimaryButton}
-                                    onPress={() => router.push("/workout")}
+                                    onPress={() => router.push("/(tabs)/library/workout")}
                                     activeOpacity={0.85}
                                 >
                                     <Text style={styles.heroBannerButtonText}>Browse Workouts</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.heroBannerSecondaryButton}
-                                    onPress={() => router.push("/plan")}
+                                    onPress={() => router.navigate("/(tabs)/plan")}
                                     activeOpacity={0.85}
                                 >
                                     <Text style={styles.heroBannerSecondaryButtonText}>
@@ -565,7 +565,7 @@ export const Home: React.FC<HomeProps> = ({
                                                 backgroundColor: theme.colors.accent + "12",
                                             },
                                         ]}
-                                        onPress={() => router.push("/plan")}
+                                        onPress={() => router.navigate("/(tabs)/plan")}
                                         activeOpacity={0.7}
                                     >
                                         <View
@@ -609,7 +609,7 @@ export const Home: React.FC<HomeProps> = ({
                                         activeOpacity={0.85}
                                         onPress={() =>
                                             router.push(
-                                                `/workout-detail?id=${encodeURIComponent(item.id)}`,
+                                                `/(tabs)/home/workout-detail?id=${encodeURIComponent(item.id)}`,
                                             )
                                         }
                                     >
@@ -722,7 +722,7 @@ export const Home: React.FC<HomeProps> = ({
                                                 backgroundColor: theme.colors.accent + "12",
                                             },
                                         ]}
-                                        onPress={() => router.push("/plan")}
+                                        onPress={() => router.navigate("/(tabs)/plan")}
                                         activeOpacity={0.7}
                                     >
                                         <View

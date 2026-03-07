@@ -361,7 +361,7 @@ export const TrainingPlanManager: React.FC = () => {
                         My Schedule
                     </Text>
                     <TouchableOpacity
-                        onPress={() => router.push("/workout")}
+                        onPress={() => router.push("/(tabs)/library/workout")}
                         style={[styles.browseButton, { borderColor: theme.colors.border }]}
                     >
                         <Text style={[styles.browseText, { color: theme.colors.accent }]}>
@@ -387,7 +387,7 @@ export const TrainingPlanManager: React.FC = () => {
                             Scheduled Workouts
                         </Text>
                         <TouchableOpacity
-                            onPress={() => router.push("/calendar")}
+                            onPress={() => router.navigate("/(tabs)/calendar")}
                             style={styles.calendarShortcut}
                         >
                             <Ionicons
@@ -416,7 +416,7 @@ export const TrainingPlanManager: React.FC = () => {
                                         activeOpacity={0.8}
                                         onPress={() =>
                                             router.push(
-                                                `/workout-detail?id=${encodeURIComponent(it.workout.id)}`,
+                                                `/(tabs)/library/workout-detail?id=${encodeURIComponent(it.workout.id)}`,
                                             )
                                         }
                                     >

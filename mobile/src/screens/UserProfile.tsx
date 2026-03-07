@@ -369,7 +369,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onProfileUpdat
                                     borderColor: theme.colors.glassBorder,
                                 },
                             ]}
-                            onPress={() => router.push("/my-prs")}
+                            onPress={() => router.push("/(tabs)/home/my-prs")}
                             activeOpacity={0.7}
                         >
                             <View style={styles.prLinkContent}>

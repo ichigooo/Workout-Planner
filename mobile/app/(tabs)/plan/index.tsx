@@ -17,11 +17,11 @@ import type { WorkoutPlanTemplate } from "@/src/types";
 import { useRouter } from "expo-router";
 
 const templateBackgrounds = [
-    require("../../assets/images/workout_templates/temp1.png"),
-    require("../../assets/images/workout_templates/temp2.png"),
-    require("../../assets/images/workout_templates/temp3.png"),
-    require("../../assets/images/workout_templates/temp4.png"),
-    require("../../assets/images/workout_templates/temp5.png"),
+    require("../../../assets/images/workout_templates/temp1.png"),
+    require("../../../assets/images/workout_templates/temp2.png"),
+    require("../../../assets/images/workout_templates/temp3.png"),
+    require("../../../assets/images/workout_templates/temp4.png"),
+    require("../../../assets/images/workout_templates/temp5.png"),
 ];
 
 export default function PlanScreen() {
@@ -61,7 +61,7 @@ export default function PlanScreen() {
     const handlePressTemplate = (tpl: WorkoutPlanTemplate) => {
         const payload = encodeURIComponent(JSON.stringify(tpl));
         router.push({
-            pathname: "/plan/[id]",
+            pathname: "/(tabs)/plan/[id]",
             params: { id: tpl.id, data: payload },
         });
     };
@@ -98,7 +98,7 @@ export default function PlanScreen() {
                             templates.map((tpl, index) => {
                                 const isClimbTemplate = tpl.name.toLowerCase().includes("climb");
                                 const background = isClimbTemplate
-                                    ? require("../../assets/images/workout_templates/climb_temp1.jpg")
+                                    ? require("../../../assets/images/workout_templates/climb_temp1.jpg")
                                     : (templateBackgrounds[index % templateBackgrounds.length] ??
                                       templateBackgrounds[0]);
 

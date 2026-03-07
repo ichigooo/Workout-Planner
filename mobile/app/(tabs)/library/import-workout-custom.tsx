@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getTheme, spacing, radii, typography } from "@/src/theme";
+import { getTheme, spacing, radii, typography, TAB_BAR_HEIGHT } from "@/src/theme";
 import { useColorScheme } from "react-native";
 import * as Linking from "expo-linking";
 import { WorkoutImport, CreateWorkoutRequest, WorkoutCategory } from "@/src/types";
@@ -220,7 +220,7 @@ export default function CustomImportScreen() {
                 <ScrollView
                     style={styles.content}
                     contentContainerStyle={{
-                        paddingBottom: insets.bottom + 100,
+                        paddingBottom: insets.bottom + TAB_BAR_HEIGHT + 100,
                     }}
                     showsVerticalScrollIndicator={false}
                 >
@@ -359,7 +359,7 @@ export default function CustomImportScreen() {
                     style={[
                         styles.stickyButtonContainer,
                         {
-                            paddingBottom: insets.bottom + 16,
+                            paddingBottom: insets.bottom + TAB_BAR_HEIGHT + 16,
                             backgroundColor: theme.colors.bg,
                             borderTopColor: theme.colors.border,
                         },

@@ -20,6 +20,7 @@ import { supabase } from "@/src/lib/supabase";
 import { apiService } from "@/src/services/api";
 import initApp from "@/src/services/startup";
 import { setCurrentUserId } from "@/src/state/session";
+import { signInWithGoogle } from "@/src/lib/auth";
 
 export default function SignUpScreen() {
     const router = useRouter();
@@ -95,10 +96,29 @@ export default function SignUpScreen() {
             console.log("[SignUp] Auth + profile success, user id:", userId);
 
             await initApp();
-            router.replace("/(tabs)");
+            router.replace("/(tabs)/home");
         } catch (e) {
             console.error("[SignUp] Unexpected error during sign-up:", e);
             setError("Something went wrong while signing up. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleSignIn = async () => {
+        setError(null);
+        setIsLoading(true);
+
+        try {
+            await signInWithGoogle();
+            router.replace("/(tabs)/home");
+        } catch (e: any) {
+            console.error("[SignUp] Google sign-in failed:", e);
+            setError(
+                e?.message === "Google sign-in was cancelled or failed"
+                    ? "Sign-in was cancelled."
+                    : "Google sign-in failed. Please try again.",
+            );
         } finally {
             setIsLoading(false);
         }
@@ -305,6 +325,37 @@ export default function SignUpScreen() {
                         )}
                     </TouchableOpacity>
 
+                    <View style={styles.divider}>
+                        <View
+                            style={[styles.dividerLine, { backgroundColor: theme.colors.border }]}
+                        />
+                        <Text style={[styles.dividerText, { color: theme.colors.subtext }]}>
+                            OR
+                        </Text>
+                        <View
+                            style={[styles.dividerLine, { backgroundColor: theme.colors.border }]}
+                        />
+                    </View>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.googleButton,
+                            {
+                                backgroundColor: theme.colors.glassWhite,
+                                borderColor: theme.colors.glassBorder,
+                                opacity: isLoading ? 0.6 : 1,
+                            },
+                        ]}
+                        onPress={handleGoogleSignIn}
+                        disabled={isLoading}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="logo-google" size={20} color={theme.colors.text} />
+                        <Text style={[styles.googleButtonText, { color: theme.colors.text }]}>
+                            Continue with Google
+                        </Text>
+                    </TouchableOpacity>
+
                     <View style={styles.signInLink}>
                         <Text style={[styles.signUpText, { color: theme.colors.subtext }]}>
                             Already have an account?{" "}
@@ -405,6 +456,34 @@ const styles = StyleSheet.create({
     },
     linkText: {
         fontSize: typography.sizes.sm,
+        fontFamily: typography.fonts.bodySemibold,
+    },
+    divider: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginVertical: 24,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+    },
+    dividerText: {
+        marginHorizontal: 16,
+        fontSize: typography.sizes.sm,
+        fontFamily: typography.fonts.bodyMedium,
+    },
+    googleButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        height: 52,
+        borderRadius: radii.full,
+        borderWidth: 1,
+        gap: 8,
+        marginBottom: 24,
+    },
+    googleButtonText: {
+        fontSize: typography.sizes.md,
         fontFamily: typography.fonts.bodySemibold,
     },
 });

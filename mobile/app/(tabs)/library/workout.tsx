@@ -12,7 +12,7 @@ import {
     Linking,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { getTheme, typography } from "@/src/theme";
+import { getTheme, typography, TAB_BAR_HEIGHT } from "@/src/theme";
 import { apiService } from "@/src/services/api";
 import { Workout, CreateWorkoutRequest, WorkoutImport } from "@/src/types";
 import { EnhancedWorkoutCard } from "@/src/components/EnhancedWorkoutCard";
@@ -134,7 +134,7 @@ export default function WorkoutScreen() {
     // When an id is provided, navigate to workout detail
     useEffect(() => {
         if (typeof params.id === "string" && params.id.length > 0) {
-            router.push(`/workout-detail?id=${encodeURIComponent(params.id)}`);
+            router.push(`/(tabs)/library/workout-detail?id=${encodeURIComponent(params.id)}`);
         }
     }, [params?.id, router]);
 
@@ -245,7 +245,7 @@ export default function WorkoutScreen() {
                 isCustom={isPersonalImport}
                 onPress={() =>
                     router.push({
-                        pathname: "/import-workout/custom",
+                        pathname: "/(tabs)/library/import-workout-custom",
                         params: {
                             id: item.id,
                             payload: JSON.stringify(item),
@@ -264,7 +264,7 @@ export default function WorkoutScreen() {
             <TouchableOpacity
                 style={[styles.importPrompt, { borderColor: theme.colors.glassBorder, backgroundColor: theme.colors.glassWhite }]}
                 activeOpacity={0.7}
-                onPress={() => router.push("/import-workout")}
+                onPress={() => router.push("/(tabs)/library/import-workout")}
             >
                 <Ionicons name="cloud-upload-outline" size={24} color={theme.colors.accent} />
                 <View style={{ flex: 1 }}>
@@ -297,7 +297,7 @@ export default function WorkoutScreen() {
                 </Text>
                 <TouchableOpacity
                     style={[styles.emptyButton, { backgroundColor: theme.colors.accent }]}
-                    onPress={() => router.push("/import-workout")}
+                    onPress={() => router.push("/(tabs)/library/import-workout")}
                 >
                     <Ionicons name="add-circle-outline" size={18} color="#fff" />
                     <Text style={styles.emptyButtonText}>Import Workout</Text>
@@ -431,8 +431,8 @@ export default function WorkoutScreen() {
                         data={listData}
                         keyExtractor={(item: any) => item.id}
                         renderItem={({ item }) => {
-                            // Check if this is a custom workout import by looking for sourceUrl
-                            const isCustomImport = 'sourceUrl' in item;
+                            // WorkoutImport has userId but no presets; Workout always has presets
+                            const isCustomImport = !('presets' in item);
 
                             if (showingCustom || isCustomImport) {
                                 return renderCustomCard(item as WorkoutImport);
@@ -443,7 +443,7 @@ export default function WorkoutScreen() {
                                     workout={item as Workout}
                                     onPress={() => {
                                         router.push(
-                                            `/workout-detail?id=${encodeURIComponent(
+                                            `/(tabs)/library/workout-detail?id=${encodeURIComponent(
                                                 (item as Workout).id,
                                             )}`,
                                         );
@@ -454,7 +454,7 @@ export default function WorkoutScreen() {
                         }}
                         contentContainerStyle={{
                             paddingVertical: 8,
-                            paddingBottom: insets.bottom + 16,
+                            paddingBottom: insets.bottom + TAB_BAR_HEIGHT + 16,
                         }}
                         showsVerticalScrollIndicator={false}
                         ListFooterComponent={renderListFooter}
@@ -490,7 +490,7 @@ export default function WorkoutScreen() {
                                 ]}
                                 onPress={() => {
                                     setShowMenu(false);
-                                    router.push("/import-workout");
+                                    router.push("/(tabs)/library/import-workout");
                                 }}
                             >
                                 <Text style={[styles.menuItemText, { color: theme.colors.text }]}>

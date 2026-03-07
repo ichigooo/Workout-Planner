@@ -269,7 +269,7 @@ export default function WorkoutSummaryScreen() {
                     styles.doneButton,
                     { backgroundColor: theme.colors.accent },
                 ]}
-                onPress={() => router.replace("/(tabs)")}
+                onPress={() => router.replace("/(tabs)/home")}
                 activeOpacity={0.85}
             >
                 <Text style={styles.doneButtonText}>Done</Text>

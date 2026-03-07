@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Workout, CreateWorkoutRequest, CurrentPR, getDefaultPreset } from "../types";
 import { PRSection } from "./personal-records";
 import { SetPlanCard } from "./SetPlanCard";
-import { getTheme, typography, radii } from "../theme";
+import { getTheme, typography, radii, TAB_BAR_HEIGHT } from "../theme";
 import { apiService } from "../services/api";
 import { getCurrentPlanId, getCurrentUserId } from "../state/session";
 import { useAdminMode } from "../hooks/useAdminMode";
@@ -197,7 +197,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                     <ScrollView
                         style={styles.content}
                         contentContainerStyle={{
-                            paddingBottom: insets.bottom + 16,
+                            paddingBottom: insets.bottom + TAB_BAR_HEIGHT + 16,
                         }}
                         showsVerticalScrollIndicator={false}
                     >
@@ -357,7 +357,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                     style={[
                         styles.stickyButtonContainer,
                         {
-                            paddingBottom: insets.bottom + 8,
+                            paddingBottom: insets.bottom + TAB_BAR_HEIGHT + 8,
                             backgroundColor: theme.colors.bg,
                             borderTopColor: theme.colors.border,
                         },
